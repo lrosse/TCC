@@ -1,0 +1,33 @@
+# Arquivos do ambiente virtual
+ambiente/
+env/
+
+# Arquivos de configuração do sistema operacional
+*.DS_Store
+Thumbs.db
+
+# Arquivos de cache do Python
+__pycache__/
+*.py[cod]
+
+# Arquivos de migração gerados automaticamente
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Arquivos de log
+*.log
+
+# Arquivos de banco de dados local
+db.sqlite3
+
+# Arquivos de configuração sensíveis
+*.env
+
+# Arquivos estáticos e de mídia gerados
+staticfiles/
+media/
+
+# Arquivos de IDEs
+.vscode/
+.idea/
+*.swp
