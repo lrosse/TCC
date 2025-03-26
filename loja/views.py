@@ -39,7 +39,26 @@ def entrar(request):
 def sair(request):
     logout(request)
     return redirect('home')
+    
 
 @staff_required
 def dashboard(request):
-    return render(request, 'loja/dashboard.html')
+    if request.method == "POST":
+        form = RegistroForm(request.POST)
+        if form.is_valid():
+            # Cria o novo usuário sem salvar no banco ainda
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            
+            # Verifica se o admin selecionou a opção de ser superuser
+            if 'make_superuser' in request.POST:
+                user.is_superuser = True
+                user.is_staff = True  # Tornando o usuário um admin, se for o caso
+
+            user.save()
+            login(request, user)  # Faz login automaticamente após o cadastro
+            return redirect('home')
+    else:
+        form = RegistroForm()
+
+    return render(request, 'loja/dashboard.html', {'form': form})
