@@ -14,16 +14,15 @@ def home(request):
 
 def registrar(request):
     if request.method == "POST":
-        form = RegistroForm(request.POST)
+        form = RegistroForm(request.POST, user=request.user)  # Passa o usuário autenticado
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.save()
+            user = form.save()
             login(request, user)  # Faz login automaticamente após o cadastro
             return redirect('home')
     else:
-        form = RegistroForm()
+        form = RegistroForm(user=request.user)  # Passa o usuário autenticado
     return render(request, 'loja/registrar.html', {'form': form})
+
 
 def entrar(request):
     if request.method == "POST":
