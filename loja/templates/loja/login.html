@@ -2,15 +2,104 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        .login-container {
+            max-width: 500px;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            margin: 0 auto;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <h2>Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Entrar</button>
-        <a class="btn btn-warning me-2" href="{% url 'registrar' %}">registrar</a>
-    </form>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="login-container">
+                    <div class="login-header">
+                        <h2 class="fw-bold">Login</h2>
+                        <p class="text-muted">Acesse sua conta para utilizar o sistema</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Transformando os campos do formulário para ficarem mais bonitos -->
+                        {% for field in form %}
+                        <div class="form-floating mb-3">
+                            {{ field }}
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {% if field.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in field.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-login">Entrar</button>
+                        </div>
+                        
+                        <div class="register-link">
+                            <p>Não tem uma conta? <a href="{% url 'registrar' %}" class="fw-bold text-decoration-none">Registre-se</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Script para adicionar classes do Bootstrap aos campos do formulário gerados pelo Django -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const formInputs = document.querySelectorAll('form input, form select, form textarea');
+            formInputs.forEach(input => {
+                input.classList.add('form-control');
+                if (input.getAttribute('type') === 'checkbox') {
+                    input.classList.remove('form-control');
+                    input.classList.add('form-check-input');
+                    input.parentElement.classList.add('form-check');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
