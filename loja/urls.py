@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', views.entrar, name='login'),
     path('logout/', views.sair, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/criar_produto/', views.criar_produto, name='criar_produto'),
 ]
 
 if settings.DEBUG:

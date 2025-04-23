@@ -61,3 +61,20 @@ def dashboard(request):
         form = RegistroForm()
 
     return render(request, 'loja/dashboard.html', {'form': form})
+
+def criar_produto(request):
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao')
+        preco = request.POST.get('preco')
+        imagem = request.FILES.get('imagem')
+
+        Produto.objects.create(
+            nome=nome,
+            descricao=descricao,
+            preco=preco,
+            imagem=imagem
+        )
+        return redirect('dashboard')  # ou para a lista de produtos
+
+    return render(request, 'loja/criar_produto.html')
