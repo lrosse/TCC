@@ -10,6 +10,7 @@ urlpatterns = [
     path('logout/', views.sair, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/criar_produto/', views.criar_produto, name='criar_produto'),
+    path('dashboard/listar_produtos/', views.listar_produtos, name='listar_produtos'),  # Rota para listar produtos
 ]
 
 if settings.DEBUG:

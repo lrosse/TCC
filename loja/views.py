@@ -78,3 +78,17 @@ def criar_produto(request):
         return redirect('dashboard')  # ou para a lista de produtos
 
     return render(request, 'loja/criar_produto.html')
+
+def listar_produtos(request):
+    # Verificar se o usuário está autenticado e é staff
+    if not request.user.is_authenticated or not request.user.is_staff:
+        return redirect('login')
+    
+    # Buscar todos os produtos
+    produtos = Produto.objects.all()
+    
+    # Renderizar o template com os produtos
+    context = {
+        'produtos': produtos
+    }
+    return render(request, 'loja/listar_produtos.html', context)

@@ -3,7 +3,18 @@
     <ul class="nav flex-column">
         <li class="nav-item mb-2"><a href="{% url 'home' %}" class="nav-link">Home</a></li>
         <li class="nav-item mb-2"><a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a></li>
-        <li class="nav-item mb-2"><a href="{% url 'criar_produto' %}" class="nav-link">Produtos</a></li>
+        
+        <!-- Dropdown para Produtos -->
+        <li class="nav-item mb-2 dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="produtosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Produtos
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="produtosDropdown">
+                <li><a class="dropdown-item" href="{% url 'listar_produtos' %}">Lista</a></li>
+                <li><a class="dropdown-item" href="{% url 'criar_produto' %}">Cadastro</a></li>
+            </ul>
+        </li>
+        
         <li class="nav-item mb-2"><a href="#" class="nav-link">Pedidos</a></li>
         <li class="nav-item mb-2"><a href="#" class="nav-link">Relatórios</a></li>
         <li class="nav-item mb-2"><a href="#" class="nav-link">Feedbacks</a></li>
