@@ -1,59 +1,47 @@
-{% extends 'loja/base.html' %}
+{% extends 'loja/barra_lateral.html' %}
 
 {% block title %}Lista de Produtos{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Barra Lateral -->
-        <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
-            {% include 'loja/barra_lateral.html' %}
-        </div>
-
-        <!-- Conteúdo Principal -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Lista de Produtos</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="{% url 'criar_produto' %}" class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-plus-circle"></i> Novo Produto
-                    </a>
-                </div>
-            </div>
-
-            <!-- Tabela de Produtos -->
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>Preço</th>
-                            <th>Descrição</th>
-                            <th>Quantidade</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for produto in produtos %}
-                        <tr>
-                            <td>{{ produto.nome }}</td>
-                            <td>R$ {{ produto.preco }}</td>
-                            <td>{{ produto.descricao|truncatechars:50 }}</td>
-                            <td>{{ produto.quantidade|default:"Não informada" }}</td>
-                            <td>
-                                <a href="#" class="btn btn-sm btn-info">Editar</a>
-                                <a href="#" class="btn btn-sm btn-danger">Excluir</a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center">Nenhum produto cadastrado.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </main>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Lista de Produtos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'criar_produto' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-plus-circle"></i> Novo Produto
+        </a>
     </div>
+</div>
+
+<!-- Tabela de Produtos -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Preço</th>
+                <th>Descrição</th>
+                <th>Quantidade</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produto in produtos %}
+            <tr>
+                <td>{{ produto.nome }}</td>
+                <td>R$ {{ produto.preco }}</td>
+                <td>{{ produto.descricao|truncatechars:50 }}</td>
+                <td>{{ produto.quantidade|default:"Não informada" }}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-info">Editar</a>
+                    <a href="#" class="btn btn-sm btn-danger">Excluir</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Nenhum produto cadastrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

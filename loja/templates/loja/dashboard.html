@@ -1,72 +1,60 @@
-{% extends 'loja/base.html' %}
+{% extends 'loja/barra_lateral.html' %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Barra Lateral -->
-        <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
-            {% include 'loja/barra_lateral.html' %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Olá, {{ user.username }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'registrar' %}" class="btn btn-sm btn-outline-success">
+            <i class="bi bi-person-plus"></i> Registrar Novo Usuário
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger ms-2">
+            <i class="bi bi-box-arrow-right"></i> Sair
+        </a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Gráficos de Vendas</h5>
+                <!-- conteúdo gráfico aqui -->
+            </div>
         </div>
-
-        <!-- Conteúdo Principal -->
-        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">Olá, {{ user.username }}</h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="{% url 'registrar' %}" class="btn btn-sm btn-outline-success">
-                        <i class="bi bi-person-plus"></i> Registrar Novo Usuário
-                    </a>
-                    <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-danger ms-2">
-                        <i class="bi bi-box-arrow-right"></i> Sair
-                    </a>
-                </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Produtos Populares</h5>
+                <!-- produtos populares aqui -->
             </div>
-
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Gráficos de Vendas</h5>
-                            <!-- conteúdo gráfico aqui -->
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Produtos Populares</h5>
-                            <!-- produtos populares aqui -->
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">R$ 0,00 Vendas no mês</h5>
-                            <!-- dados dinâmicos -->
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Pedidos</h5>
-                            <!-- número de pedidos -->
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Feedbacks</h5>
-                            <!-- feedbacks recentes -->
-                        </div>
-                    </div>
-                </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">R$ 0,00 Vendas no mês</h5>
+                <!-- dados dinâmicos -->
             </div>
-        </main>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Pedidos</h5>
+                <!-- número de pedidos -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Feedbacks</h5>
+                <!-- feedbacks recentes -->
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
