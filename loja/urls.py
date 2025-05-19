@@ -6,12 +6,17 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('', views.home, name='home'),
     path('registrar/', views.registrar, name='registrar'),
-    path('login/', views.entrar, name='login'),
-    path('logout/', views.sair, name='logout'),
+    path('entrar/', views.entrar, name='login'),
+    path('sair/', views.sair, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('dashboard/criar_produto/', views.criar_produto, name='criar_produto'),
-    path('dashboard/listar_produtos/', views.listar_produtos, name='listar_produtos'),  # Rota para listar produtos
+    
+    # Rotas para produtos
+    path('produtos/criar/', views.criar_produto, name='criar_produto'),
+    path('produtos/listar/', views.listar_produtos, name='listar_produtos'),
+    path('produtos/editar/<int:produto_id>/', views.editar_produto, name='editar_produto'),
+    path('produtos/excluir/<int:produto_id>/', views.excluir_produto, name='excluir_produto'),
 ]
 
+# Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

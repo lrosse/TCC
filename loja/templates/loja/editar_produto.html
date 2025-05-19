@@ -1,10 +1,10 @@
 {% extends 'loja/barra_lateral.html' %}
 
-{% block title %}Criar Produto{% endblock %}
+{% block title %}Editar Produto{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Cadastrar Produto</h1>
+    <h1 class="h2">Editar Produto</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="{% url 'listar_produtos' %}" class="btn btn-sm btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Voltar para Produtos
@@ -16,39 +16,45 @@
     <div class="col-md-8">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h5 class="card-title">Formulário de Cadastro de Produto</h5>
+                <h5 class="card-title">Editar dados do produto</h5>
 
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <div class="mb-3">
                         <label for="id_nome" class="form-label">Nome</label>
-                        <input type="text" name="nome" id="id_nome" class="form-control" required>
+                        <input type="text" name="nome" id="id_nome" class="form-control" value="{{ produto.nome }}" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="id_descricao" class="form-label">Descrição</label>
-                        <textarea name="descricao" id="id_descricao" rows="4" class="form-control" required></textarea>
+                        <textarea name="descricao" id="id_descricao" rows="4" class="form-control" required>{{ produto.descricao }}</textarea>
                     </div>
 
                     <div class="mb-3">
                         <label for="id_preco" class="form-label">Preço (R$)</label>
-                        <input type="number" name="preco" id="id_preco" step="0.01" class="form-control" required>
+                        <input type="number" name="preco" id="id_preco" step="0.01" class="form-control" value="{{ produto.preco }}" required>
                     </div>
 
-                    <!-- Campo de quantidade adicionado -->
                     <div class="mb-3">
                         <label for="id_quantidade" class="form-label">Quantidade em Estoque</label>
-                        <input type="number" name="quantidade" id="id_quantidade" min="0" class="form-control" value="0" required>
+                        <input type="number" name="quantidade" id="id_quantidade" min="0" class="form-control" value="{{ produto.quantidade }}" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="id_imagem" class="form-label">Imagem do Produto</label>
+                        {% if produto.imagem %}
+                            <div class="mb-2">
+                                <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" style="max-height: 100px;" class="img-thumbnail">
+                                <p class="small text-muted">Imagem atual</p>
+                            </div>
+                        {% endif %}
                         <input type="file" name="imagem" id="id_imagem" class="form-control">
+                        <small class="text-muted">Deixe em branco para manter a imagem atual</small>
                     </div>
 
                     <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Cadastrar Produto
+                        <i class="bi bi-save"></i> Salvar Alterações
                     </button>
                 </form>
             </div>

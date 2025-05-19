@@ -42,8 +42,6 @@
     </div>
 </nav>
 
-
-
     <!-- Conteúdo da Vitrine -->
     <div class="container my-4">
         <h1 class="text-center text-primary mb-4">Vitrine de Produtos</h1>
@@ -56,6 +54,8 @@
                             <h5 class="card-title">{{ produto.nome }}</h5>
                             <p class="card-text">{{ produto.descricao }}</p>
                             <p class="card-text"><strong>Preço:</strong> R$ {{ produto.preco }}</p>
+                            <!-- Exibindo a quantidade do produto -->
+                            <p class="card-text"><strong>Disponível:</strong> {{ produto.quantidade }} unidades</p>
                         </div>
                     </div>
                 </div>

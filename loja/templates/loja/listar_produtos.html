@@ -32,8 +32,8 @@
                 <td>{{ produto.descricao|truncatechars:50 }}</td>
                 <td>{{ produto.quantidade|default:"Não informada" }}</td>
                 <td>
-                    <a href="#" class="btn btn-sm btn-info">Editar</a>
-                    <a href="#" class="btn btn-sm btn-danger">Excluir</a>
+                    <a href="{% url 'editar_produto' produto.id %}" class="btn btn-sm btn-info">Editar</a>
+                    <a href="{% url 'excluir_produto' produto.id %}" class="btn btn-sm btn-danger">Excluir</a>
                 </td>
             </tr>
             {% empty %}

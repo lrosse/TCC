@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from .models import Produto
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login, authenticate, login, logout
+from django.contrib.auth import login, authenticate, logout
 from .forms import RegistroForm
 from django.contrib.auth.decorators import login_required
 from .decorators import staff_required
@@ -67,15 +67,17 @@ def criar_produto(request):
         nome = request.POST.get('nome')
         descricao = request.POST.get('descricao')
         preco = request.POST.get('preco')
+        quantidade = request.POST.get('quantidade', 0)  # Valor padrão 0 se não for fornecido
         imagem = request.FILES.get('imagem')
 
         Produto.objects.create(
             nome=nome,
             descricao=descricao,
             preco=preco,
+            quantidade=quantidade,  # Campo adicionado
             imagem=imagem
         )
-        return redirect('dashboard')  # ou para a lista de produtos
+        return redirect('listar_produtos')  # Redireciona para a lista de produtos
 
     return render(request, 'loja/criar_produto.html')
 
@@ -92,3 +94,51 @@ def listar_produtos(request):
         'produtos': produtos
     }
     return render(request, 'loja/listar_produtos.html', context)
+    
+@staff_required
+def editar_produto(request, produto_id):
+    # Buscar o produto pelo ID ou retornar 404 se não existir
+    try:
+        produto = Produto.objects.get(id=produto_id)
+    except Produto.DoesNotExist:
+        return redirect('listar_produtos')
+    
+    if request.method == 'POST':
+        # Atualizar os dados do produto
+        produto.nome = request.POST.get('nome')
+        produto.descricao = request.POST.get('descricao')
+        produto.preco = request.POST.get('preco')
+        produto.quantidade = request.POST.get('quantidade', 0)
+        
+        # Verificar se uma nova imagem foi enviada
+        if 'imagem' in request.FILES:
+            produto.imagem = request.FILES['imagem']
+            
+        # Salvar as alterações
+        produto.save()
+        return redirect('listar_produtos')
+    
+    # Renderizar o formulário de edição com os dados do produto
+    context = {
+        'produto': produto
+    }
+    return render(request, 'loja/editar_produto.html', context)
+
+@staff_required
+def excluir_produto(request, produto_id):
+    # Buscar o produto pelo ID
+    try:
+        produto = Produto.objects.get(id=produto_id)
+    except Produto.DoesNotExist:
+        return redirect('listar_produtos')
+    
+    if request.method == 'POST':
+        # Excluir o produto
+        produto.delete()
+        return redirect('listar_produtos')
+    
+    # Renderizar a página de confirmação
+    context = {
+        'produto': produto
+    }
+    return render(request, 'loja/excluir_produto.html', context)
