@@ -15,6 +15,12 @@ urlpatterns = [
     path('produtos/listar/', views.listar_produtos, name='listar_produtos'),
     path('produtos/editar/<int:produto_id>/', views.editar_produto, name='editar_produto'),
     path('produtos/excluir/<int:produto_id>/', views.excluir_produto, name='excluir_produto'),
+    
+    # Rotas para carrinho
+    path('carrinho/adicionar/<int:produto_id>/', views.adicionar_ao_carrinho, name='adicionar_ao_carrinho'),
+    path('carrinho/', views.ver_carrinho, name='ver_carrinho'),
+    path('carrinho/remover/<int:item_id>/', views.remover_do_carrinho, name='remover_do_carrinho'),
+    path('carrinho/alterar/<int:item_id>/', views.alterar_quantidade, name='alterar_quantidade'),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

@@ -54,8 +54,7 @@
                             <h5 class="card-title">{{ produto.nome }}</h5>
                             <p class="card-text">{{ produto.descricao }}</p>
                             <p class="card-text"><strong>Preço:</strong> R$ {{ produto.preco }}</p>
-                            <!-- Exibindo a quantidade do produto -->
-                            <p class="card-text"><strong>Disponível:</strong> {{ produto.quantidade }} unidades</p>
+                            <a href="{% url 'adicionar_ao_carrinho' produto.id %}" class="btn btn-primary">Adicionar ao Carrinho</a>
                         </div>
                     </div>
                 </div>

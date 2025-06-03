@@ -1,0 +1,35 @@
+<h2>Meu Carrinho</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Produto</th>
+            <th>Quantidade</th>
+            <th>Preço Unitário</th>
+            <th>Subtotal</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in itens %}
+        <tr>
+            <td>{{ item.produto.nome }}</td>
+            <td>
+                <form method="post" action="{% url 'alterar_quantidade' item.id %}">
+                    {% csrf_token %}
+                    <input type="number" name="quantidade" value="{{ item.quantidade }}" min="1" style="width: 60px;">
+                    <button type="submit" class="btn btn-sm btn-primary">Atualizar</button>
+                </form>
+            </td>
+            <td>R$ {{ item.preco_unitario }}</td>
+            <td>R$ {{ item.subtotal }}</td>
+            <td>
+                <a href="{% url 'remover_do_carrinho' item.id %}" class="btn btn-sm btn-danger">Remover</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">Seu carrinho está vazio.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4>Total: R$ {{ total }}</h4>
