@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Gestão{% endblock %}</title>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <!-- CSS Personalizado -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Estilo modelo principal -->
     <style>
+        body {
+            background-color: #ffffff;
+        }
+
         .sidebar {
             position: fixed;
             top: 0;
@@ -17,28 +24,33 @@
             left: 0;
             z-index: 100;
             padding: 48px 0 0;
-            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #343a40;
+            min-height: 100vh;
         }
-        
+
         .sidebar .nav-link {
-            color: #fff;
+            color: #f8f9fa;
             padding: .5rem 1rem;
             border-radius: .25rem;
+            transition: background-color 0.2s ease;
         }
-        
+
         .sidebar .nav-link:hover {
             background-color: rgba(255, 255, 255, .1);
         }
-        
+
         .sidebar .nav-link.active {
             background-color: rgba(255, 255, 255, .2);
         }
-        
-        .dropdown-menu {
-            margin-top: 0;
+
+        .navbar {
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
         }
-        
+
+        .main-content {
+            margin-top: 56px;
+        }
+
         @media (max-width: 767.98px) {
             .sidebar {
                 position: static;
@@ -47,8 +59,10 @@
             }
         }
     </style>
+
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
@@ -61,7 +75,7 @@
                 <ul class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="btn btn-outline-light btn-sm mx-2" href="{% url 'home' %}">Loja</a>
+                            <a class="btn btn-outline-light btn-sm me-2" href="{% url 'home' %}">Loja</a>
                         </li>
                         <li class="nav-item">
                             <a class="btn btn-outline-danger btn-sm" href="{% url 'logout' %}">Sair</a>
@@ -76,18 +90,18 @@
         </div>
     </nav>
 
-    <!-- Conteúdo Principal -->
-    <div class="container-fluid" style="margin-top: 56px;">
+    <!-- Layout -->
+    <div class="container-fluid main-content">
         <div class="row">
-            <!-- Barra Lateral -->
-            <div class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse" style="min-height: 100vh;">
-                <div class="sidebar p-3">
-                    <h4 class="text-white mb-4">Logo</h4>
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky p-3">
+                    <h4 class="text-white mb-4">Painel</h4>
                     <ul class="nav flex-column">
                         <li class="nav-item mb-2"><a href="{% url 'home' %}" class="nav-link">Home</a></li>
                         <li class="nav-item mb-2"><a href="{% url 'dashboard' %}" class="nav-link">Dashboard</a></li>
-                        
-                        <!-- Dropdown para Produtos -->
+
+                        <!-- Produtos Dropdown -->
                         <li class="nav-item mb-2 dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="produtosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 Produtos
@@ -97,49 +111,42 @@
                                 <li><a class="dropdown-item" href="{% url 'criar_produto' %}">Cadastro</a></li>
                             </ul>
                         </li>
-                        
+
                         <li class="nav-item mb-2"><a href="#" class="nav-link">Pedidos</a></li>
                         <li class="nav-item mb-2"><a href="#" class="nav-link">Relatórios</a></li>
                         <li class="nav-item mb-2"><a href="#" class="nav-link">Feedbacks</a></li>
                     </ul>
                 </div>
-            </div>
+            </nav>
 
-            <!-- Conteúdo Principal -->
+            <!-- Conteúdo da página -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                 {% block content %}{% endblock %}
             </main>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
+    <!-- Bootstrap Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Script para garantir que todos os dropdowns funcionem -->
+
+    <!-- Dropdown Hover Script -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializa todos os dropdowns do Bootstrap
-            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
-            var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
-                return new bootstrap.Dropdown(dropdownToggleEl);
-            });
-            
-            // Adiciona event listeners para funcionar no hover e no clique
-            var dropdownItems = document.querySelectorAll('.dropdown');
-            dropdownItems.forEach(function(dropdown) {
-                dropdown.addEventListener('mouseenter', function() {
-                    var toggle = this.querySelector('.dropdown-toggle');
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdowns = document.querySelectorAll('.dropdown');
+            dropdowns.forEach(drop => {
+                drop.addEventListener('mouseenter', function () {
+                    const toggle = this.querySelector('.dropdown-toggle');
                     bootstrap.Dropdown.getOrCreateInstance(toggle).show();
                 });
-                
-                dropdown.addEventListener('mouseleave', function() {
-                    var toggle = this.querySelector('.dropdown-toggle');
+                drop.addEventListener('mouseleave', function () {
+                    const toggle = this.querySelector('.dropdown-toggle');
                     bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
                 });
             });
         });
     </script>
-    
+
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

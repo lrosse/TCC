@@ -132,3 +132,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'  # URL pública para acessar os arquivos de mídia
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Caminho absoluto para o diretório de mídia
 
+# Redirecionamento automático para login se não estiver autenticado
+LOGIN_URL = 'login'
