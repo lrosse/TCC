@@ -15,6 +15,12 @@ urlpatterns = [
     path('produtos/listar/', views.listar_produtos, name='listar_produtos'),
     path('produtos/editar/<int:produto_id>/', views.editar_produto, name='editar_produto'),
     path('produtos/excluir/<int:produto_id>/', views.excluir_produto, name='excluir_produto'),
+
+    # Rotas para estoque
+    path('produtos/entrada-estoque/', views.entrada_estoque, name='entrada_estoque'),
+    path('produtos/ajuste-estoque/', views.ajuste_estoque, name='ajuste_estoque'),
+    path('produtos/historico-estoque/', views.historico_estoque, name='historico_estoque'),
+
     
     # Rotas para carrinho
     path('carrinho/adicionar/<int:produto_id>/', views.adicionar_ao_carrinho, name='adicionar_ao_carrinho'),

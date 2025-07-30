@@ -6,6 +6,10 @@ from .forms import RegistroForm
 from django.contrib.auth.decorators import login_required
 from .decorators import staff_required
 from django.contrib.auth.models import User
+from django.contrib import messages
+from .models import EntradaEstoque
+from .models import MovimentacaoEstoque  
+
 
 def home(request):
     produtos = Produto.objects.all()
@@ -110,6 +114,99 @@ def excluir_produto(request, produto_id):
         return redirect('listar_produtos')
     
     return render(request, 'loja/excluir_produto.html', {'produto': produto})
+
+@staff_required
+def entrada_estoque(request):
+    produtos = Produto.objects.all()
+
+    if request.method == 'POST':
+        produto_id = request.POST.get('produto')
+        quantidade = request.POST.get('quantidade')
+        observacao = request.POST.get('observacao', '')
+
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            quantidade = int(quantidade)
+
+            if quantidade <= 0:
+                messages.error(request, "A quantidade deve ser maior que zero.")
+                return redirect('entrada_estoque')
+
+            # Atualiza o estoque do produto
+            produto.quantidade += quantidade
+            produto.save()
+
+            # Registra a entrada
+            EntradaEstoque.objects.create(
+                produto=produto,
+                quantidade_adicionada=quantidade,
+                observacao=observacao
+            )
+
+            # Registra a movimentação de estoque
+            MovimentacaoEstoque.objects.create(
+                produto=produto,
+                tipo='entrada',
+                quantidade=quantidade,
+                estoque_final=produto.quantidade,
+                observacao=observacao
+            )
+
+            messages.success(request, f"{quantidade} unidade(s) adicionada(s) ao estoque de {produto.nome}.")
+            return redirect('entrada_estoque')
+
+        except Produto.DoesNotExist:
+            messages.error(request, "Produto não encontrado.")
+        except ValueError:
+            messages.error(request, "Informe uma quantidade válida.")
+
+    return render(request, 'loja/entrada_estoque.html', {'produtos': produtos})
+
+@staff_required
+def ajuste_estoque(request):
+    produtos = Produto.objects.all()
+
+    if request.method == 'POST':
+        produto_id = request.POST.get('produto_id')
+        nova_quantidade = request.POST.get('nova_quantidade')
+        observacao = request.POST.get('observacao', '').strip()
+
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            nova_quantidade = int(nova_quantidade)
+
+            if nova_quantidade < 0:
+                messages.error(request, "A quantidade não pode ser negativa.")
+                return redirect('ajuste_estoque')
+
+            # Atualiza o estoque
+            produto.quantidade = nova_quantidade
+            produto.save()
+
+            # Cria o registro no histórico de movimentações
+            MovimentacaoEstoque.objects.create(
+                produto=produto,
+                tipo='ajuste',
+                quantidade=nova_quantidade,
+                estoque_final=produto.quantidade,
+                observacao=observacao or f"Ajuste manual realizado por {request.user.username}"
+            )
+
+            messages.success(request, f"Estoque de '{produto.nome}' atualizado para {nova_quantidade}.")
+            return redirect('ajuste_estoque')
+
+        except Produto.DoesNotExist:
+            messages.error(request, "Produto não encontrado.")
+        except ValueError:
+            messages.error(request, "Quantidade inválida.")
+
+    return render(request, 'loja/ajuste_estoque.html', {'produtos': produtos})
+
+
+@staff_required
+def historico_estoque(request):
+    movimentacoes = MovimentacaoEstoque.objects.select_related('produto').order_by('-data')
+    return render(request, 'loja/historico_estoque.html', {'movimentacoes': movimentacoes})
 
 # FUNÇÃO AUXILIAR SEM DECORATOR
 def get_or_create_carrinho(usuario):

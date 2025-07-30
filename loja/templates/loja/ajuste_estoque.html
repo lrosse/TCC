@@ -1,0 +1,55 @@
+{% extends 'loja/barra_lateral.html' %}
+{% block title %}Ajuste Manual de Estoque{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Ajuste Manual de Estoque</h2>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Produto</th>
+                <th>Estoque Atual</th>
+                <th>Nova Quantidade</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produto in produtos %}
+            <tr>
+                <td>{{ produto.nome }}</td>
+                <td>{{ produto.quantidade }}</td>
+                <td>
+                    <form method="post" onsubmit="return confirmarAjuste();" class="d-flex flex-column gap-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="produto_id" value="{{ produto.id }}">
+
+                        <input type="number" name="nova_quantidade" class="form-control" min="0" required
+                            placeholder="Nova quantidade">
+
+                        <textarea name="observacao" class="form-control" rows="1"
+                            placeholder="Motivo do ajuste (opcional)"></textarea>
+
+                        <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
+                    </form>
+                </td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% block extra_js %}
+<script>
+function confirmarAjuste() {
+    return confirm("Tem certeza que deseja ajustar o estoque? Esta ação será registrada.");
+}
+</script>
+{% endblock %}
+{% endblock %}

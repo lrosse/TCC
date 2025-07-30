@@ -1,0 +1,39 @@
+{% extends 'loja/barra_lateral.html' %}
+{% block title %}Entrada de Estoque{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Entrada de Estoque</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="produto" class="form-label">Produto</label>
+            <select name="produto" id="produto" class="form-select" required>
+                <option value="">Selecione um produto</option>
+                {% for produto in produtos %}
+                    <option value="{{ produto.id }}">{{ produto.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="quantidade" class="form-label">Quantidade a adicionar</label>
+            <input type="number" name="quantidade" id="quantidade" class="form-control" min="1" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="observacao" class="form-label">Observação (opcional)</label>
+            <textarea name="observacao" id="observacao" class="form-control"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">Confirmar Entrada</button>
+    </form>
+</div>
+{% endblock %}
