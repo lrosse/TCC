@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Finalizar Pedido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap 5.3 + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .pedido-card {
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+        .form-section {
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+        }
+        .btn-whatsapp {
+            background-color: #25D366;
+            border: none;
+        }
+        .btn-whatsapp:hover {
+            background-color: #1ebe5d;
+        }
+    </style>
+</head>
+<body>
+<div class="container my-5">
+    <h2 class="text-center mb-5 text-primary">Finalizar Pedido</h2>
+
+    <!-- Resumo do Carrinho -->
+    <div class="card pedido-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-cart-check"></i> Resumo do Carrinho</h5>
+        </div>
+        <div class="card-body">
+            {% if itens %}
+            <ul class="list-group mb-3">
+                {% for item in itens %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ item.quantidade }}x {{ item.produto.nome }}
+                    <span>R$ {{ item.subtotal }}</span>
+                </li>
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <strong>Total:</strong>
+                    <strong>R$ {{ total }}</strong>
+                </li>
+            </ul>
+            {% else %}
+            <p class="text-muted">Seu carrinho está vazio.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Formulário de Entrega -->
+    <div class="form-section bg-white">
+        <h5 class="mb-4"><i class="bi bi-truck"></i> Dados para Entrega</h5>
+        <div id="alertaCampos" class="alert alert-danger d-none">Por favor, preencha todos os campos obrigatórios antes de finalizar o pedido.</div>
+
+        <form id="formEntrega">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Nome completo *" id="nome" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Rua *" id="rua" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" placeholder="Número *" id="numero" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" placeholder="Bairro *" id="bairro" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Cidade *" id="cidade" required>
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Complemento" id="complemento">
+                </div>
+                <div class="col-md-6">
+                    <input type="text" class="form-control" placeholder="Referência" id="referencia">
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-whatsapp text-white fw-semibold" onclick="finalizarPedido()">
+                    <i class="bi bi-whatsapp me-2"></i>Confirmar Pedido via WhatsApp
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function finalizarPedido() {
+        const campos = ['nome', 'rua', 'numero', 'bairro', 'cidade'];
+        let vazio = false;
+
+        campos.forEach(id => {
+            if (!document.getElementById(id).value.trim()) {
+                vazio = true;
+            }
+        });
+
+        if (vazio) {
+            document.getElementById('alertaCampos').classList.remove('d-none');
+            return;
+        }
+
+        const nome = document.getElementById('nome').value;
+        const rua = document.getElementById('rua').value;
+        const numero = document.getElementById('numero').value;
+        const bairro = document.getElementById('bairro').value;
+        const cidade = document.getElementById('cidade').value;
+        const complemento = document.getElementById('complemento').value;
+        const referencia = document.getElementById('referencia').value;
+
+        let mensagem = "🛒 *Pedido realizado através do site*:%0A%0A";
+        mensagem += "📦 *Produtos:*%0A";
+
+        {% autoescape off %}
+        {% for item in itens %}
+        mensagem += "- {{ item.quantidade }}x {{ item.produto.nome }} – R$ {{ item.subtotal }}%0A";
+        {% endfor %}
+        {% endautoescape %}
+
+        mensagem += "%0A💰 *Total:* R$ {{ total }}%0A%0A";
+        mensagem += "📍 *Endereço de entrega:*%0A";
+        mensagem += rua + ", " + numero + "%0A";
+        mensagem += bairro + " – " + cidade + "%0A";
+        if (complemento) mensagem += "Complemento: " + complemento + "%0A";
+        if (referencia) mensagem += "Referência: " + referencia + "%0A";
+        mensagem += "%0A🙋 Cliente: " + nome + "%0A%0A";
+        mensagem += "Agradeço desde já e fico no aguardo da confirmação 😊";
+
+        const numeroVendedor = "{{ numero_vendedor }}";
+        const url = `https://wa.me/${numeroVendedor}?text=${mensagem}`;
+        window.open(url, '_blank');
+    }
+</script>
+</body>
+</html>

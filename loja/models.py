@@ -25,8 +25,10 @@ class Carrinho(models.Model):
         total = sum(item.subtotal() for item in self.itemcarrinho_set.all())
         self.valor_total = total
         self.save()
-        return total   
-    
+        return total
+
+    def total(self):
+        return self.calcular_total()
 class ItemCarrinho(models.Model):
     carrinho = models.ForeignKey(Carrinho, on_delete=models.CASCADE)
     produto = models.ForeignKey(Produto, on_delete=models.CASCADE)

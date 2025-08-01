@@ -134,3 +134,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Caminho absoluto para o diretór
 
 # Redirecionamento automático para login se não estiver autenticado
 LOGIN_URL = 'login'
+
+# Número do WhatsApp do vendedor (DDI + DDD + número, sem espaços ou traços)
+WHATSAPP_NUMERO = "5518988083436"  # Substitua pelo número real

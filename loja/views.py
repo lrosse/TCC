@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from .models import EntradaEstoque
 from .models import MovimentacaoEstoque  
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
 
 
 def home(request):
@@ -254,3 +256,21 @@ def alterar_quantidade(request, item_id):
             item.delete()
         item.carrinho.calcular_total()
     return redirect('ver_carrinho')
+
+@login_required
+def finalizar_compra(request):
+    try:
+        carrinho = Carrinho.objects.get(usuario=request.user)
+        itens = ItemCarrinho.objects.filter(carrinho=carrinho)
+        total = carrinho.total()
+    except Carrinho.DoesNotExist:
+        itens = []
+        total = 0
+
+    numero_vendedor = '5518988083436'  # Com +55 já embutido
+
+    return render(request, 'loja/finalizar_compra.html', {
+        'itens': itens,
+        'total': total,
+        'numero_vendedor': numero_vendedor
+    })

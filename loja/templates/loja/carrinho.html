@@ -2,113 +2,98 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Carrinho</title>
+    <title>Carrinho de Compras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap CSS + Bootstrap Icons -->
+    <!-- Bootstrap 5.3 + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        .card-carrinho {
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+            margin-top: 40px;
         }
-
-        .cart-container {
-            max-width: 960px;
-            margin: 50px auto;
+        .btn-remover {
+            color: #dc3545;
+            font-size: 1.2rem;
         }
-
-        .cart-card {
-            background-color: #fff;
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        .btn-remover:hover {
+            color: #b02a37;
         }
-
-        .cart-header {
-            background: linear-gradient(135deg, #1a73e8, #4285f4);
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            padding: 1.5rem 2rem;
-            color: #fff;
+        .btn-comprar {
+            background-color: #0d6efd;
+            color: white;
         }
-
-        .cart-header h3 {
-            margin: 0;
-            font-weight: 600;
+        .btn-comprar:hover {
+            background-color: #0b5ed7;
         }
-
-        .table th {
-            background-color: #f1f3f4;
-        }
-
-        .total-row {
-            font-size: 1.25rem;
-            font-weight: bold;
-        }
-
-        .btn-icon {
-            padding: 0.4rem 0.7rem;
+        .quantidade-form {
+            max-width: 80px;
         }
     </style>
 </head>
 <body>
+<div class="container my-5">
+    <h2 class="text-center text-primary mb-4"><i class="bi bi-cart4 me-2"></i>Seu Carrinho</h2>
 
-<div class="container cart-container">
-    <div class="card cart-card">
-
-        <div class="cart-header d-flex justify-content-between align-items-center">
-            <h3><i class="bi bi-cart-check me-2"></i>Seu Carrinho</h3>
-            <span class="small">Itens: {{ itens|length }}</span>
-        </div>
-
-        <div class="card-body p-4">
+    <div class="card card-carrinho">
+        <div class="card-body">
+            {% if itens %}
             <div class="table-responsive">
-                <table class="table align-middle text-center">
-                    <thead>
+                <table class="table align-middle">
+                    <thead class="table-light">
                         <tr>
                             <th>Produto</th>
-                            <th>Quantidade</th>
-                            <th>Preço</th>
-                            <th>Subtotal</th>
-                            <th></th>
+                            <th class="text-center">Quantidade</th>
+                            <th class="text-end">Preço Unitário</th>
+                            <th class="text-end">Subtotal</th>
+                            <th class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for item in itens %}
                         <tr>
-                            <td class="fw-semibold">{{ item.produto.nome }}</td>
-                            <td>
-                                <form method="post" action="{% url 'alterar_quantidade' item.id %}" class="d-flex justify-content-center align-items-center gap-2">
+                            <td>{{ item.produto.nome }}</td>
+                            <td class="text-center">
+                                <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-flex justify-content-center">
                                     {% csrf_token %}
-                                    <input type="number" name="quantidade" value="{{ item.quantidade }}" min="1"
-                                           class="form-control form-control-sm text-center" style="width: 70px;">
-                                    <button type="submit" class="btn btn-outline-primary btn-sm btn-icon">
-                                        <i class="bi bi-arrow-clockwise"></i>
+                                    <input type="number" name="quantidade" value="{{ item.quantidade }}" min="1" class="form-control form-control-sm text-center quantidade-form me-2">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Atualizar">
+                                        <i class="bi bi-arrow-repeat"></i>
                                     </button>
                                 </form>
                             </td>
-                            <td>R$ {{ item.preco_unitario }}</td>
-                            <td>R$ {{ item.subtotal }}</td>
-                            <td>
-                                <a href="{% url 'remover_do_carrinho' item.id %}" class="btn btn-outline-danger btn-sm btn-icon">
+                            <td class="text-end">R$ {{ item.produto.preco }}</td>
+                            <td class="text-end">R$ {{ item.subtotal }}</td>
+                            <td class="text-center">
+                                <a href="{% url 'remover_do_carrinho' item.id %}" class="btn-remover" title="Remover do carrinho">
                                     <i class="bi bi-trash3-fill"></i>
                                 </a>
                             </td>
                         </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-muted text-center py-4">Seu carrinho está vazio.</td>
-                        </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end fw-bold">Total:</td>
+                            <td class="text-end fw-bold">R$ {{ total }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
             <div class="d-flex justify-content-end mt-4">
-                <p class="total-row text-primary">Total: R$ {{ total }}</p>
+                <a href="{% url 'finalizar_compra' %}" class="btn btn-comprar btn-lg">
+                    <i class="bi bi-check-circle me-2"></i>Comprar
+                </a>
             </div>
+
+            {% else %}
+            <p class="text-muted text-center my-4">Seu carrinho está vazio.</p>
+            {% endif %}
         </div>
     </div>
 </div>
