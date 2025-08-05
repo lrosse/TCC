@@ -48,41 +48,79 @@
 
 <body>
 
-    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="#">Minha Loja</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <span class="nav-link text-white">Bem-vindo, {{ user.username }}</span>
-                        </li>
-                        {% if user.is_staff %}
-                        <li class="nav-item">
-                            <a class="btn btn-warning me-2" href="{% url 'dashboard' %}">Dashboard</a>
-                        </li>
-                        {% endif %}
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light me-2" href="{% url 'ver_carrinho' %}">
-                                <i class="bi bi-cart3"></i> Carrinho
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light" href="{% url 'logout' %}">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="btn btn-outline-light" href="{% url 'login' %}">Login</a>
-                        </li>
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">Minha Loja</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <!-- Formulário de busca -->
+            <form class="d-flex ms-auto me-3" role="search" method="GET" action="{% url 'home' %}" id="formBusca">
+                <input class="form-control form-control-sm me-2" type="search" name="q" placeholder="Buscar produtos..." value="{{ request.GET.q }}">
+                <button class="btn btn-outline-light btn-sm" type="submit" title="Buscar">
+                    <i class="bi bi-search"></i>
+                </button>
+                <button class="btn btn-outline-light btn-sm ms-1" type="button" title="Filtros" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </form>
+
+            <!-- Links da direita -->
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <span class="nav-link text-white">Bem-vindo, {{ user.username }}</span>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="nav-item">
+                        <a class="btn btn-warning me-2" href="{% url 'dashboard' %}">Dashboard</a>
+                    </li>
                     {% endif %}
-                </ul>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light me-2" href="{% url 'ver_carrinho' %}">
+                            <i class="bi bi-cart3"></i> Carrinho
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light" href="{% url 'logout' %}">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light" href="{% url 'login' %}">Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Filtros Avançados (aparece ao clicar no funil) -->
+<div class="collapse container mt-3" id="filtrosExtras">
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <input type="number" class="form-control" placeholder="Preço mínimo" name="preco_min" form="formBusca" value="{{ request.GET.preco_min }}">
+                </div>
+                <div class="col-md-6">
+                    <input type="number" class="form-control" placeholder="Preço máximo" name="preco_max" form="formBusca" value="{{ request.GET.preco_max }}">
+                </div>
+            </div>
+            <div class="text-end mt-3">
+                <button class="btn btn-primary me-2" type="submit" form="formBusca">
+                    <i class="bi bi-funnel-fill me-1"></i> Aplicar Filtros
+                </button>
+                <a href="{% url 'home' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Limpar Filtros
+                </a>
             </div>
         </div>
-    </nav>
+    </div>
+</div>
+
 
     <!-- Conteúdo da Vitrine -->
     <div class="container my-5">

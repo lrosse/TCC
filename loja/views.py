@@ -15,7 +15,26 @@ from django.conf import settings
 
 def home(request):
     produtos = Produto.objects.all()
-    return render(request, 'loja/home.html', {'produtos': produtos})
+
+    # Pegando os parâmetros da URL
+    termo_busca = request.GET.get('q')
+    preco_min = request.GET.get('preco_min')
+    preco_max = request.GET.get('preco_max')
+
+    # Filtro por nome (busca)
+    if termo_busca:
+        produtos = produtos.filter(nome__icontains=termo_busca)
+
+    # Filtro por faixa de preço
+    if preco_min:
+        produtos = produtos.filter(preco__gte=preco_min)
+    if preco_max:
+        produtos = produtos.filter(preco__lte=preco_max)
+
+    context = {
+        'produtos': produtos,
+    }
+    return render(request, 'loja/home.html', context)
 
 def registrar(request):
     if request.method == "POST":
