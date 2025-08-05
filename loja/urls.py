@@ -15,6 +15,8 @@ urlpatterns = [
     path('produtos/listar/', views.listar_produtos, name='listar_produtos'),
     path('produtos/editar/<int:produto_id>/', views.editar_produto, name='editar_produto'),
     path('produtos/excluir/<int:produto_id>/', views.excluir_produto, name='excluir_produto'),
+    path('produto/<int:produto_id>/', views.produto_detalhe, name='produto_detalhe'),
+
 
     # Rotas para estoque
     path('produtos/entrada-estoque/', views.entrada_estoque, name='entrada_estoque'),

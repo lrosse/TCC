@@ -136,6 +136,11 @@ def excluir_produto(request, produto_id):
     
     return render(request, 'loja/excluir_produto.html', {'produto': produto})
 
+@login_required  # se quiser permitir só logados — remova se for público
+def produto_detalhe(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+    return render(request, 'loja/produto_detalhe.html', {'produto': produto})
+
 @staff_required
 def entrada_estoque(request):
     produtos = Produto.objects.all()

@@ -126,32 +126,25 @@
     <div class="container my-5">
         <h1 class="text-center text-primary mb-5">Vitrine de Produtos</h1>
         <div class="row">
-            {% for produto in produtos %}
-            <div class="col-md-4 mb-4">
-                <div class="card product-card h-100">
-                    <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="Imagem do produto">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">{{ produto.nome }}</h5>
-                        <p class="card-text text-muted" style="min-height: 60px;">{{ produto.descricao }}</p>
-                        <p class="card-text fw-semibold">Preço: <span class="text-success">R$ {{ produto.preco }}</span></p>
-                        <div class="mt-auto">
-                            {% if user.is_authenticated %}
-                            <a href="{% url 'adicionar_ao_carrinho' produto.id %}" class="btn btn-primary btn-cart">
-                                <i class="bi bi-cart-plus"></i> Adicionar ao Carrinho
-                            </a>
-                            {% else %}
-                            <button type="button" class="btn btn-primary btn-cart" data-bs-toggle="modal" data-bs-target="#loginModal">
-                                <i class="bi bi-cart-plus"></i> Adicionar ao Carrinho
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
+    {% for produto in produtos %}
+    <div class="col-md-4 mb-4">
+        <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
+            <div class="card h-100 shadow-sm">
+                {% if produto.imagem %}
+                <img src="{{ produto.imagem.url }}" class="card-img-top" alt="{{ produto.nome }}">
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ produto.nome }}</h5>
+                    <p class="card-text text-muted">{{ produto.descricao|truncatechars:80 }}</p>
+                    <p class="card-text fw-bold text-success">R$ {{ produto.preco }}</p>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-center text-muted">Nenhum produto disponível.</p>
-            {% endfor %}
-        </div>
+        </a>
+    </div>
+    {% empty %}
+    <p class="text-center text-muted">Nenhum produto disponível.</p>
+    {% endfor %}
+</div>
     </div>
 
     <!-- Modal de Login Obrigatório -->
