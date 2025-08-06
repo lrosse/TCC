@@ -2,42 +2,118 @@
 {% block title %}Histórico de Estoque{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Histórico de Movimentações de Estoque</h2>
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h1 class="h3 text-success">Histórico de Movimentações</h1>
+        <a href="{% url 'entrada_estoque' %}" class="btn btn-outline-success">
+            <i class="bi bi-box-arrow-in-down"></i> Nova Entrada
+        </a>
+    </div>
 
-    <table class="table table-striped table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th>Data</th>
-                <th>Produto</th>
-                <th>Tipo</th>
-                <th>Quantidade</th>
-                <th>Estoque Final</th>
-                <th>Observação</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in movimentacoes %}
-            <tr>
-                <td>{{ m.data|date:"d/m/Y H:i" }}</td>
-                <td>{{ m.produto.nome }}</td>
-                <td>
-                    {% if m.tipo == 'entrada' %}
-                        <span class="badge bg-success">Entrada</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Ajuste</span>
-                    {% endif %}
-                </td>
-                <td>{{ m.quantidade }}</td>
-                <td>{{ m.estoque_final }}</td>
-                <td>{{ m.observacao|default:"—" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="6" class="text-center">Nenhuma movimentação registrada ainda.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Barra de pesquisa principal e botão de filtro -->
+    <form class="row g-2 align-items-end mb-3" onsubmit="return false;">
+        <div class="col-md-4">
+            <label class="form-label">Nome do Produto</label>
+            <input type="text" id="filtro-nome" class="form-control shadow-sm" placeholder="Digite o nome...">
+        </div>
+        <div class="col-auto">
+            <label class="form-label d-block">&nbsp;</label>
+            <button class="btn btn-outline-secondary shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras">
+                <i class="bi bi-funnel-fill"></i> Filtros
+            </button>
+        </div>
+    </form>
+
+    <!-- Filtros colapsáveis -->
+    <div class="collapse mb-4" id="filtrosExtras">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Data</label>
+                        <input type="date" id="filtro-data" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select id="filtro-tipo" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="entrada">Entrada</option>
+                            <option value="ajuste">Ajuste</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela com histórico -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped align-middle text-center" id="tabela-movimentacoes">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Data</th>
+                            <th>Produto</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                            <th>Estoque Final</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mov in movimentacoes %}
+                        <tr>
+                            <td class="coluna-data">{{ mov.data|date:"Y-m-d" }}</td>
+                            <td class="coluna-produto">{{ mov.produto.nome }}</td>
+                            <td class="coluna-tipo">
+                                <span class="badge {% if mov.tipo == 'entrada' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {{ mov.tipo|capfirst }}
+                                </span>
+                            </td>
+                            <td>{{ mov.quantidade }}</td>
+                            <td>{{ mov.estoque_final }}</td>
+                            <td>{{ mov.observacao }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-muted">Nenhuma movimentação registrada.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Função para aplicar os filtros dinamicamente
+function filtrarTabela() {
+    const nome = document.getElementById('filtro-nome').value.toLowerCase();
+    const data = document.getElementById('filtro-data').value;
+    const tipo = document.getElementById('filtro-tipo').value.toLowerCase();
+
+    const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
+
+    linhas.forEach(linha => {
+        const textoNome = linha.querySelector('.coluna-produto').textContent.toLowerCase();
+        const textoData = linha.querySelector('.coluna-data').textContent;
+        const textoTipo = linha.querySelector('.coluna-tipo').textContent.toLowerCase();
+
+        const condNome = !nome || textoNome.includes(nome);
+        const condData = !data || textoData === data;
+        const condTipo = !tipo || textoTipo.includes(tipo);
+
+        linha.style.display = (condNome && condData && condTipo) ? '' : 'none';
+    });
+}
+
+// Eventos para aplicar o filtro ao digitar ou selecionar
+document.getElementById('filtro-nome').addEventListener('input', filtrarTabela);
+document.getElementById('filtro-data').addEventListener('input', filtrarTabela);
+document.getElementById('filtro-tipo').addEventListener('change', filtrarTabela);
+</script>
 {% endblock %}

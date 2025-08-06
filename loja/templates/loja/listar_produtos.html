@@ -4,6 +4,8 @@
 
 {% block content %}
 <div class="container-fluid px-4">
+
+    <!-- Cabeçalho + botão novo produto -->
     <div class="d-flex justify-content-between align-items-center my-4">
         <h1 class="h3 text-primary">Lista de Produtos</h1>
         <a href="{% url 'criar_produto' %}" class="btn btn-primary shadow-sm">
@@ -11,6 +13,54 @@
         </a>
     </div>
 
+ <!-- Filtro com colapso -->
+<form method="get" class="mb-4">
+    <div class="row g-2 align-items-end">
+
+        <!-- Campo Nome (sempre visível) -->
+        <div class="col-md-4">
+            <label class="form-label">Nome</label>
+            <input type="text" name="nome" class="form-control" placeholder="Pesquisar por nome..." value="{{ nome }}">
+        </div>
+
+        <!-- Botão de colapso -->
+        <div class="col-auto">
+            <label class="form-label d-block">&nbsp;</label>
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras">
+                <i class="bi bi-funnel-fill"></i> Filtros
+            </button>
+        </div>
+
+        <!-- Botão de buscar -->
+        <div class="col-auto">
+            <label class="form-label d-block">&nbsp;</label>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Buscar
+            </button>
+        </div>
+    </div>
+
+    <!-- Campos extras colapsáveis -->
+    <div class="collapse mt-3" id="filtrosExtras">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Preço</label>
+                <input type="text" name="preco" class="form-control" placeholder="Pesquisar por preço..." value="{{ preco }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Descrição</label>
+                <input type="text" name="descricao" class="form-control" placeholder="Pesquisar por descrição..." value="{{ descricao }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Quantidade</label>
+                <input type="text" name="quantidade" class="form-control" placeholder="Qtd..." value="{{ quantidade }}">
+            </div>
+        </div>
+    </div>
+</form>
+
+
+    <!-- Tabela de produtos -->
     <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">

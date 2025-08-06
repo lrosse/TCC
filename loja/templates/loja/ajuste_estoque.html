@@ -5,13 +5,20 @@
 <div class="container mt-4">
     <h2 class="mb-4">Ajuste Manual de Estoque</h2>
 
+    <!-- Mensagens de sistema -->
     {% if messages %}
     {% for message in messages %}
     <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
     {% endif %}
 
-    <table class="table table-bordered table-striped">
+    <!-- Filtro por nome (pesquisa dinâmica na tabela) -->
+    <div class="mb-3">
+        <input type="text" id="filtro-produto" class="form-control" placeholder="Pesquisar produto...">
+    </div>
+
+    <!-- Tabela com formulário individual por produto -->
+    <table class="table table-bordered table-striped" id="tabela-produtos">
         <thead class="table-dark">
             <tr>
                 <th>Produto</th>
@@ -23,19 +30,22 @@
         <tbody>
             {% for produto in produtos %}
             <tr>
-                <td>{{ produto.nome }}</td>
+                <td class="nome-produto">{{ produto.nome }}</td>
                 <td>{{ produto.quantidade }}</td>
                 <td>
                     <form method="post" onsubmit="return confirmarAjuste();" class="d-flex flex-column gap-2">
                         {% csrf_token %}
+
+                        <!-- Campo oculto com o ID do produto -->
                         <input type="hidden" name="produto_id" value="{{ produto.id }}">
 
-                        <input type="number" name="nova_quantidade" class="form-control" min="0" required
-                            placeholder="Nova quantidade">
+                        <!-- Nova quantidade -->
+                        <input type="number" name="nova_quantidade" class="form-control" min="0" required placeholder="Nova quantidade">
 
-                        <textarea name="observacao" class="form-control" rows="1"
-                            placeholder="Motivo do ajuste (opcional)"></textarea>
+                        <!-- Observação -->
+                        <textarea name="observacao" class="form-control" rows="1" placeholder="Motivo do ajuste (opcional)"></textarea>
 
+                        <!-- Botão de envio -->
                         <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
                     </form>
                 </td>
@@ -45,11 +55,24 @@
         </tbody>
     </table>
 </div>
+{% endblock %}
+
 {% block extra_js %}
 <script>
+// Confirmação de submissão
 function confirmarAjuste() {
     return confirm("Tem certeza que deseja ajustar o estoque? Esta ação será registrada.");
 }
+
+// Filtro de busca ao vivo na tabela de produtos
+document.getElementById('filtro-produto').addEventListener('input', function () {
+    const filtro = this.value.toLowerCase();
+    const linhas = document.querySelectorAll('#tabela-produtos tbody tr');
+
+    linhas.forEach(linha => {
+        const nome = linha.querySelector('.nome-produto').textContent.toLowerCase();
+        linha.style.display = nome.includes(filtro) ? '' : 'none';
+    });
+});
 </script>
-{% endblock %}
 {% endblock %}

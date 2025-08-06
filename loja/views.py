@@ -11,7 +11,7 @@ from .models import EntradaEstoque
 from .models import MovimentacaoEstoque  
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-
+from django.db.models import Q
 
 def home(request):
     produtos = Produto.objects.all()
@@ -98,12 +98,32 @@ def criar_produto(request):
 
     return render(request, 'loja/criar_produto.html')
 
+@staff_required
 def listar_produtos(request):
-    if not request.user.is_authenticated or not request.user.is_staff:
-        return redirect('login')
-    produtos = Produto.objects.all()
-    return render(request, 'loja/listar_produtos.html', {'produtos': produtos})
+    nome = request.GET.get("nome", "")
+    preco = request.GET.get("preco", "")
+    descricao = request.GET.get("descricao", "")
+    quantidade = request.GET.get("quantidade", "")
 
+    produtos = Produto.objects.all()
+
+    if nome:
+        produtos = produtos.filter(nome__icontains=nome)
+    if preco:
+        produtos = produtos.filter(preco__icontains=preco)
+    if descricao:
+        produtos = produtos.filter(descricao__icontains=descricao)
+    if quantidade:
+        produtos = produtos.filter(quantidade__icontains=quantidade)
+
+    context = {
+        "produtos": produtos,
+        "nome": nome,
+        "preco": preco,
+        "descricao": descricao,
+        "quantidade": quantidade,
+    }
+    return render(request, "loja/listar_produtos.html", context)
 @staff_required
 def editar_produto(request, produto_id):
     try:
@@ -142,59 +162,50 @@ def produto_detalhe(request, produto_id):
 
 @staff_required
 def entrada_estoque(request):
-    produtos = Produto.objects.all()
+    produtos = Produto.objects.all().order_by('nome')
 
     if request.method == 'POST':
-        produto_id = request.POST.get('produto')
+        produto_id = request.POST.get('produto_id')
         quantidade = request.POST.get('quantidade')
         observacao = request.POST.get('observacao', '')
 
         try:
-            produto = Produto.objects.get(id=produto_id)
+            produto = Produto.objects.get(id=produto_id) 
             quantidade = int(quantidade)
 
             if quantidade <= 0:
                 messages.error(request, "A quantidade deve ser maior que zero.")
+            else:
+                produto.quantidade += quantidade
+                produto.save()
+
+                MovimentacaoEstoque.objects.create(
+                    produto=produto,
+                    tipo='entrada',
+                    quantidade=quantidade,
+                    estoque_final=produto.quantidade,
+                    observacao=observacao or f"Entrada registrada por {request.user.username}"
+                )
+
+                messages.success(request, f"Entrada de {quantidade} unidades para '{produto.nome}' registrada com sucesso.")
                 return redirect('entrada_estoque')
-
-            # Atualiza o estoque do produto
-            produto.quantidade += quantidade
-            produto.save()
-
-            # Registra a entrada
-            EntradaEstoque.objects.create(
-                produto=produto,
-                quantidade_adicionada=quantidade,
-                observacao=observacao
-            )
-
-            # Registra a movimentação de estoque
-            MovimentacaoEstoque.objects.create(
-                produto=produto,
-                tipo='entrada',
-                quantidade=quantidade,
-                estoque_final=produto.quantidade,
-                observacao=observacao
-            )
-
-            messages.success(request, f"{quantidade} unidade(s) adicionada(s) ao estoque de {produto.nome}.")
-            return redirect('entrada_estoque')
 
         except Produto.DoesNotExist:
             messages.error(request, "Produto não encontrado.")
         except ValueError:
-            messages.error(request, "Informe uma quantidade válida.")
+            messages.error(request, "Quantidade inválida.")
 
     return render(request, 'loja/entrada_estoque.html', {'produtos': produtos})
 
+
 @staff_required
 def ajuste_estoque(request):
-    produtos = Produto.objects.all()
+    produtos = Produto.objects.all().order_by('nome')
 
     if request.method == 'POST':
         produto_id = request.POST.get('produto_id')
         nova_quantidade = request.POST.get('nova_quantidade')
-        observacao = request.POST.get('observacao', '').strip()
+        observacao = request.POST.get('observacao', '')
 
         try:
             produto = Produto.objects.get(id=produto_id)
@@ -204,11 +215,9 @@ def ajuste_estoque(request):
                 messages.error(request, "A quantidade não pode ser negativa.")
                 return redirect('ajuste_estoque')
 
-            # Atualiza o estoque
             produto.quantidade = nova_quantidade
             produto.save()
 
-            # Cria o registro no histórico de movimentações
             MovimentacaoEstoque.objects.create(
                 produto=produto,
                 tipo='ajuste',
@@ -226,6 +235,7 @@ def ajuste_estoque(request):
             messages.error(request, "Quantidade inválida.")
 
     return render(request, 'loja/ajuste_estoque.html', {'produtos': produtos})
+
 
 
 @staff_required
