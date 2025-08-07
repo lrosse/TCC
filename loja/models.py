@@ -77,10 +77,22 @@ class Pedido(models.Model):
         ('Cancelado', 'Cancelado'),
     ]
 
+    # Relacionamento com o cliente que fez o pedido
     cliente = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    # Valor total do pedido (soma dos subtotais)
     total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Status do pedido (padrão: Pendente)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pendente')
+
+    # Data e hora da criação do pedido
     data_criacao = models.DateTimeField(auto_now_add=True)
+
+    # CAMPOS NOVOS PARA ENTREGA 👇
+    nome_cliente = models.CharField(max_length=100)
+    endereco_entrega = models.TextField()  # Rua, número, bairro, cidade, complemento etc.
+    observacao = models.TextField(blank=True, null=True)  # Frete, referência, instruções extras
 
     def __str__(self):
         return f"Pedido #{self.id} - {self.cliente.username}"

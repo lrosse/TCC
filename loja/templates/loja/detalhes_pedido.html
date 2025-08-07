@@ -7,6 +7,16 @@
     <h2 class="mb-4">Pedido #{{ pedido.id }}</h2>
 
     <!-- Card com informações gerais do pedido -->
+                         <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-person-vcard me-2"></i>Dados do Cliente</h5>
+                        <p><strong>Nome:</strong> {{ pedido.nome_cliente }}</p>
+                        <p><strong>Endereço:</strong><br>{{ pedido.endereco_entrega|linebreaks }}</p>
+                        {% if pedido.observacao %}
+                            <p><strong>Observações:</strong><br>{{ pedido.observacao }}</p>
+                        {% endif %}
+                    </div>
+                </div>
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <h5 class="card-title"><i class="bi bi-receipt-cutoff me-2"></i>Informações do Pedido</h5>

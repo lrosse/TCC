@@ -64,7 +64,7 @@
                     <tbody>
                         {% for mov in movimentacoes %}
                         <tr>
-                            <td class="coluna-data">{{ mov.data|date:"Y-m-d" }}</td>
+                            <td class="coluna-data">{{ mov.data|date:"d/m/Y" }}</td>
                             <td class="coluna-produto">{{ mov.produto.nome }}</td>
                             <td class="coluna-tipo">
                                 <span class="badge {% if mov.tipo == 'entrada' %}bg-success{% else %}bg-warning text-dark{% endif %}">

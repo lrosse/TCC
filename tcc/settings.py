@@ -111,11 +111,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
 USE_TZ = True
+
+DATETIME_FORMAT = "d/m/Y H:i"
 
 
 # Static files (CSS, JavaScript, Images)
@@ -136,4 +138,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Caminho absoluto para o diretór
 LOGIN_URL = 'login'
 
 # Número do WhatsApp do vendedor (DDI + DDD + número, sem espaços ou traços)
-WHATSAPP_NUMERO = "5518988083436"  # Substitua pelo número real
+WHATSAPP_NUMBER = "5518988083436"  # Substitua pelo número real
