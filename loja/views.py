@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Produto, Carrinho, ItemCarrinho
+from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegistroForm
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from .decorators import staff_required
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -294,16 +295,145 @@ def alterar_quantidade(request, item_id):
 def finalizar_compra(request):
     try:
         carrinho = Carrinho.objects.get(usuario=request.user)
-        itens = ItemCarrinho.objects.filter(carrinho=carrinho)
-        total = carrinho.total()
+        itens = carrinho.itemcarrinho_set.all()
     except Carrinho.DoesNotExist:
-        itens = []
-        total = 0
+        messages.error(request, "Seu carrinho está vazio.")
+        return redirect('ver_carrinho')
 
-    numero_vendedor = '5518988083436'  # Com +55 já embutido
+    if not itens:
+        messages.warning(request, "Seu carrinho está vazio.")
+        return redirect('ver_carrinho')
 
+    if request.method == 'POST':
+        # Captura os dados do formulário
+        nome = request.POST.get("nome")
+        rua = request.POST.get("rua")
+        numero = request.POST.get("numero")
+        bairro = request.POST.get("bairro")
+        cidade = request.POST.get("cidade")
+        complemento = request.POST.get("complemento", "")
+        referencia = request.POST.get("referencia", "")
+
+        # Cria o pedido
+        pedido = Pedido.objects.create(
+            cliente=request.user,
+            total=carrinho.total(),
+            status='Pendente'
+        )
+
+        # Cria os itens do pedido
+        for item in itens:
+            PedidoItem.objects.create(
+                pedido=pedido,
+                produto=item.produto,
+                quantidade=item.quantidade,
+                preco_unitario=item.preco_unitario
+            )
+
+        # Limpa o carrinho
+        itens.delete()
+        carrinho.valor_total = 0
+        carrinho.save()
+
+        # Monta a mensagem do WhatsApp
+        mensagem = "🛒 *Pedido realizado através do site*:%0A%0A"
+        mensagem += "📦 *Produtos:*%0A"
+
+        for item in pedido.itens.all():
+            mensagem += f"- {item.quantidade}x {item.produto.nome} – R$ {item.subtotal()}%0A"
+
+        mensagem += f"%0A💰 *Total:* R$ {pedido.total}%0A%0A"
+        mensagem += "📍 *Endereço de entrega:*%0A"
+        mensagem += f"{rua}, {numero}%0A{bairro} – {cidade}%0A"
+        if complemento:
+            mensagem += f"Complemento: {complemento}%0A"
+        if referencia:
+            mensagem += f"Referência: {referencia}%0A"
+        mensagem += f"%0A🙋 Cliente: {nome}%0A"
+        mensagem += "Agradeço desde já e fico no aguardo da confirmação 😊"
+
+        numero_vendedor = '5518988083436'
+        url = f"https://wa.me/{numero_vendedor}?text={mensagem}"
+
+        return redirect(url)
+
+    # GET – Exibe a página
+    total = carrinho.total()
+    numero_vendedor = '5518988083436'
     return render(request, 'loja/finalizar_compra.html', {
         'itens': itens,
         'total': total,
         'numero_vendedor': numero_vendedor
     })
+
+
+
+@staff_required
+def pedidos(request):
+    from .models import Pedido  # Garante importação segura
+
+    # Filtros
+    termo_nome = request.GET.get("nome", "")
+    status = request.GET.get("status", "")
+    valor = request.GET.get("valor", "")
+    data = request.GET.get("data", "")
+
+    pedidos = Pedido.objects.select_related("cliente").order_by("-data_criacao")
+
+    if termo_nome:
+        pedidos = pedidos.filter(cliente__username__icontains=termo_nome)
+    if status:
+        pedidos = pedidos.filter(status=status)
+    if valor:
+        pedidos = pedidos.filter(total__icontains=valor)
+    if data:
+        pedidos = pedidos.filter(data_criacao__date=data)
+
+    context = {
+        "pedidos": pedidos,
+        "filtros": {
+            "nome": termo_nome,
+            "status": status,
+            "valor": valor,
+            "data": data
+        }
+    }
+    return render(request, "loja/pedidos.html", context)
+
+@staff_required
+def detalhes_pedido(request, pedido_id):
+    from .models import Pedido
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    itens = pedido.itens.all()
+
+    # Verifica se o formulário foi enviado
+    if request.method == "POST":
+        novo_status = request.POST.get("status")
+        if novo_status in ["Pendente", "Pago", "Cancelado"]:
+            pedido.status = novo_status
+            pedido.save()
+            messages.success(request, f"Status do pedido atualizado para '{novo_status}'.")
+            return redirect('detalhes_pedido', pedido_id=pedido.id)
+        else:
+            messages.error(request, "Status inválido.")
+
+    return render(request, "loja/detalhes_pedido.html", {
+        "pedido": pedido,
+        "itens": itens
+    })
+
+@staff_required
+@require_POST
+def atualizar_status_pedido(request, pedido_id):
+    pedido = get_object_or_404(Pedido, id=pedido_id)
+    novo_status = request.POST.get("status")
+
+    if novo_status in ["Pendente", "Pago", "Cancelado"]:
+        pedido.status = novo_status
+        pedido.save()
+        messages.success(request, f"Status do pedido #{pedido.id} atualizado para '{novo_status}'.")
+    else:
+        messages.error(request, "Status inválido.")
+
+    return redirect("pedidos")
+    

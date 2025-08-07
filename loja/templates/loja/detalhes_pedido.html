@@ -1,0 +1,88 @@
+{% extends 'loja/barra_lateral.html' %}
+
+{% block title %}Detalhes do Pedido #{{ pedido.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Pedido #{{ pedido.id }}</h2>
+
+    <!-- Card com informações gerais do pedido -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-receipt-cutoff me-2"></i>Informações do Pedido</h5>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Cliente:</strong> {{ pedido.cliente.username }}</li>
+                <li class="list-group-item"><strong>Status atual:</strong> 
+                    <span class="badge 
+                        {% if pedido.status == 'Pendente' %}bg-warning text-dark
+                        {% elif pedido.status == 'Pago' %}bg-success
+                        {% elif pedido.status == 'Cancelado' %}bg-danger
+                        {% endif %}">
+                        {{ pedido.status }}
+                    </span>
+                </li>
+                <li class="list-group-item"><strong>Data:</strong> {{ pedido.data_criacao|date:"d/m/Y H:i" }}</li>
+                <li class="list-group-item"><strong>Total:</strong> R$ {{ pedido.total }}</li>
+            </ul>
+
+            <!-- Formulário para alterar status -->
+            <form method="post" action="{% url 'atualizar_status_pedido' pedido.id %}" class="mt-4">
+                {% csrf_token %}
+                <label for="novo_status" class="form-label">Alterar status:</label>
+                <select name="status" id="novo_status" class="form-select w-auto d-inline-block">
+                    <option value="Pendente" {% if pedido.status == 'Pendente' %}selected{% endif %}>Pendente</option>
+                    <option value="Pago" {% if pedido.status == 'Pago' %}selected{% endif %}>Pago</option>
+                    <option value="Cancelado" {% if pedido.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                </select>
+                <button type="submit" class="btn btn-primary mt-3" onclick="return confirmarAtualizacao();">
+                    <i class="bi bi-check-circle"></i> Atualizar Status
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Card com lista de itens -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-box-seam me-2"></i>Itens</h5>
+            {% if itens %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Produto</th>
+                                <th>Quantidade</th>
+                                <th>Preço Unitário</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in itens %}
+                                <tr>
+                                    <td>{{ item.produto.nome }}</td>
+                                    <td>{{ item.quantidade }}</td>
+                                    <td>R$ {{ item.preco_unitario }}</td>
+                                    <td>R$ {{ item.subtotal }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Este pedido não possui itens cadastrados.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <a href="{% url 'pedidos' %}" class="btn btn-secondary mt-4">
+        <i class="bi bi-arrow-left"></i> Voltar para lista de pedidos
+    </a>
+</div>
+
+<!-- Script de confirmação -->
+<script>
+function confirmarAtualizacao() {
+    return confirm("Tem certeza que deseja atualizar o status deste pedido?");
+}
+</script>
+{% endblock %}

@@ -31,6 +31,13 @@ urlpatterns = [
     path('carrinho/alterar/<int:item_id>/', views.alterar_quantidade, name='alterar_quantidade'),
     path('finalizar-compra/', views.finalizar_compra, name='finalizar_compra'),
 
+    # Página de pedidos
+    path('pedidos/', views.pedidos, name='pedidos'),
+    path('pedidos/<int:pedido_id>/', views.detalhes_pedido, name='detalhes_pedido'),
+    path('pedidos/atualizar-status/<int:pedido_id>/', views.atualizar_status_pedido, name='atualizar_status_pedido'),
+    
+
+
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

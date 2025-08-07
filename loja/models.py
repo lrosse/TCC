@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 
+
 class Produto(models.Model):
     nome = models.CharField(max_length=200)
     descricao = models.TextField()
@@ -65,3 +66,36 @@ class MovimentacaoEstoque(models.Model):
 
     def __str__(self):
         return f"[{self.get_tipo_display()}] {self.produto.nome} - {self.quantidade} un. - {self.data.strftime('%d/%m/%Y %H:%M')}"
+    
+# ------------------------------
+# Model para armazenar o pedido
+# ------------------------------
+class Pedido(models.Model):
+    STATUS_CHOICES = [
+        ('Pendente', 'Pendente'),
+        ('Pago', 'Pago'),
+        ('Cancelado', 'Cancelado'),
+    ]
+
+    cliente = models.ForeignKey(User, on_delete=models.CASCADE)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pendente')
+    data_criacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Pedido #{self.id} - {self.cliente.username}"
+
+# ----------------------------------------------------
+# Model para armazenar cada item que compõe o pedido
+# ----------------------------------------------------
+class PedidoItem(models.Model):
+    pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='itens')
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    quantidade = models.PositiveIntegerField()
+    preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def subtotal(self):
+        return self.quantidade * self.preco_unitario
+
+    def __str__(self):
+        return f"{self.quantidade}x {self.produto.nome} no Pedido #{self.pedido.id}"

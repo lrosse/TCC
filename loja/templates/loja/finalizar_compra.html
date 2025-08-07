@@ -63,33 +63,35 @@
         <h5 class="mb-4"><i class="bi bi-truck"></i> Dados para Entrega</h5>
         <div id="alertaCampos" class="alert alert-danger d-none">Por favor, preencha todos os campos obrigatórios antes de finalizar o pedido.</div>
 
-        <form id="formEntrega">
+                <form method="POST">
+            {% csrf_token %}
+
             <div class="row g-3">
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Nome completo *" id="nome" required>
+                    <input type="text" class="form-control" placeholder="Nome completo *" name="nome" required>
                 </div>
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Rua *" id="rua" required>
+                    <input type="text" class="form-control" placeholder="Rua *" name="rua" required>
                 </div>
                 <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Número *" id="numero" required>
+                    <input type="text" class="form-control" placeholder="Número *" name="numero" required>
                 </div>
                 <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Bairro *" id="bairro" required>
+                    <input type="text" class="form-control" placeholder="Bairro *" name="bairro" required>
                 </div>
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Cidade *" id="cidade" required>
+                    <input type="text" class="form-control" placeholder="Cidade *" name="cidade" required>
                 </div>
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Complemento" id="complemento">
+                    <input type="text" class="form-control" placeholder="Complemento" name="complemento">
                 </div>
                 <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Referência" id="referencia">
+                    <input type="text" class="form-control" placeholder="Referência" name="referencia">
                 </div>
             </div>
 
             <div class="text-center mt-4">
-                <button type="button" class="btn btn-whatsapp text-white fw-semibold" onclick="finalizarPedido()">
+                <button type="submit" class="btn btn-whatsapp text-white fw-semibold">
                     <i class="bi bi-whatsapp me-2"></i>Confirmar Pedido via WhatsApp
                 </button>
             </div>
