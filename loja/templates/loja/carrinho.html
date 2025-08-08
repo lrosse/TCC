@@ -61,25 +61,25 @@
                         <tr>
                             <td>{{ item.produto.nome }}</td>
 
-                            <!-- Quantidade com - / + e submit -->
-                            <td class="text-center">
-                                <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-flex justify-content-center align-items-center gap-2">
+                            <td class="text-center align-middle">
+                                <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-inline-flex align-items-center">
                                     {% csrf_token %}
-                                    <div class="input-group qty-group">
-                                        <button type="button" class="btn btn-outline-secondary" onclick="stepQty(this, -1)" title="Diminuir">−</button>
-                                        <input
+                                    <div class="input-group input-group-sm" style="max-width: 120px;">
+                                        <button type="button" class="btn btn-outline-secondary rounded-circle px-2" onclick="stepQty(this, -1)" title="Diminuir">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                        <input style="margin-left: 8px; margin-right: 9px;"
                                             type="number"
                                             name="quantidade"
                                             value="{{ item.quantidade }}"
                                             min="1"
-                                            class="form-control form-control-sm text-center"
+                                            class="form-control text-center"
                                             oninput="if (this.value === '' || this.value < 1) this.value = 1;"
                                         >
-                                        <button type="button" class="btn btn-outline-secondary" onclick="stepQty(this, 1)" title="Aumentar">+</button>
+                                        <button type="button" class="btn btn-outline-secondary rounded-circle px-2" onclick="stepQty(this, 1)" title="Aumentar">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
                                     </div>
-                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Atualizar">
-                                        <i class="bi bi-arrow-repeat"></i>
-                                    </button>
                                 </form>
                             </td>
 
