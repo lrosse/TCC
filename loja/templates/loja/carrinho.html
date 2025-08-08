@@ -32,6 +32,10 @@
         .quantidade-form {
             max-width: 80px;
         }
+        /* Largura do grupo de quantidade para caber - [input] + */
+        .qty-group {
+            max-width: 180px;
+        }
     </style>
 </head>
 <body>
@@ -56,17 +60,34 @@
                         {% for item in itens %}
                         <tr>
                             <td>{{ item.produto.nome }}</td>
+
+                            <!-- Quantidade com - / + e submit -->
                             <td class="text-center">
-                                <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-flex justify-content-center">
+                                <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-flex justify-content-center align-items-center gap-2">
                                     {% csrf_token %}
-                                    <input type="number" name="quantidade" value="{{ item.quantidade }}" min="1" class="form-control form-control-sm text-center quantidade-form me-2">
+                                    <div class="input-group qty-group">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="stepQty(this, -1)" title="Diminuir">−</button>
+                                        <input
+                                            type="number"
+                                            name="quantidade"
+                                            value="{{ item.quantidade }}"
+                                            min="1"
+                                            class="form-control form-control-sm text-center"
+                                            oninput="if (this.value === '' || this.value < 1) this.value = 1;"
+                                        >
+                                        <button type="button" class="btn btn-outline-secondary" onclick="stepQty(this, 1)" title="Aumentar">+</button>
+                                    </div>
                                     <button type="submit" class="btn btn-sm btn-outline-primary" title="Atualizar">
                                         <i class="bi bi-arrow-repeat"></i>
                                     </button>
                                 </form>
                             </td>
-                            <td class="text-end">R$ {{ item.produto.preco }}</td>
+
+                            <!-- Preço unitário: usei o preco_unitario salvo no item -->
+                            <td class="text-end">R$ {{ item.preco_unitario }}</td>
+
                             <td class="text-end">R$ {{ item.subtotal }}</td>
+
                             <td class="text-center">
                                 <a href="{% url 'remover_do_carrinho' item.id %}" class="btn-remover" title="Remover do carrinho">
                                     <i class="bi bi-trash3-fill"></i>
@@ -100,5 +121,16 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Opção B (recarrega a página): ajusta a quantidade e envia o form
+    function stepQty(btn, delta) {
+        const form = btn.closest('form');
+        const input = form.querySelector('input[name="quantidade"]');
+        const current = parseInt(input.value || '1', 10);
+        const next = Math.max(1, current + delta);
+        input.value = next;
+        form.submit();
+    }
+</script>
 </body>
 </html>
