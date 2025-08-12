@@ -776,3 +776,61 @@ def _contagem_pedidos_por_status(queryset):
         values = [0]
     
     return labels, values
+
+@staff_required
+def dashboard(request):
+    from calendar import monthrange
+    import json
+    from django.utils import timezone
+    from django.db.models import Sum
+    
+    # Dados para o mini gráfico do mês atual
+    pedidos_pagos = Pedido.objects.filter(status='Pago')
+    
+    # Calcular vendas do mês atual
+    agora_local = timezone.localtime()
+    ano_atual, mes_atual = agora_local.year, agora_local.month
+    
+    print(f"DEBUG DASHBOARD - Mês atual: {mes_atual:02d}/{ano_atual}")
+    
+    # Gerar dados dia a dia do mês atual
+    ultimo_dia_mes = monthrange(ano_atual, mes_atual)[1]
+    todos_dias = list(range(1, ultimo_dia_mes + 1))
+    
+    # Filtrar pedidos pagos do mês atual
+    pedidos_mes_atual = []
+    for pedido in pedidos_pagos.all():
+        data_local = timezone.localtime(pedido.data_criacao)
+        if data_local.year == ano_atual and data_local.month == mes_atual:
+            pedidos_mes_atual.append((pedido, data_local))
+    
+    print(f"DEBUG DASHBOARD - Pedidos pagos no mês atual: {len(pedidos_mes_atual)}")
+    
+    # Agrupar vendas por dia
+    vendas_por_dia = {}
+    for pedido, data_local in pedidos_mes_atual:
+        dia = data_local.day
+        total = float(pedido.total) if pedido.total else 0.0
+        
+        if dia not in vendas_por_dia:
+            vendas_por_dia[dia] = 0.0
+        vendas_por_dia[dia] += total
+    
+    # Preparar dados para o gráfico
+    mini_labels = [f"{dia:02d}" for dia in todos_dias]
+    mini_values = [vendas_por_dia.get(dia, 0) for dia in todos_dias]
+    
+    # Calcular total de vendas do mês
+    vendas_mes = sum(mini_values)
+    
+    print(f"DEBUG DASHBOARD - Total vendas mês: R$ {vendas_mes:.2f}")
+    print(f"DEBUG DASHBOARD - Dias com vendas: {[dia for dia, valor in zip(todos_dias, mini_values) if valor > 0]}")
+    
+    context = {
+        'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
+        'mini_mes_values_json': json.dumps(mini_values),
+        'vendas_mes': vendas_mes,
+        # outros dados que você já tinha no context...
+    }
+    
+    return render(request, 'loja/dashboard.html', context)

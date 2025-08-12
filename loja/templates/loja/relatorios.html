@@ -145,19 +145,55 @@ new Chart(ctxMes, {
     }
 });
 
-    // Gráfico: Pedidos por status
-    const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-    new Chart(ctxStatus, {
-      type: 'doughnut',
-      data: {
-        labels: statusLabels,
-        datasets: [{ label: 'Qtd', data: statusValues }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'bottom' } }
-      }
+// Gráfico: Pedidos por status
+const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+
+// Função para definir cores baseadas no status
+function getStatusColors(labels) {
+    return labels.map(label => {
+        const labelLower = label.toLowerCase();
+        if (labelLower === 'pago') {
+            return '#4BC683'; // Verde
+        } else if (labelLower === 'pendente') {
+            return '#FF9F40'; // Laranja/Amarelo
+        } else if (labelLower === 'cancelado') {
+            return '#FF6384'; // Vermelho
+        } else {
+            return '#808080'; // Cinza para outros status
+        }
     });
+}
+
+new Chart(ctxStatus, {
+    type: 'doughnut',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            label: 'Qtd',
+            data: statusValues,
+            backgroundColor: getStatusColors(statusLabels),
+            borderColor: getStatusColors(statusLabels),
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        return `${label}: ${value} pedidos`;
+                    }
+                }
+            }
+        }
+    }
+});
 
     // Gráfico: Vendas por dia no mês atual
     const ctxDia = document.getElementById('chartVendasDia').getContext('2d');
