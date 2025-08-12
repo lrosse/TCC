@@ -3,19 +3,27 @@ from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegistroForm
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from .decorators import staff_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .models import EntradaEstoque
-from .models import MovimentacaoEstoque  
+from .models import MovimentacaoEstoque
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Q
+from django.db.models import Sum, Count  # ✅ Count para agregações por status
 from django.db import transaction
-from urllib.parse import quote 
+from urllib.parse import quote
 from decimal import Decimal
+from django.utils import timezone
+from django.db.models.functions import ExtractMonth, ExtractDay 
+
+
+# 👇 extras para serializar dados pro Chart.js
+import json
+from calendar import month_name
+from calendar import monthrange
 
 
 def home(request):
@@ -41,16 +49,19 @@ def home(request):
     }
     return render(request, 'loja/home.html', context)
 
+
 def registrar(request):
     if request.method == "POST":
-        form = RegistroForm(request.POST, user=request.user)  # Passa o usuário autenticado
+        # Passa o usuário autenticado para o form conforme sua regra
+        form = RegistroForm(request.POST, user=request.user)
         if form.is_valid():
             user = form.save()
             login(request, user)  # Faz login automaticamente após o cadastro
             return redirect('home')
     else:
-        form = RegistroForm(user=request.user)  # Passa o usuário autenticado
+        form = RegistroForm(user=request.user)
     return render(request, 'loja/registrar.html', {'form': form})
+
 
 def entrar(request):
     if request.method == "POST":
@@ -63,12 +74,91 @@ def entrar(request):
         form = AuthenticationForm()
     return render(request, 'loja/login.html', {'form': form})
 
+
 def sair(request):
     logout(request)
     return redirect('home')
 
+
+# -------------------------------
+# 🔧 HELPERS DE RELATÓRIOS
+# -------------------------------
+
+def _agregar_vendas_por_mes(queryset):
+    """
+    Soma total por mês do ANO ATUAL sem usar TruncMonth (evita problema de timezone no MySQL).
+    """
+    hoje = timezone.localdate()
+    ano = hoje.year
+
+    labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    values = [0.0] * 12
+
+    agregados = (
+        queryset
+        .filter(data_criacao__year=ano)
+        .annotate(mes_num=ExtractMonth('data_criacao'))   # 1..12
+        .values('mes_num')
+        .annotate(total=Sum('total'))
+        .order_by('mes_num')
+    )
+
+    for row in agregados:
+        m = (row['mes_num'] or 0)
+        if 1 <= m <= 12:
+            values[m - 1] = float(row['total'] or 0)
+
+    return labels, values
+
+def _agregar_vendas_mes_atual_por_dia(queryset):
+    agora = timezone.now()
+    ano = agora.year
+    mes = agora.month
+    dias_no_mes = monthrange(ano, mes)[1]  # Quantos dias tem o mês atual
+
+    # Cria um dicionário com todos os dias do mês inicializados em 0
+    vendas_dict = {dia: 0 for dia in range(1, dias_no_mes + 1)}
+
+    # Busca vendas pagas do mês e soma por dia
+    vendas_por_dia = (
+        queryset.filter(
+            data_criacao__year=ano,
+            data_criacao__month=mes
+        )
+        .annotate(dia=ExtractDay('data_criacao'))
+        .values('dia')
+        .annotate(total=Sum('total'))
+    )
+
+    # Atualiza os valores do dicionário
+    for venda in vendas_por_dia:
+        dia = venda['dia']
+        if dia:
+            vendas_dict[dia] = float(venda['total'] or 0)
+
+    # Converte para listas (labels e valores)
+    labels = [f"{dia:02d}" for dia in vendas_dict.keys()]
+    valores = list(vendas_dict.values())
+
+    return labels, valores
+
+def _contagem_pedidos_por_status(queryset):
+    """
+    Conta pedidos por status (Pendente, Pago, Cancelado...).
+    Retorna labels e values para gráfico de pizza.
+    """
+    agregados = queryset.values('status').annotate(qtd=Count('id')).order_by()
+    labels = [row['status'] or 'Indef.' for row in agregados]
+    values = [row['qtd'] for row in agregados]
+    return labels, values
+
+
 @staff_required
 def dashboard(request):
+    """
+    Dashboard administrativo com mini-gráfico do mês.
+    Mostra vendas pagas no mês atual.
+    """
     if request.method == "POST":
         form = RegistroForm(request.POST)
         if form.is_valid():
@@ -82,7 +172,37 @@ def dashboard(request):
             return redirect('home')
     else:
         form = RegistroForm()
-    return render(request, 'loja/dashboard.html', {'form': form})
+
+    agora = timezone.now()
+    ano = agora.year
+    mes = agora.month
+    inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Total de vendas do mês (somente pedidos pagos)
+    vendas_mes = (
+        Pedido.objects
+        .filter(status='Pago', data_criacao__gte=inicio_mes)
+        .aggregate(total=Sum('total'))
+        .get('total') or 0
+    )
+
+    # Filtra apenas pedidos pagos do mês atual
+    pedidos_pagos = Pedido.objects.filter(
+        status='Pago',
+        data_criacao__year=ano,
+        data_criacao__month=mes
+    )
+
+    # Gera os dados para o mini gráfico
+    mini_labels, mini_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
+
+    ctx = {
+        'form': form,
+        'vendas_mes': vendas_mes,
+        'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
+        'mini_mes_values_json': json.dumps(mini_values),
+    }
+    return render(request, 'loja/dashboard.html', ctx)
 
 def criar_produto(request):
     if request.method == 'POST':
@@ -102,6 +222,7 @@ def criar_produto(request):
         return redirect('listar_produtos')
 
     return render(request, 'loja/criar_produto.html')
+
 
 @staff_required
 def listar_produtos(request):
@@ -129,13 +250,15 @@ def listar_produtos(request):
         "quantidade": quantidade,
     }
     return render(request, "loja/listar_produtos.html", context)
+
+
 @staff_required
 def editar_produto(request, produto_id):
     try:
         produto = Produto.objects.get(id=produto_id)
     except Produto.DoesNotExist:
         return redirect('listar_produtos')
-    
+
     if request.method == 'POST':
         produto.nome = request.POST.get('nome')
         produto.descricao = request.POST.get('descricao')
@@ -145,8 +268,9 @@ def editar_produto(request, produto_id):
             produto.imagem = request.FILES['imagem']
         produto.save()
         return redirect('listar_produtos')
-    
+
     return render(request, 'loja/editar_produto.html', {'produto': produto})
+
 
 @staff_required
 def excluir_produto(request, produto_id):
@@ -154,16 +278,18 @@ def excluir_produto(request, produto_id):
         produto = Produto.objects.get(id=produto_id)
     except Produto.DoesNotExist:
         return redirect('listar_produtos')
-    
+
     if request.method == 'POST':
         produto.delete()
         return redirect('listar_produtos')
-    
+
     return render(request, 'loja/excluir_produto.html', {'produto': produto})
+
 
 def produto_detalhe(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
     return render(request, 'loja/produto_detalhe.html', {'produto': produto})
+
 
 @staff_required
 def entrada_estoque(request):
@@ -175,7 +301,7 @@ def entrada_estoque(request):
         observacao = request.POST.get('observacao', '')
 
         try:
-            produto = Produto.objects.get(id=produto_id) 
+            produto = Produto.objects.get(id=produto_id)
             quantidade = int(quantidade)
 
             if quantidade <= 0:
@@ -242,16 +368,17 @@ def ajuste_estoque(request):
     return render(request, 'loja/ajuste_estoque.html', {'produtos': produtos})
 
 
-
 @staff_required
 def historico_estoque(request):
     movimentacoes = MovimentacaoEstoque.objects.select_related('produto').order_by('-data')
     return render(request, 'loja/historico_estoque.html', {'movimentacoes': movimentacoes})
 
+
 # FUNÇÃO AUXILIAR SEM DECORATOR
 def get_or_create_carrinho(usuario):
     carrinho, criado = Carrinho.objects.get_or_create(usuario=usuario)
     return carrinho
+
 
 @login_required
 def adicionar_ao_carrinho(request, produto_id):
@@ -268,6 +395,7 @@ def adicionar_ao_carrinho(request, produto_id):
     carrinho.calcular_total()
     return redirect('ver_carrinho')
 
+
 @login_required
 def ver_carrinho(request):
     carrinho = get_or_create_carrinho(request.user)
@@ -275,12 +403,14 @@ def ver_carrinho(request):
     total = carrinho.valor_total
     return render(request, 'loja/carrinho.html', {'itens': itens, 'total': total})
 
+
 @login_required
 def remover_do_carrinho(request, item_id):
     item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
     item.delete()
     item.carrinho.calcular_total()
     return redirect('ver_carrinho')
+
 
 @login_required
 def alterar_quantidade(request, item_id):
@@ -294,6 +424,7 @@ def alterar_quantidade(request, item_id):
             item.delete()
         item.carrinho.calcular_total()
     return redirect('ver_carrinho')
+
 
 @login_required
 def finalizar_compra(request):
@@ -441,6 +572,7 @@ def pedidos(request):
     }
     return render(request, "loja/pedidos.html", context)
 
+
 @staff_required
 def detalhes_pedido(request, pedido_id):
     from .models import Pedido
@@ -463,6 +595,7 @@ def detalhes_pedido(request, pedido_id):
         "itens": itens
     })
 
+
 @staff_required
 @require_POST
 def atualizar_status_pedido(request, pedido_id):
@@ -477,4 +610,95 @@ def atualizar_status_pedido(request, pedido_id):
         messages.error(request, "Status inválido.")
 
     return redirect("pedidos")
-    
+
+
+# ============================
+# ✅ NOVA VIEW: RELATÓRIOS
+# ============================
+@staff_required
+def relatorios(request):
+    pedidos_pagos = Pedido.objects.filter(status='Pago')
+    todos_pedidos = Pedido.objects.all()
+
+    mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
+    dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
+    status_labels, status_values = _contagem_pedidos_por_status(todos_pedidos)
+
+    context = {
+        'mes_labels_json': json.dumps(mes_labels, ensure_ascii=False),
+        'mes_values_json': json.dumps(mes_values),
+        'dia_labels_json': json.dumps(dia_labels, ensure_ascii=False),
+        'dia_values_json': json.dumps(dia_values),
+        'status_labels_json': json.dumps(status_labels, ensure_ascii=False),
+        'status_values_json': json.dumps(status_values),
+        'tabela_mensal': zip(mes_labels, mes_values),
+    }
+    return render(request, 'loja/relatorios.html', context)
+
+
+def _agregar_vendas_por_mes(queryset):
+    """
+    Soma total por mês do ANO ATUAL (1..12), preenchendo zeros onde não houver venda.
+    Usa ExtractMonth (independente de tz do MySQL).
+    """
+    hoje = timezone.localdate()
+    ano = hoje.year
+
+    labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    values = [0.0] * 12
+
+    agregados = (
+        queryset
+        .filter(data_criacao__year=ano)
+        .annotate(mes_num=ExtractMonth('data_criacao'))  # 1..12
+        .values('mes_num')
+        .annotate(total=Sum('total'))
+        .order_by('mes_num')
+    )
+    for row in agregados:
+        m = row['mes_num'] or 0
+        if 1 <= m <= 12:
+            values[m - 1] = float(row['total'] or 0)
+
+    return labels, values
+
+
+def _agregar_vendas_mes_atual_por_dia(queryset):
+    """
+    Retorna dois arrays: lista de dias (1 a último do mês)
+    e valores de vendas por dia (0 nos dias sem venda).
+    """
+    agora = timezone.now()
+    ano = agora.year
+    mes = agora.month
+
+    # Determina quantos dias tem o mês atual
+    ultimo_dia_mes = monthrange(ano, mes)[1]
+    todos_dias = list(range(1, ultimo_dia_mes + 1))
+
+    # Busca vendas agrupadas por dia
+    vendas_por_dia = (
+        queryset
+        .annotate(dia=ExtractDay('data_criacao'))
+        .values('dia')
+        .annotate(total=Sum('total'))
+        .order_by('dia')
+    )
+
+    # Converte para dict {dia: total}
+    vendas_dict = {v['dia']: float(v['total'] or 0) for v in vendas_por_dia}
+
+    # Monta listas completas
+    labels = [f"{dia:02d}" for dia in todos_dias]
+    valores = [vendas_dict.get(dia, 0) for dia in todos_dias]
+
+    return labels, valores
+
+def _contagem_pedidos_por_status(queryset):
+    """
+    Conta pedidos por status (Pendente, Pago, Cancelado...).
+    """
+    agregados = queryset.values('status').annotate(qtd=Count('id')).order_by()
+    labels = [row['status'] or 'Indef.' for row in agregados]
+    values = [row['qtd'] for row in agregados]
+    return labels, values

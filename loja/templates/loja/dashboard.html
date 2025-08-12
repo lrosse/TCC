@@ -4,61 +4,125 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-3 mb-4 border-bottom">
-    <h1 class="h2 fw-semibold">Olá, {{ user.username }}</h1>
-    <div class="btn-toolbar">
-        <a href="{% url 'registrar' %}" class="btn btn-outline-success btn-sm me-2">
-            <i class="bi bi-person-plus"></i> Registrar Novo Usuário
-        </a>
-        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
-            <i class="bi bi-box-arrow-right"></i> Sair
-        </a>
-    </div>
+  <h1 class="h2 fw-semibold">Olá, {{ user.username }}</h1>
+  <div class="btn-toolbar">
+    <a href="{% url 'registrar' %}" class="btn btn-outline-success btn-sm me-2">
+      <i class="bi bi-person-plus"></i> Registrar Novo Usuário
+    </a>
+    <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-box-arrow-right"></i> Sair
+    </a>
+  </div>
 </div>
 
+<!-- ROW 1: 2 cards compactos (50% / 50%) -->
 <div class="row g-4">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">📊 Gráficos de Vendas</h5>
-                <p class="text-muted">Resumo visual das vendas do mês.</p>
-                <!-- conteúdo gráfico aqui -->
-            </div>
+  <!-- 📊 Mini gráfico do mês -->
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="card-title mb-0">Vendas (mês atual)</h5>
+          <a href="{% url 'relatorios' %}" class="text-decoration-none small">
+            Ver detalhes <i class="bi bi-arrow-right-short"></i>
+          </a>
         </div>
+        <canvas id="miniChartMes" height="120"></canvas>
+      </div>
     </div>
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">🔥 Produtos Populares</h5>
-                <p class="text-muted">Os produtos mais vendidos recentemente.</p>
-                <!-- produtos populares aqui -->
-            </div>
-        </div>
+  </div>
+
+  <!-- 📦 Pedidos -->
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <h5 class="card-title fw-bold">📦 Pedidos</h5>
+        <p class="text-muted mb-0">Visualize os pedidos recebidos.</p>
+        <!-- (no futuro: contagem real aqui) -->
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">💰 Vendas no mês</h5>
-                <p class="fs-5 text-success">R$ 0,00</p>
-            </div>
-        </div>
+  </div>
+</div>
+
+<!-- ROW 2: Produtos Populares (8) + Vendas no mês (4) -->
+<div class="row g-4 mt-1">
+  <!-- 🔥 Produtos Populares -->
+  <div class="col-12 col-lg-8">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <h5 class="card-title fw-bold">🔥 Produtos Populares</h5>
+        <p class="text-muted">Os produtos mais vendidos recentemente.</p>
+        <!-- produtos populares aqui -->
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">📦 Pedidos</h5>
-                <p class="text-muted">Visualize os pedidos recebidos.</p>
-                <!-- número de pedidos -->
-            </div>
-        </div>
+  </div>
+
+  <!-- 💰 Vendas no mês (valor) -->
+  <div class="col-12 col-lg-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <h5 class="card-title fw-bold">💰 Vendas no mês</h5>
+        <p class="fs-5 text-success mb-0">R$ {{ vendas_mes|floatformat:2 }}</p>
+      </div>
     </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body">
-                <h5 class="card-title fw-bold">📝 Feedbacks</h5>
-                <p class="text-muted">Últimos comentários dos clientes.</p>
-                <!-- feedbacks recentes -->
-            </div>
-        </div>
+  </div>
+</div>
+
+<!-- ROW 3: Feedbacks (bloco grande) -->
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <h5 class="card-title fw-bold">📝 Feedbacks</h5>
+        <p class="text-muted mb-0">Últimos comentários dos clientes.</p>
+        <!-- feedbacks recentes -->
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const miniLabels = {{ mini_mes_labels_json|safe }};
+const miniValues = {{ mini_mes_values_json|safe }};
+
+const canvas = document.getElementById('miniChartMes');
+if (canvas) {
+  const ctxMini = canvas.getContext('2d');
+  new Chart(ctxMini, {
+    type: 'bar',
+    data: {
+      labels: miniLabels,
+      datasets: [{
+        label: 'Faturamento (R$)',
+        data: miniValues,
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => 'R$ ' + ctx.raw.toLocaleString('pt-BR')
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Dia do mês' } },
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (v) => 'R$ ' + v.toLocaleString('pt-BR') }
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}
+

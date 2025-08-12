@@ -36,6 +36,8 @@ urlpatterns = [
     path('pedidos/<int:pedido_id>/', views.detalhes_pedido, name='detalhes_pedido'),
     path('pedidos/atualizar-status/<int:pedido_id>/', views.atualizar_status_pedido, name='atualizar_status_pedido'),
     
+    # Página de Relatórios (apenas staff/admin)
+    path('relatorios/', views.relatorios, name='relatorios'),
 
 
 ]
