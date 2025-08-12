@@ -18,6 +18,10 @@ from urllib.parse import quote
 from decimal import Decimal
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth, ExtractDay 
+from calendar import monthrange
+from django.db.models.functions import Coalesce
+from django.db.models import Sum, Count, DecimalField, Value
+from django.db.models.functions import ExtractMonth, ExtractDay, Coalesce
 
 
 # 👇 extras para serializar dados pro Chart.js
@@ -624,6 +628,10 @@ def relatorios(request):
     dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
     status_labels, status_values = _contagem_pedidos_por_status(todos_pedidos)
 
+    # Debug: imprimir valores para verificar
+    print(f"DEBUG - Pedidos pagos: {pedidos_pagos.count()}")
+    print(f"DEBUG - Mes values: {mes_values}")
+
     context = {
         'mes_labels_json': json.dumps(mes_labels, ensure_ascii=False),
         'mes_values_json': json.dumps(mes_values),
@@ -631,7 +639,7 @@ def relatorios(request):
         'dia_values_json': json.dumps(dia_values),
         'status_labels_json': json.dumps(status_labels, ensure_ascii=False),
         'status_values_json': json.dumps(status_values),
-        'tabela_mensal': zip(mes_labels, mes_values),
+        'tabela_mensal': list(zip(mes_labels, mes_values)),
     }
     return render(request, 'loja/relatorios.html', context)
 
@@ -639,27 +647,59 @@ def relatorios(request):
 def _agregar_vendas_por_mes(queryset):
     """
     Soma total por mês do ANO ATUAL (1..12), preenchendo zeros onde não houver venda.
-    Usa ExtractMonth (independente de tz do MySQL).
     """
-    hoje = timezone.localdate()
-    ano = hoje.year
-
+    ano = timezone.localdate().year
     labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
     values = [0.0] * 12
 
-    agregados = (
-        queryset
-        .filter(data_criacao__year=ano)
-        .annotate(mes_num=ExtractMonth('data_criacao'))  # 1..12
-        .values('mes_num')
-        .annotate(total=Sum('total'))
-        .order_by('mes_num')
-    )
-    for row in agregados:
-        m = row['mes_num'] or 0
-        if 1 <= m <= 12:
-            values[m - 1] = float(row['total'] or 0)
+    # Debug: verificar se há pedidos no ano atual
+    pedidos_ano = queryset.filter(data_criacao__year=ano)
+    print(f"DEBUG - Pedidos no ano {ano}: {pedidos_ano.count()}")
+    
+    if pedidos_ano.count() == 0:
+        print(f"DEBUG - Nenhum pedido encontrado no ano {ano}")
+        return labels, values
 
+    # Verificar alguns pedidos para debug
+    for p in pedidos_ano[:3]:
+        print(f"DEBUG - Pedido {p.id}: total={p.total}, data={p.data_criacao}")
+
+    try:
+        # Solução 1: Usar TruncMonth para lidar melhor com timezone
+        from django.db.models import DateTimeField
+        from django.db.models.functions import TruncMonth, Extract
+        
+        # Converter para timezone local antes de extrair o mês
+        agregados = (
+            pedidos_ano
+            .extra(select={'mes_num': "EXTRACT(month FROM data_criacao)"})
+            .values('mes_num')
+            .annotate(total=Sum('total'))
+            .order_by('mes_num')
+        )
+
+        print(f"DEBUG - Agregados query result: {list(agregados)}")
+
+        for row in agregados:
+            mes_num = row['mes_num']
+            total = row['total']
+            print(f"DEBUG - Mês {mes_num}: {total}")
+            
+            if mes_num and 1 <= mes_num <= 12:
+                values[int(mes_num) - 1] = float(total) if total else 0.0
+
+    except Exception as e:
+        print(f"DEBUG - Erro na agregação: {e}")
+        
+        # Fallback: método manual se a query não funcionar
+        print("DEBUG - Tentando método manual...")
+        for pedido in pedidos_ano:
+            mes = pedido.data_criacao.month
+            total = float(pedido.total) if pedido.total else 0.0
+            values[mes - 1] += total
+            print(f"DEBUG - Manual: Pedido {pedido.id} mês {mes} = R$ {total}")
+
+    print(f"DEBUG - Values final: {values}")
     return labels, values
 
 
@@ -668,37 +708,71 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
     Retorna dois arrays: lista de dias (1 a último do mês)
     e valores de vendas por dia (0 nos dias sem venda).
     """
-    agora = timezone.now()
-    ano = agora.year
-    mes = agora.month
+    # Usar timezone.localtime() para converter para timezone local configurado no Django
+    agora_local = timezone.localtime()
+    ano, mes = agora_local.year, agora_local.month
+    
+    print(f"DEBUG - Data atual local: {agora_local}")
+    print(f"DEBUG - Buscando pedidos para {mes}/{ano}")
 
-    # Determina quantos dias tem o mês atual
     ultimo_dia_mes = monthrange(ano, mes)[1]
     todos_dias = list(range(1, ultimo_dia_mes + 1))
 
-    # Busca vendas agrupadas por dia
-    vendas_por_dia = (
-        queryset
-        .annotate(dia=ExtractDay('data_criacao'))
-        .values('dia')
-        .annotate(total=Sum('total'))
-        .order_by('dia')
-    )
+    # MUDANÇA: não filtrar por ano no Django, buscar todos e filtrar em Python
+    todos_pedidos = queryset.all()
+    pedidos_mes = []
+    
+    for pedido in todos_pedidos:
+        data_local = timezone.localtime(pedido.data_criacao)
+        if data_local.year == ano and data_local.month == mes:
+            pedidos_mes.append(pedido)
+    
+    print(f"DEBUG - Todos pedidos: {todos_pedidos.count()}")
+    print(f"DEBUG - Pedidos filtrados para {mes}/{ano} (local): {len(pedidos_mes)}")
+    
+    for p in pedidos_mes:
+        data_local = timezone.localtime(p.data_criacao)
+        print(f"DEBUG - Pedido mês atual: {p.id}, dia {data_local.day} (local), total {p.total}")
 
-    # Converte para dict {dia: total}
-    vendas_dict = {v['dia']: float(v['total'] or 0) for v in vendas_por_dia}
+    try:
+        if len(pedidos_mes) == 0:
+            print("DEBUG - Nenhum pedido no mês atual, retornando zeros")
+            vendas_dict = {}
+        else:
+            # Método manual usando timezone local
+            vendas_dict = {}
+            for pedido in pedidos_mes:
+                data_local = timezone.localtime(pedido.data_criacao)
+                dia = data_local.day
+                total = float(pedido.total) if pedido.total else 0.0
+                if dia not in vendas_dict:
+                    vendas_dict[dia] = 0.0
+                vendas_dict[dia] += total
+                print(f"DEBUG - Somando: dia {dia} (local) += {total} = {vendas_dict[dia]}")
 
-    # Monta listas completas
+    except Exception as e:
+        print(f"DEBUG - Erro nas vendas por dia: {e}")
+        vendas_dict = {}
+
     labels = [f"{dia:02d}" for dia in todos_dias]
     valores = [vendas_dict.get(dia, 0) for dia in todos_dias]
-
+    
+    print(f"DEBUG - Valores finais por dia: {dict(zip(labels, valores))}")
+    
     return labels, valores
+
 
 def _contagem_pedidos_por_status(queryset):
     """
-    Conta pedidos por status (Pendente, Pago, Cancelado...).
+    Conta pedidos por status.
     """
-    agregados = queryset.values('status').annotate(qtd=Count('id')).order_by()
-    labels = [row['status'] or 'Indef.' for row in agregados]
-    values = [row['qtd'] for row in agregados]
+    try:
+        agregados = queryset.values('status').annotate(qtd=Count('id')).order_by('status')
+        labels = [row['status'] or 'Indefinido' for row in agregados]
+        values = [row['qtd'] for row in agregados]
+    except Exception as e:
+        print(f"DEBUG - Erro na contagem por status: {e}")
+        labels = ['Sem dados']
+        values = [0]
+    
     return labels, values

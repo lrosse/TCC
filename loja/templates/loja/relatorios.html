@@ -8,16 +8,16 @@
   <p class="text-muted mb-0">Visão geral das vendas e pedidos</p>
 </div>
 
-<div class="row g-4">
-  <!-- Gráfico 1: Vendas por mês (ano atual) -->
-  <div class="col-lg-8">
-    <div class="card border-0 shadow-sm rounded-4">
-      <div class="card-body">
-        <h5 class="card-title">Vendas por mês (R$)</h5>
-        <canvas id="chartVendasMes" height="160"></canvas>
+  <div class="row g-4">
+    <!-- Gráfico 1: Vendas por mês (ano atual) -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body">
+          <h5 class="card-title">Vendas por mês (R$)</h5>
+          <canvas id="chartVendasMes" height="160"></canvas>
+        </div>
       </div>
     </div>
-  </div>
 
   <!-- Gráfico 2: Pedidos por status -->
   <div class="col-lg-4">
@@ -90,25 +90,60 @@
     const statusLabels = {{ status_labels_json|safe }};
     const statusValues = {{ status_values_json|safe }};
 
-    // Gráfico: Vendas por mês
-    const ctxMes = document.getElementById('chartVendasMes').getContext('2d');
-    new Chart(ctxMes, {
-      type: 'bar',
-      data: {
-        labels: mesLabels,
-        datasets: [{ label: 'Faturamento (R$)', data: mesValues }]
-      },
-      options: {
+
+// Gráfico: Vendas por mês
+console.log('Dados do gráfico:', { mesLabels, mesValues });
+
+// Validação dos dados
+const labelsValidas = mesLabels && Array.isArray(mesLabels) ? mesLabels : [];
+const valoresValidos = mesValues && Array.isArray(mesValues) ? mesValues : [];
+
+console.log('Dados validados:', { labelsValidas, valoresValidos });
+
+const ctxMes = document.getElementById('chartVendasMes').getContext('2d');
+new Chart(ctxMes, {
+    type: 'bar',
+    data: {
+        labels: labelsValidas,
+        datasets: [{
+            label: 'Faturamento (R$)',
+            data: valoresValidos,
+            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
         responsive: true,
         plugins: {
-          legend: { display: false },
-          tooltip: { mode: 'index', intersect: false }
+            legend: {
+                display: false
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return 'R$ ' + Number(context.parsed.y).toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+                }
+            }
         },
         scales: {
-          y: { beginAtZero: true, ticks: { callback: (v) => 'R$ ' + Number(v).toLocaleString('pt-BR') } }
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + Number(value).toLocaleString('pt-BR');
+                    }
+                }
+            }
         }
-      }
-    });
+    }
+});
 
     // Gráfico: Pedidos por status
     const ctxStatus = document.getElementById('chartStatus').getContext('2d');
