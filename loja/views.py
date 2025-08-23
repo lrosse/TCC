@@ -678,28 +678,20 @@ def _agregar_vendas_por_mes(queryset):
             .order_by('mes_num')
         )
 
-        print(f"DEBUG - Agregados query result: {list(agregados)}")
-
         for row in agregados:
             mes_num = row['mes_num']
             total = row['total']
-            print(f"DEBUG - Mês {mes_num}: {total}")
             
             if mes_num and 1 <= mes_num <= 12:
                 values[int(mes_num) - 1] = float(total) if total else 0.0
 
     except Exception as e:
-        print(f"DEBUG - Erro na agregação: {e}")
-        
         # Fallback: método manual se a query não funcionar
-        print("DEBUG - Tentando método manual...")
         for pedido in pedidos_ano:
             mes = pedido.data_criacao.month
             total = float(pedido.total) if pedido.total else 0.0
             values[mes - 1] += total
-            print(f"DEBUG - Manual: Pedido {pedido.id} mês {mes} = R$ {total}")
 
-    print(f"DEBUG - Values final: {values}")
     return labels, values
 
 
@@ -711,9 +703,6 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
     # Usar timezone.localtime() para converter para timezone local configurado no Django
     agora_local = timezone.localtime()
     ano, mes = agora_local.year, agora_local.month
-    
-    print(f"DEBUG - Data atual local: {agora_local}")
-    print(f"DEBUG - Buscando pedidos para {mes}/{ano}")
 
     ultimo_dia_mes = monthrange(ano, mes)[1]
     todos_dias = list(range(1, ultimo_dia_mes + 1))
@@ -727,16 +716,11 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
         if data_local.year == ano and data_local.month == mes:
             pedidos_mes.append(pedido)
     
-    print(f"DEBUG - Todos pedidos: {todos_pedidos.count()}")
-    print(f"DEBUG - Pedidos filtrados para {mes}/{ano} (local): {len(pedidos_mes)}")
-    
     for p in pedidos_mes:
         data_local = timezone.localtime(p.data_criacao)
-        print(f"DEBUG - Pedido mês atual: {p.id}, dia {data_local.day} (local), total {p.total}")
 
     try:
         if len(pedidos_mes) == 0:
-            print("DEBUG - Nenhum pedido no mês atual, retornando zeros")
             vendas_dict = {}
         else:
             # Método manual usando timezone local
@@ -748,16 +732,12 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
                 if dia not in vendas_dict:
                     vendas_dict[dia] = 0.0
                 vendas_dict[dia] += total
-                print(f"DEBUG - Somando: dia {dia} (local) += {total} = {vendas_dict[dia]}")
 
     except Exception as e:
-        print(f"DEBUG - Erro nas vendas por dia: {e}")
         vendas_dict = {}
 
     labels = [f"{dia:02d}" for dia in todos_dias]
     valores = [vendas_dict.get(dia, 0) for dia in todos_dias]
-    
-    print(f"DEBUG - Valores finais por dia: {dict(zip(labels, valores))}")
     
     return labels, valores
 
@@ -771,7 +751,6 @@ def _contagem_pedidos_por_status(queryset):
         labels = [row['status'] or 'Indefinido' for row in agregados]
         values = [row['qtd'] for row in agregados]
     except Exception as e:
-        print(f"DEBUG - Erro na contagem por status: {e}")
         labels = ['Sem dados']
         values = [0]
     
@@ -791,8 +770,6 @@ def dashboard(request):
     agora_local = timezone.localtime()
     ano_atual, mes_atual = agora_local.year, agora_local.month
     
-    print(f"DEBUG DASHBOARD - Mês atual: {mes_atual:02d}/{ano_atual}")
-    
     # Gerar dados dia a dia do mês atual
     ultimo_dia_mes = monthrange(ano_atual, mes_atual)[1]
     todos_dias = list(range(1, ultimo_dia_mes + 1))
@@ -803,8 +780,6 @@ def dashboard(request):
         data_local = timezone.localtime(pedido.data_criacao)
         if data_local.year == ano_atual and data_local.month == mes_atual:
             pedidos_mes_atual.append((pedido, data_local))
-    
-    print(f"DEBUG DASHBOARD - Pedidos pagos no mês atual: {len(pedidos_mes_atual)}")
     
     # Agrupar vendas por dia
     vendas_por_dia = {}
@@ -822,9 +797,6 @@ def dashboard(request):
     
     # Calcular total de vendas do mês
     vendas_mes = sum(mini_values)
-    
-    print(f"DEBUG DASHBOARD - Total vendas mês: R$ {vendas_mes:.2f}")
-    print(f"DEBUG DASHBOARD - Dias com vendas: {[dia for dia, valor in zip(todos_dias, mini_values) if valor > 0]}")
     
     context = {
         'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
