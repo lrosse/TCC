@@ -7,7 +7,6 @@ from django.views.decorators.http import require_POST
 from .decorators import staff_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import EntradaEstoque
 from .models import MovimentacaoEstoque
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
