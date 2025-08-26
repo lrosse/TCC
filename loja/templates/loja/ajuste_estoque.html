@@ -2,77 +2,218 @@
 {% block title %}Ajuste Manual de Estoque{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4">Ajuste Manual de Estoque</h2>
+<h2 class="fw-semibold mt-4 mb-3">Ajuste Manual de Estoque</h2>
 
-    <!-- Mensagens de sistema -->
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-    {% endfor %}
-    {% endif %}
+<form method="post" action="{% url 'ajuste_estoque' %}" id="form-lote">
+  {% csrf_token %}
 
-    <!-- Filtro por nome (pesquisa dinâmica na tabela) -->
-    <div class="mb-3">
-        <input type="text" id="filtro-produto" class="form-control" placeholder="Pesquisar produto...">
+  <!-- Toolbar: filtro + modo global + botão salvar -->
+  <div class="row g-2 align-items-center mb-3">
+    <div class="col-md-4">
+      <input type="text" id="filtro" class="form-control" placeholder="Pesquisar por ID ou nome...">
     </div>
 
-    <!-- Tabela com formulário individual por produto -->
-    <table class="table table-bordered table-striped" id="tabela-produtos">
-        <thead class="table-dark">
-            <tr>
-                <th>Produto</th>
-                <th>Estoque Atual</th>
-                <th>Nova Quantidade</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for produto in produtos %}
-            <tr>
-                <td class="nome-produto">{{ produto.nome }}</td>
-                <td>{{ produto.quantidade }}</td>
-                <td>
-                    <form method="post" onsubmit="return confirmarAjuste();" class="d-flex flex-column gap-2">
-                        {% csrf_token %}
+    <div class="col-md-5 d-flex align-items-center gap-3">
+      <div class="btn-group" role="group" aria-label="Modo de operação">
+        <input type="radio" class="btn-check" name="acao_global" id="modoEntrada" value="entrada" autocomplete="off" checked>
+        <label class="btn btn-outline-success" for="modoEntrada">Entrada</label>
 
-                        <!-- Campo oculto com o ID do produto -->
-                        <input type="hidden" name="produto_id" value="{{ produto.id }}">
+        <input type="radio" class="btn-check" name="acao_global" id="modoSaida" value="saida" autocomplete="off">
+        <label class="btn btn-outline-danger" for="modoSaida">Saída</label>
+      </div>
+    </div>
 
-                        <!-- Nova quantidade -->
-                        <input type="number" name="nova_quantidade" class="form-control" min="0" required placeholder="Nova quantidade">
+    <div class="col-md-3 text-md-end">
+      <button type="submit" class="btn btn-primary" id="btn-salvar" disabled>
+        Salvar movimentações
+      </button>
+    </div>
+  </div>
 
-                        <!-- Observação -->
-                        <textarea name="observacao" class="form-control" rows="1" placeholder="Motivo do ajuste (opcional)"></textarea>
-
-                        <!-- Botão de envio -->
-                        <button type="submit" class="btn btn-sm btn-primary">Salvar</button>
-                    </form>
-                </td>
-                <td></td>
-            </tr>
-            {% endfor %}
-        </tbody>
+  <!-- Tabela de produtos -->
+  <div class="table-responsive">
+    <table class="table table-bordered align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th style="width:8%">ID</th>
+          <th style="width:27%">Produto</th>
+          <th style="width:15%">Estoque Atual</th>
+          <th style="width:20%">Quantidade</th>
+          <th>Observação (opcional)</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-produtos">
+        {% for p in produtos %}
+        <!-- data-busca inclui ID e nome (para o filtro funcionar com ambos) -->
+        <tr data-busca="{{ p.id }} {{ p.nome|lower }}">
+          <td>{{ p.id }}</td>
+          <td>{{ p.nome }}</td>
+          <td><span class="badge bg-secondary fs-6">{{ p.quantidade }}</span></td>
+          <td>
+            <input
+              type="number"
+              class="form-control qtd"
+              name="qtd_{{ p.id }}"
+              min="0" step="1"
+              inputmode="numeric"
+              placeholder="0">
+          </td>
+          <td>
+            <input
+              type="text"
+              class="form-control obs"
+              name="obs_{{ p.id }}"
+              placeholder="Motivo/observação (opcional)">
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
+</form>
+
+<!-- ===========================
+     MODAL DE CONFIRMAÇÃO
+     =========================== -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalLabel">Confirmar movimentações</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Você está prestes a aplicar <strong><span id="confirm-qtd-itens">0</span></strong> movimentação(ões) no modo
+          <strong><span id="confirm-modo">Entrada</span></strong>.
+        </p>
+        <p class="text-muted mb-0">
+          Deseja continuar?
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirmar-modal">Confirmar</button>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Destaque visual conforme o modo */
+  .modo-entrada .qtd:focus { box-shadow: 0 0 0 .25rem rgba(25,135,84,.25); }
+  .modo-saida   .qtd:focus { box-shadow: 0 0 0 .25rem rgba(220,53,69,.25); }
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Confirmação de submissão
-function confirmarAjuste() {
-    return confirm("Tem certeza que deseja ajustar o estoque? Esta ação será registrada.");
-}
+  // -----------------------------
+  // Filtro por ID OU nome
+  // -----------------------------
+  const filtro = document.getElementById('filtro');
+  const linhas = document.querySelectorAll('#tabela-produtos tr[data-busca]');
 
-// Filtro de busca ao vivo na tabela de produtos
-document.getElementById('filtro-produto').addEventListener('input', function () {
-    const filtro = this.value.toLowerCase();
-    const linhas = document.querySelectorAll('#tabela-produtos tbody tr');
-
-    linhas.forEach(linha => {
-        const nome = linha.querySelector('.nome-produto').textContent.toLowerCase();
-        linha.style.display = nome.includes(filtro) ? '' : 'none';
+  filtro?.addEventListener('input', () => {
+    const q = filtro.value.trim().toLowerCase();
+    linhas.forEach(tr => {
+      const termo = tr.dataset.busca; // Ex.: "12 teclado mecânico"
+      tr.style.display = termo.includes(q) ? '' : 'none';
     });
-});
+  });
+
+  // -----------------------------
+  // Habilitar botão "Salvar"
+  // -----------------------------
+  const form = document.getElementById('form-lote');
+  const btnSalvar = document.getElementById('btn-salvar');
+  const qtdInputs = form.querySelectorAll('input.qtd');
+
+  const atualizarBotao = () => {
+    let habilitar = false;
+    qtdInputs.forEach(i => {
+      if (i.value && Number(i.value) > 0) habilitar = true;
+    });
+    btnSalvar.disabled = !habilitar;
+  };
+  qtdInputs.forEach(i => i.addEventListener('input', atualizarBotao));
+  atualizarBotao();
+
+  // -----------------------------
+  // Feedback visual do modo (Entrada/Saída)
+  // -----------------------------
+  const bodyContent = document.querySelector('body');
+  const radios = form.querySelectorAll('input[name="acao_global"]');
+  const aplicarClasseModo = () => {
+    const modo = form.querySelector('input[name="acao_global"]:checked')?.value;
+    bodyContent.classList.toggle('modo-entrada', modo === 'entrada');
+    bodyContent.classList.toggle('modo-saida',   modo === 'saida');
+  };
+  radios.forEach(r => r.addEventListener('change', aplicarClasseModo));
+  aplicarClasseModo();
+
+  // -----------------------------
+  // Confirmação antes de enviar (corrigido)
+  // -----------------------------
+  const modalEl = document.getElementById('confirmModal');
+  const btnConfirmarModal = document.getElementById('btn-confirmar-modal');
+  const spanQtd = document.getElementById('confirm-qtd-itens');
+  const spanModo = document.getElementById('confirm-modo');
+
+  let bsModal = null;
+  let allowSubmit = false; // guard: só permite enviar após confirmar
+
+  function getResumoMovimentacoes() {
+    // conta quantos itens têm quantidade > 0
+    let count = 0;
+    qtdInputs.forEach(i => { if (i.value && Number(i.value) > 0) count++; });
+
+    const modoVal = form.querySelector('input[name="acao_global"]:checked')?.value || 'entrada';
+    const modoTxt = (modoVal === 'saida') ? 'Saída' : 'Entrada';
+    return { count, modoTxt };
+  }
+
+  form.addEventListener('submit', (e) => {
+    if (allowSubmit) {
+      // já confirmado -> deixa enviar e reseta flag
+      allowSubmit = false;
+      return;
+    }
+
+    // 1ª tentativa: bloqueia envio e abre modal
+    e.preventDefault();
+
+    const { count, modoTxt } = getResumoMovimentacoes();
+    if (count === 0) {
+      alert('Informe ao menos uma quantidade para movimentar.');
+      return;
+    }
+
+    spanQtd.textContent = count;
+    spanModo.textContent = modoTxt;
+
+    bsModal = bsModal || new bootstrap.Modal(modalEl);
+    bsModal.show();
+  });
+
+  btnConfirmarModal.addEventListener('click', () => {
+    // libera o envio e dispara um submit "de verdade"
+    allowSubmit = true;
+    bsModal?.hide();
+
+    // requestSubmit aciona validações nativas e o listener acima,
+    // mas agora allowSubmit=true deixa passar.
+    if (form.requestSubmit) {
+      form.requestSubmit();
+    } else {
+      form.submit(); // fallback
+    }
+  });
 </script>
 {% endblock %}

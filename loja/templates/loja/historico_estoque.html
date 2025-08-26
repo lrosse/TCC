@@ -11,7 +11,7 @@
     </div>
 
     <!-- Barra de pesquisa principal e botão de filtro -->
-    <form class="row g-2 align-items-end mb-3" onsubmit="return false;">
+    <form class="row g-3 align-items-end mb-3" onsubmit="return false;">
         <div class="col-md-4">
             <label class="form-label">Nome do Produto</label>
             <input type="text" id="filtro-nome" class="form-control shadow-sm" placeholder="Digite o nome...">
@@ -38,8 +38,12 @@
                         <select id="filtro-tipo" class="form-select">
                             <option value="">Todos</option>
                             <option value="entrada">Entrada</option>
-                            <option value="ajuste">Ajuste</option>
+                            <option value="saida">Saída</option>
                         </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">ID do Produto</label>
+                        <input type="text" id="filtro-id" class="form-control shadow-sm" placeholder="Ex.: 12">
                     </div>
                 </div>
             </div>
@@ -54,6 +58,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Data</th>
+                            <th>ID</th>
                             <th>Produto</th>
                             <th>Tipo</th>
                             <th>Quantidade</th>
@@ -63,13 +68,29 @@
                     </thead>
                     <tbody>
                         {% for mov in movimentacoes %}
-                        <tr>
+                        {# normaliza tipo: 'ajuste' -> 'saida' para filtro #}
+                        {% with tipo_norm=mov.tipo %}
+                          {% if mov.tipo == 'ajuste' %}
+                            {% with tipo_norm='saida' %}{% endwith %}
+                          {% endif %}
+                        {% endwith %}
+                        <tr
+                          data-id="{{ mov.produto.id }}"
+                          data-nome="{{ mov.produto.nome|lower }}"
+                          data-tipo="{% if mov.tipo == 'ajuste' %}saida{% else %}{{ mov.tipo }}{% endif %}"
+                          data-date="{{ mov.data|date:'Y-m-d' }}"
+                        >
                             <td class="coluna-data">{{ mov.data|date:"d/m/Y" }}</td>
+                            <td class="coluna-id">{{ mov.produto.id }}</td>
                             <td class="coluna-produto">{{ mov.produto.nome }}</td>
                             <td class="coluna-tipo">
-                                <span class="badge {% if mov.tipo == 'entrada' %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                                    {{ mov.tipo|capfirst }}
-                                </span>
+                                {% if mov.tipo == 'entrada' %}
+                                  <span class="badge bg-success">Entrada</span>
+                                {% elif mov.tipo == 'saida' or mov.tipo == 'ajuste' %}
+                                  <span class="badge bg-danger">Saída</span>
+                                {% else %}
+                                  <span class="badge bg-secondary">{{ mov.tipo|capfirst }}</span>
+                                {% endif %}
                             </td>
                             <td>{{ mov.quantidade }}</td>
                             <td>{{ mov.estoque_final }}</td>
@@ -77,7 +98,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-muted">Nenhuma movimentação registrada.</td>
+                            <td colspan="7" class="text-muted">Nenhuma movimentação registrada.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -90,30 +111,37 @@
 
 {% block extra_js %}
 <script>
-// Função para aplicar os filtros dinamicamente
 function filtrarTabela() {
-    const nome = document.getElementById('filtro-nome').value.toLowerCase();
-    const data = document.getElementById('filtro-data').value;
-    const tipo = document.getElementById('filtro-tipo').value.toLowerCase();
+  const idVal   = (document.getElementById('filtro-id').value || '').trim().toLowerCase();
+  const nomeVal = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
+  const dataVal = (document.getElementById('filtro-data').value || '').trim();          // YYYY-MM-DD
+  const tipoVal = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase(); // '', 'entrada', 'saida'
 
-    const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
+  const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
 
-    linhas.forEach(linha => {
-        const textoNome = linha.querySelector('.coluna-produto').textContent.toLowerCase();
-        const textoData = linha.querySelector('.coluna-data').textContent;
-        const textoTipo = linha.querySelector('.coluna-tipo').textContent.toLowerCase();
+  linhas.forEach(linha => {
+    const liId   = (linha.dataset.id || '').toLowerCase();
+    const liNome = (linha.dataset.nome || '').toLowerCase();
+    const liDate = linha.dataset.date || '';   // YYYY-MM-DD
+    const liTipo = (linha.dataset.tipo || '').toLowerCase(); // entrada/saida
 
-        const condNome = !nome || textoNome.includes(nome);
-        const condData = !data || textoData === data;
-        const condTipo = !tipo || textoTipo.includes(tipo);
+    const condId   = !idVal   || liId.includes(idVal);
+    const condNome = !nomeVal || liNome.includes(nomeVal);
+    const condData = !dataVal || liDate === dataVal;
+    const condTipo = !tipoVal || liTipo === tipoVal;
 
-        linha.style.display = (condNome && condData && condTipo) ? '' : 'none';
-    });
+    linha.style.display = (condId && condNome && condData && condTipo) ? '' : 'none';
+  });
 }
 
 // Eventos para aplicar o filtro ao digitar ou selecionar
-document.getElementById('filtro-nome').addEventListener('input', filtrarTabela);
-document.getElementById('filtro-data').addEventListener('input', filtrarTabela);
-document.getElementById('filtro-tipo').addEventListener('change', filtrarTabela);
+['filtro-id','filtro-nome','filtro-data','filtro-tipo'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener(id === 'filtro-tipo' ? 'change' : 'input', filtrarTabela);
+});
+
+// aplica uma vez no carregamento (caso haja valores predefinidos)
+filtrarTabela();
 </script>
 {% endblock %}

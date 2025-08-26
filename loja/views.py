@@ -331,43 +331,79 @@ def entrada_estoque(request):
             messages.error(request, "Quantidade inválida.")
 
     return render(request, 'loja/entrada_estoque.html', {'produtos': produtos})
-
+    
 
 @staff_required
 def ajuste_estoque(request):
+    """
+    Ajuste manual em lote.
+    - Modo global: 'entrada' ou 'saida'
+    - Quantidades por produto: name="qtd_<id>"
+    - Observação: usa obs_<id> (se vier) ou cai no global 'observacao'
+    """
     produtos = Produto.objects.all().order_by('nome')
 
     if request.method == 'POST':
-        produto_id = request.POST.get('produto_id')
-        nova_quantidade = request.POST.get('nova_quantidade')
-        observacao = request.POST.get('observacao', '')
-
-        try:
-            produto = Produto.objects.get(id=produto_id)
-            nova_quantidade = int(nova_quantidade)
-
-            if nova_quantidade < 0:
-                messages.error(request, "A quantidade não pode ser negativa.")
-                return redirect('ajuste_estoque')
-
-            produto.quantidade = nova_quantidade
-            produto.save()
-
-            MovimentacaoEstoque.objects.create(
-                produto=produto,
-                tipo='ajuste',
-                quantidade=nova_quantidade,
-                estoque_final=produto.quantidade,
-                observacao=observacao or f"Ajuste manual realizado por {request.user.username}"
-            )
-
-            messages.success(request, f"Estoque de '{produto.nome}' atualizado para {nova_quantidade}.")
+        modo = (request.POST.get('acao_global') or 'entrada').strip().lower()
+        if modo not in ('entrada', 'saida'):
+            messages.error(request, "Modo inválido. Selecione Entrada ou Saída.")
             return redirect('ajuste_estoque')
 
-        except Produto.DoesNotExist:
-            messages.error(request, "Produto não encontrado.")
-        except ValueError:
-            messages.error(request, "Quantidade inválida.")
+        # Observação global do textarea (pode estar vazia)
+        observacao_global = (request.POST.get('observacao') or '').strip()
+
+        # Lista de (produto, qtd, observacao_efetiva)
+        movimentos = []
+        for p in produtos:
+            qtd_raw = (request.POST.get(f'qtd_{p.id}') or '').strip()
+            if not qtd_raw:
+                continue
+            try:
+                qtd = int(qtd_raw)
+            except ValueError:
+                continue
+            if qtd <= 0:
+                continue
+
+            # Preferência: obs_<id> se vier; caso contrário, usa a global
+            obs_item = (request.POST.get(f'obs_{p.id}') or '').strip()
+            obs_efetiva = obs_item if obs_item else observacao_global
+
+            movimentos.append((p, qtd, obs_efetiva))
+
+        if not movimentos:
+            messages.warning(request, "Nenhuma quantidade informada para movimentar.")
+            return redirect('ajuste_estoque')
+
+        with transaction.atomic():
+            for produto, qtd, obs in movimentos:
+                if modo == 'entrada':
+                    novo_estoque = produto.quantidade + qtd
+                    tipo = 'entrada'
+                else:
+                    if produto.quantidade - qtd < 0:
+                        messages.error(
+                            request,
+                            f"Saída inválida para '{produto.nome}': estoque insuficiente."
+                        )
+                        transaction.set_rollback(True)
+                        return redirect('ajuste_estoque')
+                    novo_estoque = produto.quantidade - qtd
+                    tipo = 'saida'
+
+                produto.quantidade = novo_estoque
+                produto.save()
+
+                MovimentacaoEstoque.objects.create(
+                    produto=produto,
+                    tipo=tipo,
+                    quantidade=qtd,
+                    estoque_final=novo_estoque,
+                    observacao=obs  # ✅ usa a observação efetiva (item ou global)
+                )
+
+        messages.success(request, "Movimentações salvas com sucesso!")
+        return redirect('ajuste_estoque')
 
     return render(request, 'loja/ajuste_estoque.html', {'produtos': produtos})
 
