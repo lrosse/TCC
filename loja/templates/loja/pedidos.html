@@ -47,48 +47,104 @@
         </div>
     </form>
 
-    <!-- Tabela de pedidos -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Status</th>
-                    <th>Valor Total</th>
-                    <th>Data</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for pedido in pedidos %}
-                <tr>
-                    <td>{{ pedido.numero_pedido }}</td>
-                    <td>{{ pedido.cliente.username }}</td>
-                    <td>
-                        <span class="badge 
-                            {% if pedido.status == 'Pendente' %}bg-warning text-dark
-                            {% elif pedido.status == 'Pago' %}bg-success
-                            {% elif pedido.status == 'Cancelado' %}bg-danger
-                            {% endif %}">
-                            {{ pedido.status }}
-                        </span>
-                    </td>
-                    <td>R$ {{ pedido.total }}</td>
-                    <td>{{ pedido.data_criacao|date:"d/m/Y H:i" }}</td>
-                    <td>
-                        <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn               btn-outline-primary btn-sm">   
-                            <i class="bi bi-search"></i> Detalhes
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center">Nenhum pedido encontrado.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <!-- Formulário de alteração em lote -->
+    <form method="post" action="{% url 'atualizar_status_pedidos_lote' %}" id="formLote">
+        {% csrf_token %}
+
+        <!-- Seletor de status + botão aplicar -->
+        <div class="d-flex justify-content-start align-items-center mb-3 gap-2">
+            <div>
+                <select name="status" class="form-select" required>
+                    <option value="" disabled selected>Alterar status para...</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Pago">Pago</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmarLote">
+                <i class="bi bi-check-circle"></i> Aplicar
+            </button>
+        </div>
+
+        <!-- Tabela de pedidos -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th></th>
+                                <th>Código do Pedido</th>
+                                <th>Cliente</th>
+                                <th>Status</th>
+                                <th>Valor Total</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pedido in pedidos %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="pedidos" value="{{ pedido.id }}">
+                                </td>
+                                <td>{{ pedido.numero_pedido }}</td>
+                                <td>{{ pedido.cliente.username }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if pedido.status == 'Pendente' %}bg-warning text-dark
+                                        {% elif pedido.status == 'Pago' %}bg-success
+                                        {% elif pedido.status == 'Cancelado' %}bg-danger
+                                        {% endif %}">
+                                        {{ pedido.status }}
+                                    </span>
+                                </td>
+                                <td>R$ {{ pedido.total }}</td>
+                                <td>{{ pedido.data_criacao|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-outline-primary btn-sm">   
+                                        <i class="bi bi-search"></i> Detalhes
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">Nenhum pedido encontrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de confirmação -->
+        <div class="modal fade" id="confirmarLote" tabindex="-1" aria-labelledby="confirmarLoteLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="confirmarLoteLabel"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Alteração</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        Tem certeza que deseja alterar o status dos pedidos selecionados?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Sim, confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+
+<!-- Script para selecionar todos -->
+<script>
+document.getElementById('selecionarTodos').addEventListener('change', function() {
+    let checkboxes = document.querySelectorAll('input[name="pedidos"]');
+    checkboxes.forEach(cb => cb.checked = this.checked);
+});
+</script>
 {% endblock %}

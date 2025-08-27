@@ -647,16 +647,9 @@ def detalhes_pedido(request, pedido_id):
     pedido = get_object_or_404(Pedido, id=pedido_id)
     itens = pedido.itens.all()
 
-    # Verifica se o formulário foi enviado
-    if request.method == "POST":
-        novo_status = request.POST.get("status")
-        if novo_status in ["Pendente", "Pago", "Cancelado"]:
-            pedido.status = novo_status
-            pedido.save()
-            messages.success(request, f"Status do pedido atualizado para '{novo_status}'.")
-            return redirect('detalhes_pedido', pedido_id=pedido.id)
-        else:
-            messages.error(request, "Status inválido.")
+    # ❌ Antes: aqui havia lógica de POST para mudar status
+    # ✅ Agora: removemos essa lógica,
+    # pois o formulário já envia para atualizar_status_pedido
 
     return render(request, "loja/detalhes_pedido.html", {
         "pedido": pedido,
@@ -671,12 +664,100 @@ def atualizar_status_pedido(request, pedido_id):
     novo_status = request.POST.get("status")
 
     if novo_status in ["Pendente", "Pago", "Cancelado"]:
+        # Se mudou de Pendente para Pago, faz a baixa de estoque
+        if novo_status == "Pago" and pedido.status != "Pago":
+            for item in pedido.itens.all():
+                produto = item.produto
+                # Evita estoque negativo
+                if produto.quantidade < item.quantidade:
+                    messages.error(
+                        request,
+                        f"Estoque insuficiente para o produto '{produto.nome}'. "
+                        f"Disponível: {produto.quantidade}, necessário: {item.quantidade}."
+                    )
+                    return redirect("detalhes_pedido", pedido_id=pedido.id)
+
+                # Baixa no estoque
+                produto.quantidade -= item.quantidade
+                produto.save()
+
+                # Registra movimentação
+                from .models import MovimentacaoEstoque
+                MovimentacaoEstoque.objects.create(
+                    produto=produto,
+                    tipo="saida",  # usamos "saida" para manter padrão do histórico
+                    quantidade=item.quantidade,  # sempre positivo
+                    estoque_final=produto.quantidade,
+                    observacao=f"Baixa automática por pagamento do pedido {pedido.numero_pedido or pedido.id}"
+                )
+
+
         pedido.status = novo_status
         pedido.save()
         messages.success(request, f"Status do pedido #{pedido.id} atualizado para '{novo_status}'.")
     else:
         messages.error(request, "Status inválido.")
 
+    return redirect("pedidos")
+
+@staff_required
+@require_POST
+def atualizar_status_pedidos_lote(request):
+    """
+    Atualiza o status de múltiplos pedidos selecionados na listagem.
+    - Se status for 'Pago', baixa automaticamente do estoque.
+    - Se já estava Pago, não baixa de novo.
+    """
+    from .models import Pedido, MovimentacaoEstoque
+
+    # Pega os IDs dos pedidos selecionados
+    pedido_ids = request.POST.getlist("pedidos")
+    novo_status = request.POST.get("status")
+
+    if not pedido_ids:
+        messages.warning(request, "Nenhum pedido selecionado.")
+        return redirect("pedidos")
+
+    if novo_status not in ["Pendente", "Pago", "Cancelado"]:
+        messages.error(request, "Status inválido.")
+        return redirect("pedidos")
+
+    pedidos = Pedido.objects.filter(id__in=pedido_ids)
+    alterados = 0
+
+    for pedido in pedidos:
+        # Se o status é Pago e ainda não estava Pago -> baixa estoque
+        if novo_status == "Pago" and pedido.status != "Pago":
+            for item in pedido.itens.all():
+                produto = item.produto
+                # Verifica estoque suficiente
+                if produto.quantidade < item.quantidade:
+                    messages.error(
+                        request,
+                        f"Estoque insuficiente para o produto '{produto.nome}' "
+                        f"no pedido {pedido.numero_pedido or pedido.id}. "
+                        f"Disponível: {produto.quantidade}, necessário: {item.quantidade}."
+                    )
+                    return redirect("pedidos")
+
+                # Atualiza estoque
+                produto.quantidade -= item.quantidade
+                produto.save()
+
+                # Cria movimentação de saída
+                MovimentacaoEstoque.objects.create(
+                    produto=produto,
+                    tipo="saida",
+                    quantidade=item.quantidade,  # sempre positivo
+                    estoque_final=produto.quantidade,
+                    observacao=f"Baixa automática por pagamento do pedido {pedido.numero_pedido or pedido.id}"
+                )
+
+        pedido.status = novo_status
+        pedido.save()
+        alterados += 1
+
+    messages.success(request, f"{alterados} pedido(s) atualizado(s) para '{novo_status}'.")
     return redirect("pedidos")
 
 
