@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+import uuid
 
 
 class Produto(models.Model):
@@ -77,26 +78,28 @@ class Pedido(models.Model):
         ('Cancelado', 'Cancelado'),
     ]
 
-    # Relacionamento com o cliente que fez o pedido
     cliente = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    # Valor total do pedido (soma dos subtotais)
     total = models.DecimalField(max_digits=10, decimal_places=2)
-
-    # Status do pedido (padrão: Pendente)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pendente')
-
-    # Data e hora da criação do pedido
     data_criacao = models.DateTimeField(auto_now_add=True)
 
-    # CAMPOS NOVOS PARA ENTREGA 👇
     nome_cliente = models.CharField(max_length=100)
-    endereco_entrega = models.TextField()  # Rua, número, bairro, cidade, complemento etc.
-    observacao = models.TextField(blank=True, null=True)  # Frete, referência, instruções extras
+    endereco_entrega = models.TextField()
+
+    numero_pedido = models.CharField(max_length=30, unique=True, editable=False, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.numero_pedido:
+            agora = timezone.now()
+            prefixo = agora.strftime("%Y%m")  # 202508
+            codigo_unico = str(uuid.uuid4()).replace('-', '')[:8].upper()
+            # Resultado: 202508-A1B2C3D4 (impossível ter conflito)
+            self.numero_pedido = f"{prefixo}-{codigo_unico}"
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Pedido #{self.id} - {self.cliente.username}"
-
+        return f"Pedido {self.numero_pedido or self.id} - {self.cliente.username}"
 # ----------------------------------------------------
 # Model para armazenar cada item que compõe o pedido
 # ----------------------------------------------------

@@ -21,6 +21,13 @@ from calendar import monthrange
 from django.db.models.functions import Coalesce
 from django.db.models import Sum, Count, DecimalField, Value
 from django.db.models.functions import ExtractMonth, ExtractDay, Coalesce
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db import transaction
+from django.conf import settings
+from urllib.parse import quote
+from decimal import Decimal
 
 
 # 👇 extras para serializar dados pro Chart.js
@@ -160,7 +167,6 @@ def _contagem_pedidos_por_status(queryset):
 def dashboard(request):
     """
     Dashboard administrativo com mini-gráfico do mês.
-    Mostra vendas pagas no mês atual.
     """
     if request.method == "POST":
         form = RegistroForm(request.POST)
@@ -177,8 +183,6 @@ def dashboard(request):
         form = RegistroForm()
 
     agora = timezone.now()
-    ano = agora.year
-    mes = agora.month
     inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     # Total de vendas do mês (somente pedidos pagos)
@@ -190,14 +194,17 @@ def dashboard(request):
     )
 
     # Filtra apenas pedidos pagos do mês atual
-    pedidos_pagos = Pedido.objects.filter(
-        status='Pago',
-        data_criacao__year=ano,
-        data_criacao__month=mes
-    )
+    pedidos_pagos = Pedido.objects.filter(status='Pago')
 
     # Gera os dados para o mini gráfico
     mini_labels, mini_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
+
+    # DEBUG
+    print(f"🔍 Dashboard DEBUG:")
+    print(f"   Pedidos pagos total: {pedidos_pagos.count()}")
+    print(f"   Mini labels: {mini_labels[:5]}...")  # Primeiros 5
+    print(f"   Mini values: {mini_values[:5]}...")   # Primeiros 5
+    print(f"   Vendas mês: {vendas_mes}")
 
     ctx = {
         'form': form,
@@ -467,13 +474,9 @@ def alterar_quantidade(request, item_id):
 
 @login_required
 def finalizar_compra(request):
-    """
-    Fluxo:
-    - GET: mostra o formulário de entrega.
-    - POST: valida dados, cria Pedido e PedidoItem, limpa carrinho e exibe
-            a página de confirmação que abrirá o WhatsApp em nova aba.
-    """
-    # 1) Busca carrinho do usuário
+    """View super simples - sem complicações"""
+    
+    # 1) Busca carrinho
     try:
         carrinho = Carrinho.objects.get(usuario=request.user)
     except Carrinho.DoesNotExist:
@@ -486,46 +489,52 @@ def finalizar_compra(request):
         return redirect('ver_carrinho')
 
     if request.method == 'POST':
-        # 2) Captura/valida campos do formulário
-        nome = (request.POST.get("nome") or "").strip()
-        rua = (request.POST.get("rua") or "").strip()
-        numero = (request.POST.get("numero") or "").strip()
-        bairro = (request.POST.get("bairro") or "").strip()
-        cidade = (request.POST.get("cidade") or "").strip()
-        complemento = (request.POST.get("complemento") or "").strip()
-        referencia = (request.POST.get("referencia") or "").strip()
+        print("🔥 INICIANDO PROCESSAMENTO DO POST")
+        
+        # 2) Pega dados do form
+        nome = request.POST.get("nome", "").strip()
+        rua = request.POST.get("rua", "").strip()
+        numero = request.POST.get("numero", "").strip()
+        bairro = request.POST.get("bairro", "").strip()
+        cidade = request.POST.get("cidade", "").strip()
+        complemento = request.POST.get("complemento", "").strip()
+        referencia = request.POST.get("referencia", "").strip()
 
+        print(f"📝 Dados: {nome}, {rua}, {numero}, {bairro}, {cidade}")
+
+        # 3) Validação
         if not all([nome, rua, numero, bairro, cidade]):
-            messages.error(request, "Por favor, preencha todos os campos obrigatórios de entrega.")
+            print("❌ Dados inválidos")
+            messages.error(request, "Preencha todos os campos obrigatórios.")
             return render(request, 'loja/finalizar_compra.html', {
                 'itens': itens,
                 'total': carrinho.total(),
-                'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5599999999999'),
-                'form': {  # mantém valores digitados
-                    'nome': nome, 'rua': rua, 'numero': numero, 'bairro': bairro,
-                    'cidade': cidade, 'complemento': complemento, 'referencia': referencia
-                }
+                'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
             })
 
-        # 3) Monta o endereço em texto único para salvar no Pedido
-        linhas_endereco = [f"{rua}, {numero}", f"{bairro} – {cidade}"]
+        # 4) Monta endereço
+        endereco_parts = [f"{rua}, {numero}", f"{bairro} – {cidade}"]
         if complemento:
-            linhas_endereco.append(f"Complemento: {complemento}")
+            endereco_parts.append(f"Complemento: {complemento}")
         if referencia:
-            linhas_endereco.append(f"Referência: {referencia}")
-        endereco_texto = "\n".join(linhas_endereco)
+            endereco_parts.append(f"Referência: {referencia}")
+        endereco_texto = "\n".join(endereco_parts)
 
-        # 4) Cria Pedido + Itens de forma atômica e limpa o carrinho
-        with transaction.atomic():
+        print("💾 CRIANDO PEDIDO...")
+        
+        try:
+            # 5) Cria pedido - SEM TRANSACTION ATOMIC
             pedido = Pedido.objects.create(
                 cliente=request.user,
-                total=Decimal(carrinho.total()),  # congela o total no momento do pedido
+                total=Decimal(str(carrinho.total())),
                 status='Pendente',
                 nome_cliente=nome,
-                endereco_entrega=endereco_texto,
-                observacao=""
+                endereco_entrega=endereco_texto
             )
+            
+            print(f"✅ Pedido criado: ID={pedido.id}, Número={pedido.numero_pedido}")
 
+            # 6) Cria itens do pedido
             for item in itens:
                 PedidoItem.objects.create(
                     pedido=pedido,
@@ -533,50 +542,70 @@ def finalizar_compra(request):
                     quantidade=item.quantidade,
                     preco_unitario=item.preco_unitario
                 )
+            
+            print(f"📦 Criados {itens.count()} itens")
 
+            # 7) Limpa carrinho
             itens.delete()
             carrinho.valor_total = Decimal('0.00')
             carrinho.save()
+            
+            print("🧹 Carrinho limpo")
 
-        # 5) Monta a mensagem do WhatsApp (texto puro, com quebras de linha)
-        linhas = [
-            "🛒 *Pedido realizado através do site*:",
-            "",
-            "📦 *Produtos:*",
-        ]
+        except Exception as e:
+            print(f"💥 ERRO AO CRIAR PEDIDO: {e}")
+            import traceback
+            traceback.print_exc()
+            messages.error(request, f"Erro: {str(e)}")
+            return render(request, 'loja/finalizar_compra.html', {
+                'itens': itens,
+                'total': carrinho.total(),
+                'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
+            })
+
+        # 8) Monta WhatsApp
+        print("📱 Montando WhatsApp...")
+        
+        produtos_texto = []
         for item in pedido.itens.all():
-            linhas.append(f"- {item.quantidade}x {item.produto.nome} – R$ {item.subtotal()}")
+            produtos_texto.append(f"- {item.quantidade}x {item.produto.nome} – R$ {item.subtotal()}")
 
-        linhas += [
-            "",
-            f"💰 *Total:* R$ {pedido.total}",
-            "",
-            "📍 *Endereço de entrega:*",
-            *endereco_texto.split("\n"),
-            "",
-            f"🙋 Cliente: {nome}",
-            "",
-            "Agradeço desde já e fico no aguardo da confirmação 😊",
-        ]
+            mensagem_parts = [
+                f"🛒 *Pedido {pedido.numero_pedido} realizado através do site*:",
+                "",
+                "📦 *Produtos:*",
+                *produtos_texto,
+                "",
+                f"💰 *Total:* R$ {pedido.total}",
+                "",
+                "📍 *Endereço de entrega:*",
+                *endereco_texto.split("\n"),
+                "",
+                f"🙋 Cliente: {nome}",
+                "",
+                "Agradeço desde já! 😊",
+            ]
 
-        mensagem_final = "\n".join(linhas)
-        numero_vendedor = getattr(settings, 'WHATSAPP_NUMBER', '5599999999999')
+        mensagem_final = "\n".join(mensagem_parts)
+        numero_vendedor = getattr(settings, 'WHATSAPP_NUMBER', '5518981078919')
         whatsapp_url = f"https://wa.me/{numero_vendedor}?text={quote(mensagem_final)}"
 
-        # 👉 Em vez de redirecionar, renderiza a página de confirmação
+        print("🎉 SUCESSO! Redirecionando...")
+
+        # 9) SUCESSO!
         return render(request, "loja/pedido_confirmado.html", {
             "whatsapp_url": whatsapp_url,
-            "pedido_id": pedido.id,
+            "pedido_id": pedido.id,  # pode remover se não usar mais
             "nome_cliente": nome,
+            "numero_pedido": pedido.numero_pedido,  # 👈 garante que o template recebe
         })
 
-    # GET — Renderiza a página de finalização
+    # GET
     return render(request, 'loja/finalizar_compra.html', {
         'itens': itens,
         'total': carrinho.total(),
-        'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5599999999999'),
+        'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
     })
-
 
 
 @staff_required
@@ -654,7 +683,7 @@ def atualizar_status_pedido(request, pedido_id):
 # ============================
 # ✅ NOVA VIEW: RELATÓRIOS
 # ============================
-@staff_required
+@staff_required  
 def relatorios(request):
     pedidos_pagos = Pedido.objects.filter(status='Pago')
     todos_pedidos = Pedido.objects.all()
@@ -662,10 +691,6 @@ def relatorios(request):
     mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
     dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
     status_labels, status_values = _contagem_pedidos_por_status(todos_pedidos)
-
-    # Debug: imprimir valores para verificar
-    print(f"DEBUG - Pedidos pagos: {pedidos_pagos.count()}")
-    print(f"DEBUG - Mes values: {mes_values}")
 
     context = {
         'mes_labels_json': json.dumps(mes_labels, ensure_ascii=False),
@@ -678,7 +703,6 @@ def relatorios(request):
     }
     return render(request, 'loja/relatorios.html', context)
 
-
 def _agregar_vendas_por_mes(queryset):
     """
     Soma total por mês do ANO ATUAL (1..12), preenchendo zeros onde não houver venda.
@@ -687,24 +711,12 @@ def _agregar_vendas_por_mes(queryset):
     labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
     values = [0.0] * 12
 
-    # Debug: verificar se há pedidos no ano atual
     pedidos_ano = queryset.filter(data_criacao__year=ano)
-    print(f"DEBUG - Pedidos no ano {ano}: {pedidos_ano.count()}")
     
     if pedidos_ano.count() == 0:
-        print(f"DEBUG - Nenhum pedido encontrado no ano {ano}")
         return labels, values
 
-    # Verificar alguns pedidos para debug
-    for p in pedidos_ano[:3]:
-        print(f"DEBUG - Pedido {p.id}: total={p.total}, data={p.data_criacao}")
-
     try:
-        # Solução 1: Usar TruncMonth para lidar melhor com timezone
-        from django.db.models import DateTimeField
-        from django.db.models.functions import TruncMonth, Extract
-        
-        # Converter para timezone local antes de extrair o mês
         agregados = (
             pedidos_ano
             .extra(select={'mes_num': "EXTRACT(month FROM data_criacao)"})
@@ -721,7 +733,7 @@ def _agregar_vendas_por_mes(queryset):
                 values[int(mes_num) - 1] = float(total) if total else 0.0
 
     except Exception as e:
-        # Fallback: método manual se a query não funcionar
+        # Fallback: método manual
         for pedido in pedidos_ano:
             mes = pedido.data_criacao.month
             total = float(pedido.total) if pedido.total else 0.0
@@ -735,14 +747,13 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
     Retorna dois arrays: lista de dias (1 a último do mês)
     e valores de vendas por dia (0 nos dias sem venda).
     """
-    # Usar timezone.localtime() para converter para timezone local configurado no Django
     agora_local = timezone.localtime()
     ano, mes = agora_local.year, agora_local.month
 
     ultimo_dia_mes = monthrange(ano, mes)[1]
     todos_dias = list(range(1, ultimo_dia_mes + 1))
 
-    # MUDANÇA: não filtrar por ano no Django, buscar todos e filtrar em Python
+    # Filtra pedidos do mês atual
     todos_pedidos = queryset.all()
     pedidos_mes = []
     
@@ -750,15 +761,11 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
         data_local = timezone.localtime(pedido.data_criacao)
         if data_local.year == ano and data_local.month == mes:
             pedidos_mes.append(pedido)
-    
-    for p in pedidos_mes:
-        data_local = timezone.localtime(p.data_criacao)
 
     try:
         if len(pedidos_mes) == 0:
             vendas_dict = {}
         else:
-            # Método manual usando timezone local
             vendas_dict = {}
             for pedido in pedidos_mes:
                 data_local = timezone.localtime(pedido.data_criacao)
@@ -776,18 +783,23 @@ def _agregar_vendas_mes_atual_por_dia(queryset):
     
     return labels, valores
 
-
 def _contagem_pedidos_por_status(queryset):
-    """
-    Conta pedidos por status.
-    """
-    try:
-        agregados = queryset.values('status').annotate(qtd=Count('id')).order_by('status')
-        labels = [row['status'] or 'Indefinido' for row in agregados]
-        values = [row['qtd'] for row in agregados]
-    except Exception as e:
-        labels = ['Sem dados']
-        values = [0]
+    """Conta pedidos por status"""
+    from django.db.models import Count
+    
+    status_counts = (
+        queryset
+        .values('status')
+        .annotate(count=Count('status'))
+        .order_by('status')
+    )
+    
+    labels = []
+    values = []
+    
+    for item in status_counts:
+        labels.append(item['status'])
+        values.append(item['count'])
     
     return labels, values
 
@@ -810,13 +822,11 @@ def detalhes_pedido_cliente(request, pedido_id):
     itens = pedido.itens.all()
 
     context = {
-        'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
-        'mini_mes_values_json': json.dumps(mini_values),
-        'vendas_mes': vendas_mes,
-        # outros dados que você já tinha no context...
+        "pedido": pedido,
+        "itens": itens,
     }
     
-    return render(request, 'loja/dashboard.html', context)
+    return render(request, "loja/detalhes_pedido_cliente.html", context)
 
 # jksdfklsdjf
 # branch teste oda

@@ -10,7 +10,7 @@
 </head>
 <body>
     <div class="container py-4">
-        <h2>📋 Detalhes do Pedido #{{ pedido.id }}</h2>
+        <h2>📋 Detalhes do Pedido #{{ pedido.numero_pedido }}</h2>
         <p><strong>Data:</strong> {{ pedido.data_criacao|date:"d/m/Y H:i" }}</p>
         <p><strong>Status:</strong> {{ pedido.status }}</p>
         <p><strong>Total:</strong> R$ {{ pedido.total }}</p>

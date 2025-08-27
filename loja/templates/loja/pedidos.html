@@ -63,7 +63,7 @@
             <tbody>
                 {% for pedido in pedidos %}
                 <tr>
-                    <td>#{{ pedido.id }}</td>
+                    <td>{{ pedido.numero_pedido }}</td>
                     <td>{{ pedido.cliente.username }}</td>
                     <td>
                         <span class="badge 
