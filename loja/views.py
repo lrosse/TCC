@@ -236,31 +236,43 @@ def criar_produto(request):
 
 @staff_required
 def listar_produtos(request):
+    # Pegando parâmetros da URL
     nome = request.GET.get("nome", "")
-    preco = request.GET.get("preco", "")
-    descricao = request.GET.get("descricao", "")
-    quantidade = request.GET.get("quantidade", "")
+    produto_id = request.GET.get("id", "")
+    preco_min = request.GET.get("preco_min", "")
+    preco_max = request.GET.get("preco_max", "")
+    quantidade_min = request.GET.get("quantidade_min", "")
+    quantidade_max = request.GET.get("quantidade_max", "")
 
     produtos = Produto.objects.all()
 
+    # Filtros
     if nome:
         produtos = produtos.filter(nome__icontains=nome)
-    if preco:
-        produtos = produtos.filter(preco__icontains=preco)
-    if descricao:
-        produtos = produtos.filter(descricao__icontains=descricao)
-    if quantidade:
-        produtos = produtos.filter(quantidade__icontains=quantidade)
+
+    if produto_id:
+        produtos = produtos.filter(id=produto_id)
+
+    if preco_min:
+        produtos = produtos.filter(preco__gte=preco_min)
+    if preco_max:
+        produtos = produtos.filter(preco__lte=preco_max)
+
+    if quantidade_min:
+        produtos = produtos.filter(quantidade__gte=quantidade_min)
+    if quantidade_max:
+        produtos = produtos.filter(quantidade__lte=quantidade_max)
 
     context = {
         "produtos": produtos,
         "nome": nome,
-        "preco": preco,
-        "descricao": descricao,
-        "quantidade": quantidade,
+        "id": produto_id,
+        "preco_min": preco_min,
+        "preco_max": preco_max,
+        "quantidade_min": quantidade_min,
+        "quantidade_max": quantidade_max,
     }
     return render(request, "loja/listar_produtos.html", context)
-
 
 @staff_required
 def editar_produto(request, produto_id):

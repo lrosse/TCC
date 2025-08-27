@@ -31,48 +31,52 @@
   </div>
 
   <!-- Tabela de produtos -->
-  <div class="table-responsive">
-    <table class="table table-bordered align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th style="width:8%">ID</th>
-          <th style="width:27%">Produto</th>
-          <th style="width:15%">Estoque Atual</th>
-          <th style="width:20%">Quantidade</th>
-          <th>Observação (opcional)</th>
-        </tr>
-      </thead>
-      <tbody id="tabela-produtos">
-        {% for p in produtos %}
-        <!-- data-busca inclui ID e nome (para o filtro funcionar com ambos) -->
-        <tr data-busca="{{ p.id }} {{ p.nome|lower }}">
-          <td>{{ p.id }}</td>
-          <td>{{ p.nome }}</td>
-          <td><span class="badge bg-secondary fs-6">{{ p.quantidade }}</span></td>
-          <td>
-            <input
-              type="number"
-              class="form-control qtd"
-              name="qtd_{{ p.id }}"
-              min="0" step="1"
-              inputmode="numeric"
-              placeholder="0">
-          </td>
-          <td>
-            <input
-              type="text"
-              class="form-control obs"
-              name="obs_{{ p.id }}"
-              placeholder="Motivo/observação (opcional)">
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <!-- Tabela de produtos -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-striped align-middle text-center">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Produto</th>
+              <th>Estoque Atual</th>
+              <th>Quantidade</th>
+              <th>Observação (opcional)</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-produtos">
+            {% for p in produtos %}
+            <tr data-busca="{{ p.id }} {{ p.nome|lower }}">
+              <td>{{ p.id }}</td>
+              <td>{{ p.nome }}</td>
+              <td>{{ p.quantidade }}</td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control qtd"
+                  name="qtd_{{ p.id }}"
+                  min="0" step="1"
+                  inputmode="numeric"
+                  placeholder="0">
+              </td>
+              <td>
+                <input
+                  type="text"
+                  class="form-control obs"
+                  name="obs_{{ p.id }}"
+                  placeholder="Motivo/observação (opcional)">
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </form>
 

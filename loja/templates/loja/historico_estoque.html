@@ -3,8 +3,8 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center my-4">
-        <h1 class="h3 text-success">Histórico de Movimentações</h1>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="fw-semibold mb-0">Histórico de estoque</h2>
         <a href="{% url 'entrada_estoque' %}" class="btn btn-outline-success">
             <i class="bi bi-box-arrow-in-down"></i> Nova Entrada
         </a>
@@ -13,39 +13,42 @@
     <!-- Barra de pesquisa principal e botão de filtro -->
     <form class="row g-3 align-items-end mb-3" onsubmit="return false;">
         <div class="col-md-4">
-            <label class="form-label">Nome do Produto</label>
             <input type="text" id="filtro-nome" class="form-control shadow-sm" placeholder="Digite o nome...">
         </div>
         <div class="col-auto">
             <label class="form-label d-block">&nbsp;</label>
-            <button class="btn btn-outline-secondary shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras">
+            <button class="btn btn-outline-secondary shadow-sm" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#filtrosExtras" 
+                    aria-expanded="false" aria-controls="filtrosExtras">
                 <i class="bi bi-funnel-fill"></i> Filtros
             </button>
         </div>
     </form>
 
-    <!-- Filtros colapsáveis -->
+    <!-- Filtros colapsáveis (sem card em volta, só inputs Bootstrap) -->
     <div class="collapse mb-4" id="filtrosExtras">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Data</label>
-                        <input type="date" id="filtro-data" class="form-control">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Tipo</label>
-                        <select id="filtro-tipo" class="form-select">
-                            <option value="">Todos</option>
-                            <option value="entrada">Entrada</option>
-                            <option value="saida">Saída</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">ID do Produto</label>
-                        <input type="text" id="filtro-id" class="form-control shadow-sm" placeholder="Ex.: 12">
-                    </div>
-                </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Data</label>
+                <input type="date" id="filtro-data" class="form-control shadow-sm">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <select id="filtro-tipo" class="form-select shadow-sm">
+                    <option value="">Todos</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saída</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">ID do Produto</label>
+                <input type="text" id="filtro-id" class="form-control shadow-sm" placeholder="Ex.: 12">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label d-block">&nbsp;</label>
+                <button type="button" id="btn-limpar" class="btn btn-outline-danger form-control">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
             </div>
         </div>
     </div>
@@ -68,22 +71,16 @@
                     </thead>
                     <tbody>
                         {% for mov in movimentacoes %}
-                        {# normaliza tipo: 'ajuste' -> 'saida' para filtro #}
-                        {% with tipo_norm=mov.tipo %}
-                          {% if mov.tipo == 'ajuste' %}
-                            {% with tipo_norm='saida' %}{% endwith %}
-                          {% endif %}
-                        {% endwith %}
                         <tr
                           data-id="{{ mov.produto.id }}"
                           data-nome="{{ mov.produto.nome|lower }}"
                           data-tipo="{% if mov.tipo == 'ajuste' %}saida{% else %}{{ mov.tipo }}{% endif %}"
                           data-date="{{ mov.data|date:'Y-m-d' }}"
                         >
-                            <td class="coluna-data">{{ mov.data|date:"d/m/Y" }}</td>
-                            <td class="coluna-id">{{ mov.produto.id }}</td>
-                            <td class="coluna-produto">{{ mov.produto.nome }}</td>
-                            <td class="coluna-tipo">
+                            <td>{{ mov.data|date:"d/m/Y" }}</td>
+                            <td>{{ mov.produto.id }}</td>
+                            <td>{{ mov.produto.nome }}</td>
+                            <td>
                                 {% if mov.tipo == 'entrada' %}
                                   <span class="badge bg-success">Entrada</span>
                                 {% elif mov.tipo == 'saida' or mov.tipo == 'ajuste' %}
@@ -114,16 +111,16 @@
 function filtrarTabela() {
   const idVal   = (document.getElementById('filtro-id').value || '').trim().toLowerCase();
   const nomeVal = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
-  const dataVal = (document.getElementById('filtro-data').value || '').trim();          // YYYY-MM-DD
-  const tipoVal = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase(); // '', 'entrada', 'saida'
+  const dataVal = (document.getElementById('filtro-data').value || '').trim();
+  const tipoVal = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase();
 
   const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
 
   linhas.forEach(linha => {
     const liId   = (linha.dataset.id || '').toLowerCase();
     const liNome = (linha.dataset.nome || '').toLowerCase();
-    const liDate = linha.dataset.date || '';   // YYYY-MM-DD
-    const liTipo = (linha.dataset.tipo || '').toLowerCase(); // entrada/saida
+    const liDate = linha.dataset.date || '';
+    const liTipo = (linha.dataset.tipo || '').toLowerCase();
 
     const condId   = !idVal   || liId.includes(idVal);
     const condNome = !nomeVal || liNome.includes(nomeVal);
@@ -134,14 +131,22 @@ function filtrarTabela() {
   });
 }
 
-// Eventos para aplicar o filtro ao digitar ou selecionar
+// Eventos
 ['filtro-id','filtro-nome','filtro-data','filtro-tipo'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener(id === 'filtro-tipo' ? 'change' : 'input', filtrarTabela);
 });
 
-// aplica uma vez no carregamento (caso haja valores predefinidos)
+// Botão limpar filtros
+document.getElementById('btn-limpar').addEventListener('click', () => {
+  ['filtro-id','filtro-nome','filtro-data','filtro-tipo'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  filtrarTabela();
+});
+
+// aplica no carregamento
 filtrarTabela();
 </script>
 {% endblock %}
