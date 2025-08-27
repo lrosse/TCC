@@ -104,6 +104,12 @@
 
               {# Se tiver página de perfil, descomente a linha abaixo e crie a rota 'perfil' #}
               {# <li><a class="dropdown-item" href="{% url 'perfil' %}"><i class="bi bi-person-circle me-2"></i>Minha conta</a></li> #}
+                <li>
+                    <a class="dropdown-item" href="{% url 'meus_pedidos' %}">
+                        <i class="bi bi-box-seam"></i> Meus Pedidos
+                    </a>
+                </li>
+                <li>
 
               {% if request.user.is_staff or request.user.is_superuser %}
                 <li><a class="dropdown-item" href="{% url 'dashboard' %}">

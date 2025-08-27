@@ -39,6 +39,8 @@ urlpatterns = [
     # Página de Relatórios (apenas staff/admin)
     path('relatorios/', views.relatorios, name='relatorios'),
 
+    # Página de Meus Pedidos (usuário comum)
+    path('meus_pedidos/', views.meus_pedidos, name='meus_pedidos'),
 
 ]
 
