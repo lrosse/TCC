@@ -53,6 +53,7 @@
                             <th>Status</th>
                             <th>Total</th>
                             <th>Endereço</th>
+                            <th>Detalhes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -71,6 +72,11 @@
                             </td>
                             <td>R$ {{ pedido.total }}</td>
                             <td>{{ pedido.endereco_entrega }}</td>
+                            <td>
+                                <a href="{% url 'detalhes_pedido_cliente' pedido.id %}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

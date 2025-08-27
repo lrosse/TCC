@@ -799,3 +799,18 @@ def meus_pedidos(request):
     """
     pedidos = Pedido.objects.filter(cliente=request.user).order_by('-data_criacao')
     return render(request, 'loja/meus_pedidos.html', {'pedidos': pedidos})
+
+@login_required
+def detalhes_pedido_cliente(request, pedido_id):
+    """
+    Mostra os detalhes de um pedido específico para o cliente logado.
+    - Garante que o usuário só veja os pedidos dele mesmo.
+    """
+    pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
+    itens = pedido.itens.all()
+
+    context = {
+        "pedido": pedido,
+        "itens": itens
+    }
+    return render(request, "loja/detalhes_pedido_cliente.html", context)
