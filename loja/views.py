@@ -791,48 +791,24 @@ def _contagem_pedidos_por_status(queryset):
     
     return labels, values
 
-@staff_required
-def dashboard(request):
-    from calendar import monthrange
-    import json
-    from django.utils import timezone
-    from django.db.models import Sum
-    
-    # Dados para o mini gráfico do mês atual
-    pedidos_pagos = Pedido.objects.filter(status='Pago')
-    
-    # Calcular vendas do mês atual
-    agora_local = timezone.localtime()
-    ano_atual, mes_atual = agora_local.year, agora_local.month
-    
-    # Gerar dados dia a dia do mês atual
-    ultimo_dia_mes = monthrange(ano_atual, mes_atual)[1]
-    todos_dias = list(range(1, ultimo_dia_mes + 1))
-    
-    # Filtrar pedidos pagos do mês atual
-    pedidos_mes_atual = []
-    for pedido in pedidos_pagos.all():
-        data_local = timezone.localtime(pedido.data_criacao)
-        if data_local.year == ano_atual and data_local.month == mes_atual:
-            pedidos_mes_atual.append((pedido, data_local))
-    
-    # Agrupar vendas por dia
-    vendas_por_dia = {}
-    for pedido, data_local in pedidos_mes_atual:
-        dia = data_local.day
-        total = float(pedido.total) if pedido.total else 0.0
-        
-        if dia not in vendas_por_dia:
-            vendas_por_dia[dia] = 0.0
-        vendas_por_dia[dia] += total
-    
-    # Preparar dados para o gráfico
-    mini_labels = [f"{dia:02d}" for dia in todos_dias]
-    mini_values = [vendas_por_dia.get(dia, 0) for dia in todos_dias]
-    
-    # Calcular total de vendas do mês
-    vendas_mes = sum(mini_values)
-    
+
+@login_required
+def meus_pedidos(request):
+    """
+    Exibe todos os pedidos feitos pelo usuário logado.
+    """
+    pedidos = Pedido.objects.filter(cliente=request.user).order_by('-data_criacao')
+    return render(request, 'loja/meus_pedidos.html', {'pedidos': pedidos})
+
+@login_required
+def detalhes_pedido_cliente(request, pedido_id):
+    """
+    Mostra os detalhes de um pedido específico para o cliente logado.
+    - Garante que o usuário só veja os pedidos dele mesmo.
+    """
+    pedido = get_object_or_404(Pedido, id=pedido_id, cliente=request.user)
+    itens = pedido.itens.all()
+
     context = {
         'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
         'mini_mes_values_json': json.dumps(mini_values),
@@ -844,10 +820,3 @@ def dashboard(request):
 
 # jksdfklsdjf
 # branch teste oda
-
-# lksdfjkldsjklfjklsdjklfsdfsfjklsjdkljklsf
-# ksjldfjklsdfjklsjfkl
-# ksjfjksdjkfsjkldf
-# ksfkdskjfsldkfjkdlsf
-# jklsdfksdjfsdf
-# lksjflsdkf
