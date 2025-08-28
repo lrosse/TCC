@@ -52,43 +52,47 @@
                         <h2 class="fw-bold">Cadastro de Usuário</h2>
                         <p class="text-muted">Crie sua conta para acessar o sistema</p>
                     </div>
-                    
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <!-- Estrutura correta para campos normais e checkboxes -->
-                        {% for field in form %}
-                            {% if field.field.widget.input_type == "checkbox" %}
-                                <div class="form-check">
-                                    {{ field }}
-                                    <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                </div>
-                            {% else %}
-                                <div class="form-floating mb-3">
-                                    {{ field }}
-                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                    {% if field.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in field.errors %}
-                                        {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
-                                    {% if field.help_text %}
-                                    <div class="form-text">{{ field.help_text }}</div>
-                                    {% endif %}
-                                </div>
+                        <form method="post">
+                            {% csrf_token %}
+                            {% if next %}
+                                <input type="hidden" name="next" value="{{ next }}">
                             {% endif %}
-                        {% endfor %}
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-cadastro">Registrar</button>
-                        </div>
-                        
-                        <div class="login-link">
-                            <p>Já tem uma conta? <a href="{% url 'login' %}" class="fw-bold text-decoration-none">Faça login</a></p>
-                        </div>
-                    </form>
+                            {% for field in form %}
+                                {% if field.field.widget.input_type == "checkbox" %}
+                                    <div class="form-check">
+                                        {{ field }}
+                                        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    </div>
+                                {% else %}
+                                    <div class="form-floating mb-3">
+                                        {{ field }}
+                                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                        {% if field.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in field.errors %}
+                                            {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                        {% if field.help_text %}
+                                        <div class="form-text">{{ field.help_text }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-success btn-cadastro">Registrar</button>
+                            </div>
+
+                            <div class="login-link">
+                                <p>Já tem uma conta? 
+                                <a href="{% url 'login' %}{% if next %}?next={{ next }}{% endif %}" 
+                                    class="fw-bold text-decoration-none">Faça login</a>
+                                </p>
+                            </div>
+                        </form>
                 </div>
             </div>
         </div>

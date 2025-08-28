@@ -59,31 +59,49 @@ def home(request):
     }
     return render(request, 'loja/home.html', context)
 
-
 def registrar(request):
+    next_url = request.GET.get("next") or request.POST.get("next")
+
     if request.method == "POST":
-        # Passa o usuário autenticado para o form conforme sua regra
         form = RegistroForm(request.POST, user=request.user)
         if form.is_valid():
             user = form.save()
-            login(request, user)  # Faz login automaticamente após o cadastro
-            return redirect('home')
+            login(request, user)
+
+            # 🔄 Migra carrinho da sessão para o banco
+            migrar_carrinho_sessao_para_usuario(request, user)
+
+            # 🔀 Redireciona para origem, se existir
+            return redirect(next_url or 'home')
     else:
         form = RegistroForm(user=request.user)
-    return render(request, 'loja/registrar.html', {'form': form})
 
+    return render(request, 'loja/registrar.html', {
+        'form': form,
+        'next': next_url
+    })
 
 def entrar(request):
+    next_url = request.GET.get("next") or request.POST.get("next")
+
     if request.method == "POST":
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            return redirect('home')
+
+            # 🔄 Migra carrinho da sessão para o banco
+            migrar_carrinho_sessao_para_usuario(request, user)
+
+            # 🔀 Redireciona para origem, se existir
+            return redirect(next_url or 'home')
     else:
         form = AuthenticationForm()
-    return render(request, 'loja/login.html', {'form': form})
 
+    return render(request, 'loja/login.html', {
+        'form': form,
+        'next': next_url
+    })
 
 def sair(request):
     logout(request)
@@ -438,51 +456,161 @@ def get_or_create_carrinho(usuario):
     return carrinho
 
 
-@login_required
 def adicionar_ao_carrinho(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
-    carrinho = get_or_create_carrinho(request.user)
-    item_carrinho, criado = ItemCarrinho.objects.get_or_create(
-        carrinho=carrinho,
-        produto=produto,
-        defaults={'preco_unitario': produto.preco, 'quantidade': 1}
-    )
-    if not criado:
-        item_carrinho.quantidade += 1
-        item_carrinho.save()
-    carrinho.calcular_total()
-    return redirect('ver_carrinho')
 
+    if request.user.is_authenticated:
+        # 🔒 Usuário logado → usa Carrinho do banco
+        carrinho = get_or_create_carrinho(request.user)
+        item_carrinho, criado = ItemCarrinho.objects.get_or_create(
+            carrinho=carrinho,
+            produto=produto,
+            defaults={'preco_unitario': produto.preco, 'quantidade': 1}
+        )
+        if not criado:
+            item_carrinho.quantidade += 1
+            item_carrinho.save()
+        carrinho.calcular_total()
+        messages.success(request, f"'{produto.nome}' foi adicionado ao seu carrinho.")
+        return redirect('ver_carrinho')
 
-@login_required
-def ver_carrinho(request):
-    carrinho = get_or_create_carrinho(request.user)
-    itens = ItemCarrinho.objects.filter(carrinho=carrinho)
-    total = carrinho.valor_total
-    return render(request, 'loja/carrinho.html', {'itens': itens, 'total': total})
+    else:
+        # 👤 Usuário anônimo → salva na sessão
+        carrinho_sessao = request.session.get("carrinho", {})
 
-
-@login_required
-def remover_do_carrinho(request, item_id):
-    item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
-    item.delete()
-    item.carrinho.calcular_total()
-    return redirect('ver_carrinho')
-
-
-@login_required
-def alterar_quantidade(request, item_id):
-    item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
-    if request.method == "POST":
-        qtd = int(request.POST.get('quantidade', 1))
-        if qtd > 0:
-            item.quantidade = qtd
-            item.save()
+        if str(produto_id) in carrinho_sessao:
+            carrinho_sessao[str(produto_id)]["quantidade"] += 1
         else:
-            item.delete()
-        item.carrinho.calcular_total()
-    return redirect('ver_carrinho')
+            carrinho_sessao[str(produto_id)] = {
+                "nome": produto.nome,
+                "preco_unitario": str(produto.preco),  # Decimal → string
+                "quantidade": 1,
+                "imagem": produto.imagem.url if produto.imagem else None,
+            }
 
+        request.session["carrinho"] = carrinho_sessao
+        request.session.modified = True  # Garante que a sessão será salva
+
+        messages.success(request, f"'{produto.nome}' foi adicionado ao seu carrinho (sessão).")
+        return redirect('ver_carrinho')
+
+
+def ver_carrinho(request):
+    if request.user.is_authenticated:
+        # 🔒 Usuário logado → usa carrinho do banco
+        carrinho = get_or_create_carrinho(request.user)
+        itens = ItemCarrinho.objects.filter(carrinho=carrinho)
+        total = carrinho.valor_total
+        return render(request, 'loja/carrinho.html', {
+            'itens': itens,
+            'total': total,
+            'sessao': False  # flag para template saber a origem
+        })
+
+    else:
+        # 👤 Usuário anônimo → usa carrinho da sessão
+        carrinho_sessao = request.session.get("carrinho", {})
+        itens = []
+        total = Decimal('0.00')
+
+        for produto_id, dados in carrinho_sessao.items():
+            subtotal = Decimal(dados["preco_unitario"]) * dados["quantidade"]
+            total += subtotal
+            itens.append({
+                "id": produto_id,
+                "nome": dados["nome"],
+                "quantidade": dados["quantidade"],
+                "preco_unitario": Decimal(dados["preco_unitario"]),
+                "subtotal": subtotal,
+                "imagem": dados.get("imagem"),
+            })
+
+        return render(request, 'loja/carrinho.html', {
+            'itens': itens,
+            'total': total,
+            'sessao': True  # flag para template saber a origem
+        })
+
+def remover_do_carrinho(request, item_id):
+    if request.user.is_authenticated:
+        # 🔒 Usuário logado → remove do banco
+        item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
+        item.delete()
+        item.carrinho.calcular_total()
+        return redirect('ver_carrinho')
+
+    else:
+        # 👤 Usuário anônimo → remove da sessão
+        carrinho_sessao = request.session.get("carrinho", {})
+        if str(item_id) in carrinho_sessao:
+            del carrinho_sessao[str(item_id)]
+            request.session["carrinho"] = carrinho_sessao
+            request.session.modified = True
+        return redirect('ver_carrinho')
+
+def alterar_quantidade(request, item_id):
+    if request.user.is_authenticated:
+        # 🔒 Usuário logado → altera no banco
+        item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
+        if request.method == "POST":
+            qtd = int(request.POST.get('quantidade', 1))
+            if qtd > 0:
+                item.quantidade = qtd
+                item.save()
+            else:
+                item.delete()
+            item.carrinho.calcular_total()
+        return redirect('ver_carrinho')
+
+    else:
+        # 👤 Usuário anônimo → altera na sessão
+        carrinho_sessao = request.session.get("carrinho", {})
+        if str(item_id) in carrinho_sessao:
+            try:
+                qtd = int(request.POST.get('quantidade', 1))
+            except ValueError:
+                qtd = 1
+
+            if qtd > 0:
+                carrinho_sessao[str(item_id)]["quantidade"] = qtd
+            else:
+                del carrinho_sessao[str(item_id)]
+
+            request.session["carrinho"] = carrinho_sessao
+            request.session.modified = True
+
+        return redirect('ver_carrinho')
+
+def migrar_carrinho_sessao_para_usuario(request, user):
+    carrinho_sessao = request.session.get("carrinho", {})
+    if not carrinho_sessao:
+        return
+    
+    carrinho = get_or_create_carrinho(user)
+
+    for produto_id, dados in carrinho_sessao.items():
+        try:
+            produto = Produto.objects.get(id=produto_id)
+        except Produto.DoesNotExist:
+            continue  # ignora produtos que não existem mais
+
+        item, criado = ItemCarrinho.objects.get_or_create(
+            carrinho=carrinho,
+            produto=produto,
+            defaults={
+                "preco_unitario": produto.preco,
+                "quantidade": dados["quantidade"]
+            }
+        )
+        if not criado:
+            item.quantidade += dados["quantidade"]
+            item.save()
+
+    carrinho.calcular_total()
+    # limpa carrinho da sessão
+    if "carrinho" in request.session:
+        del request.session["carrinho"]
+        request.session.modified = True
 
 @login_required
 def finalizar_compra(request):

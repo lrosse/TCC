@@ -75,36 +75,37 @@
             </div>
             {% endif %}
         </div>
-
-        <form method="post" action="{% url 'login' %}?next={{ request.GET.next }}">
-            {% csrf_token %}
-
-            {% for field in form %}
-            <div class="form-floating mb-3">
-                {{ field }}
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {% if field.errors %}
-                <div class="invalid-feedback d-block">
-                    {% for error in field.errors %}
-                    {{ error }}
-                    {% endfor %}
-                </div>
+            <form method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
                 {% endif %}
-                {% if field.help_text %}
-                <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-            </div>
-            {% endfor %}
 
-            <button type="submit" class="btn btn-primary btn-login">Entrar</button>
+                {% for field in form %}
+                <div class="form-floating mb-3">
+                    {{ field }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {% if field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in field.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                    {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-login">Entrar</button>
 
-            <div class="register-link">
-                <p class="mt-3">
-                    Não tem uma conta?
-                    <a href="{% url 'registrar' %}" class="fw-bold text-decoration-none">Registre-se</a>
-                </p>
-            </div>
-        </form>
+        <div class="register-link">
+            <p class="mt-3">
+                Não tem uma conta?
+                <a href="{% url 'registrar' %}{% if next %}?next={{ next }}{% endif %}" class="fw-bold text-decoration-none">Registre-se</a>
+            </p>
+        </div>
+    </form>
     </div>
 
     <!-- Bootstrap JS -->
