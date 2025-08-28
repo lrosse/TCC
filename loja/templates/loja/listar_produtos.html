@@ -5,68 +5,58 @@
 {% block content %}
 <div class="container-fluid px-4">
 
-    <!-- Cabeçalho + botão novo produto -->
-    <div class="d-flex justify-content-between align-items-center my-4">
-        <h1 class="h3 text-primary">Lista de Produtos</h1>
-        <a href="{% url 'criar_produto' %}" class="btn btn-primary shadow-sm">
-            <i class="bi bi-plus-circle"></i> Novo Produto
-        </a>
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="fw-semibold mb-0">Lista de produtos</h2>
+            <a href="{% url 'criar_produto' %}" class="btn btn-outline-success">
+        <i class="bi bi-box-arrow-in-down"></i> Nova produto
+            </a>
     </div>
+    
 
- <!-- Filtro com colapso -->
-<form method="get" class="mb-4">
-    <div class="row g-2 align-items-end">
-
-        <!-- Campo Nome (sempre visível) -->
+    <!-- Barra de busca + botão de filtros -->
+    <div class="row g-2 mb-3">
         <div class="col-md-4">
-            <label class="form-label">Nome</label>
-            <input type="text" name="nome" class="form-control" placeholder="Pesquisar por nome..." value="{{ nome }}">
+            <input type="text" id="filtro-nome" class="form-control" placeholder="Pesquisar por nome ou ID...">
         </div>
-
-        <!-- Botão de colapso -->
         <div class="col-auto">
-            <label class="form-label d-block">&nbsp;</label>
             <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras">
                 <i class="bi bi-funnel-fill"></i> Filtros
             </button>
         </div>
-
-        <!-- Botão de buscar -->
-        <div class="col-auto">
-            <label class="form-label d-block">&nbsp;</label>
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-search"></i> Buscar
-            </button>
-        </div>
     </div>
 
-    <!-- Campos extras colapsáveis -->
-    <div class="collapse mt-3" id="filtrosExtras">
+    <!-- Campos extras (colapsáveis) -->
+    <div class="collapse mb-3" id="filtrosExtras">
         <div class="row g-2">
-            <div class="col-md-3">
-                <label class="form-label">Preço</label>
-                <input type="text" name="preco" class="form-control" placeholder="Pesquisar por preço..." value="{{ preco }}">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Descrição</label>
-                <input type="text" name="descricao" class="form-control" placeholder="Pesquisar por descrição..." value="{{ descricao }}">
+            <div class="col-md-2">
+                <input type="number" id="preco-min" class="form-control" placeholder="Preço mín.">
             </div>
             <div class="col-md-2">
-                <label class="form-label">Quantidade</label>
-                <input type="text" name="quantidade" class="form-control" placeholder="Qtd..." value="{{ quantidade }}">
+                <input type="number" id="preco-max" class="form-control" placeholder="Preço máx.">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="qtd-min" class="form-control" placeholder="Qtd mín.">
+            </div>
+            <div class="col-md-2">
+                <input type="number" id="qtd-max" class="form-control" placeholder="Qtd máx.">
+            </div>
+            <div class="col-md-2 d-flex">
+                <button type="button" id="btn-limpar" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
             </div>
         </div>
     </div>
-</form>
 
-
-    <!-- Tabela de produtos -->
+    <!-- Tabela -->
     <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-striped align-middle text-center">
                     <thead class="table-dark">
                         <tr>
+                            <th>ID</th>
                             <th>Nome</th>
                             <th>Preço</th>
                             <th>Descrição</th>
@@ -74,9 +64,13 @@
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tabela-produtos">
                         {% for produto in produtos %}
-                        <tr>
+                        <tr data-id="{{ produto.id }}" 
+                            data-nome="{{ produto.nome|lower }}" 
+                            data-preco="{{ produto.preco }}" 
+                            data-qtd="{{ produto.quantidade }}">
+                            <td>{{ produto.id }}</td>
                             <td>{{ produto.nome }}</td>
                             <td>R$ {{ produto.preco }}</td>
                             <td>{{ produto.descricao|truncatechars:50 }}</td>
@@ -88,7 +82,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="5" class="text-muted text-center">Nenhum produto cadastrado.</td>
+                            <td colspan="6" class="text-muted text-center">Nenhum produto cadastrado.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -97,4 +91,52 @@
         </div>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+const filtroNome = document.getElementById("filtro-nome");
+const precoMin = document.getElementById("preco-min");
+const precoMax = document.getElementById("preco-max");
+const qtdMin = document.getElementById("qtd-min");
+const qtdMax = document.getElementById("qtd-max");
+const btnLimpar = document.getElementById("btn-limpar");
+
+const linhas = document.querySelectorAll("#tabela-produtos tr[data-id]");
+
+function aplicarFiltros() {
+    const termo = filtroNome.value.trim().toLowerCase();
+    const pMin = parseFloat(precoMin?.value) || 0;
+    const pMax = parseFloat(precoMax?.value) || Infinity;
+    const qMin = parseInt(qtdMin?.value) || 0;
+    const qMax = parseInt(qtdMax?.value) || Infinity;
+
+    linhas.forEach(tr => {
+        const id = tr.dataset.id;
+        const nome = tr.dataset.nome;
+        const preco = parseFloat(tr.dataset.preco);
+        const qtd = parseInt(tr.dataset.qtd);
+
+        const matchNome = nome.includes(termo) || id.includes(termo);
+        const matchPreco = preco >= pMin && preco <= pMax;
+        const matchQtd = qtd >= qMin && qtd <= qMax;
+
+        tr.style.display = (matchNome && matchPreco && matchQtd) ? "" : "none";
+    });
+}
+
+// Escuta os campos
+[filtroNome, precoMin, precoMax, qtdMin, qtdMax].forEach(el => {
+    el?.addEventListener("input", aplicarFiltros);
+});
+
+// Botão limpar filtros extras
+btnLimpar.addEventListener("click", () => {
+    precoMin.value = "";
+    precoMax.value = "";
+    qtdMin.value = "";
+    qtdMax.value = "";
+    aplicarFiltros();
+});
+</script>
+{% endblock %}
 {% endblock %}
