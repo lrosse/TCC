@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem
+from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem, Feedback
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
-from .forms import RegistroForm
+from .forms import RegistroForm, FeedbackForm
 from django.views.decorators.http import require_POST
 from .decorators import staff_required
 from django.contrib.auth.models import User
@@ -10,16 +10,13 @@ from django.contrib import messages
 from .models import MovimentacaoEstoque
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.db.models import Q
-from django.db.models import Sum, Count  # ✅ Count para agregações por status
+from django.db.models import Sum, Count, Avg
 from django.db import transaction
 from urllib.parse import quote
 from decimal import Decimal
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth, ExtractDay 
 from calendar import monthrange
-from django.db.models.functions import Coalesce
-from django.db.models import Sum, Count, DecimalField, Value
 from django.db.models.functions import ExtractMonth, ExtractDay, Coalesce
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -325,11 +322,25 @@ def excluir_produto(request, produto_id):
 
     return render(request, 'loja/excluir_produto.html', {'produto': produto})
 
-
 def produto_detalhe(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
-    return render(request, 'loja/produto_detalhe.html', {'produto': produto})
 
+    if request.user.is_staff:  
+        # Admin vê todos os feedbacks
+        feedbacks = produto.feedbacks.select_related("usuario").order_by("-data_criacao")
+    else:
+        # Clientes só veem feedbacks aprovados
+        feedbacks = produto.feedbacks.filter(visivel=True).select_related("usuario").order_by("-data_criacao")
+
+    media_nota = feedbacks.aggregate(Avg("nota"))["nota__avg"] or 0
+    media_nota = round(media_nota, 1)
+
+    context = {
+        "produto": produto,
+        "feedbacks": feedbacks,
+        "media_nota": media_nota,
+    }
+    return render(request, "loja/produto_detalhe.html", context)
 
 @staff_required
 def entrada_estoque(request):
@@ -1049,5 +1060,93 @@ def detalhes_pedido_cliente(request, pedido_id):
     
     return render(request, "loja/detalhes_pedido_cliente.html", context)
 
-# jksdfklsdjf
-# branch teste oda
+# ============================
+# ✅ NOVA VIEW: FESDBACKS
+# ============================
+@login_required
+def adicionar_feedback(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    if request.method == "POST":
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.usuario = request.user
+            feedback.produto = produto
+            feedback.save()
+            messages.success(request, "Obrigado pelo seu feedback!")
+            return redirect("produto_detalhe", produto_id=produto.id)
+    else:
+        form = FeedbackForm()
+
+    return render(request, "loja/adicionar_feedback.html", {
+        "form": form,
+        "produto": produto
+    })
+
+@staff_required
+def listar_feedbacks(request):
+    feedbacks = Feedback.objects.select_related("usuario", "produto").order_by("-data_criacao")
+
+    # Filtros
+    usuario = request.GET.get("usuario")
+    produto = request.GET.get("produto")
+    nota = request.GET.get("nota")
+    status = request.GET.get("status")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if usuario:
+        feedbacks = feedbacks.filter(usuario__username__icontains=usuario)
+    if produto:
+        feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+    if nota:
+        feedbacks = feedbacks.filter(nota=nota)
+    if status == "visivel":
+        feedbacks = feedbacks.filter(visivel=True)
+    elif status == "oculto":
+        feedbacks = feedbacks.filter(visivel=False)
+    if data_inicio:
+        feedbacks = feedbacks.filter(data_criacao__date__gte=data_inicio)
+    if data_fim:
+        feedbacks = feedbacks.filter(data_criacao__date__lte=data_fim)
+
+    return render(request, "loja/listar_feedbacks.html", {"feedbacks": feedbacks})
+
+
+@staff_required
+def detalhes_feedback(request, feedback_id):
+    feedback = get_object_or_404(Feedback, id=feedback_id)
+
+    if request.method == "POST":
+        # Atualiza visibilidade
+        novo_status = request.POST.get("visivel")
+        feedback.visivel = True if novo_status == "on" else False
+        feedback.save()
+        messages.success(request, "Feedback atualizado com sucesso.")
+        return redirect("listar_feedbacks")
+
+    return render(request, "loja/detalhes_feedback.html", {"feedback": feedback})
+
+@staff_required
+@require_POST
+def atualizar_feedbacks_lote(request):
+    feedback_ids = request.POST.getlist("feedbacks")
+    visibilidade = request.POST.get("visibilidade")
+
+    if not feedback_ids:
+        messages.warning(request, "Nenhum feedback selecionado.")
+        return redirect("listar_feedbacks")
+
+    feedbacks = Feedback.objects.filter(id__in=feedback_ids)
+
+    if visibilidade == "visivel":
+        feedbacks.update(visivel=True)
+        messages.success(request, f"{feedbacks.count()} feedback(s) marcados como visíveis.")
+    elif visibilidade == "oculto":
+        feedbacks.update(visivel=False)
+        messages.success(request, f"{feedbacks.count()} feedback(s) marcados como ocultos.")
+    else:
+        messages.error(request, "Ação inválida.")
+
+    return redirect("listar_feedbacks")

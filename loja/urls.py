@@ -43,9 +43,12 @@ urlpatterns = [
     # Página de Meus Pedidos (usuário comum)
     path('meus_pedidos/', views.meus_pedidos, name='meus_pedidos'),
     path('meus_pedidos/<int:pedido_id>/', views.detalhes_pedido_cliente, name='detalhes_pedido_cliente'),
-
-
-
+    
+    # Página de Feedbacks
+    path('produto/<int:produto_id>/feedback/', views.adicionar_feedback, name='adicionar_feedback'),
+    path('feedbacks/', views.listar_feedbacks, name='listar_feedbacks'),
+    path('feedbacks/<int:feedback_id>/', views.detalhes_feedback, name='detalhes_feedback'),
+    path('feedbacks/atualizar-lote/', views.atualizar_feedbacks_lote, name='atualizar_feedbacks_lote'),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

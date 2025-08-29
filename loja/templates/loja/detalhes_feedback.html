@@ -1,0 +1,52 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Detalhes do Feedback{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h2 class="fw-semibold mb-4">Detalhes do Feedback</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p><strong>Usuário:</strong> {{ feedback.usuario.username }}</p>
+            <p><strong>Produto:</strong> {% if feedback.produto %} {{ feedback.produto.nome }} {% else %} — {% endif %}</p>
+            <p><strong>Nota:</strong>
+                <span class="text-warning">
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= feedback.nota %}
+                            <i class="bi bi-star-fill"></i>
+                        {% else %}
+                            <i class="bi bi-star"></i>
+                        {% endif %}
+                    {% endfor %}
+                </span>
+                ({{ feedback.nota }}/5)
+            </p>
+            <p><strong>Comentário:</strong><br>{{ feedback.comentario|default:"(Sem comentário)" }}</p>
+            <p><strong>Data:</strong> {{ feedback.data_criacao|date:"d/m/Y H:i" }}</p>
+            <p><strong>Status:</strong> 
+                {% if feedback.visivel %}
+                    <span class="badge bg-success">Visível</span>
+                {% else %}
+                    <span class="badge bg-secondary">Oculto</span>
+                {% endif %}
+            </p>
+        </div>
+
+        <div class="card-footer">
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="visivel" name="visivel" {% if feedback.visivel %}checked{% endif %}>
+                    <label class="form-check-label" for="visivel">
+                        Tornar este feedback visível no site
+                    </label>
+                </div>
+                <div class="mt-3">
+                    <a href="{% url 'listar_feedbacks' %}" class="btn btn-secondary">Voltar</a>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Gerenciar Feedbacks{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="fw-semibold mb-0">Gerenciar Feedbacks</h2>
+    </div>
+
+    <!-- Barra de busca + botão de filtros -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-4">
+            <input type="text" id="filtro-busca" class="form-control" placeholder="Pesquisar por usuário, produto ou comentário...">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras">
+                <i class="bi bi-funnel-fill"></i> Filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros extras -->
+    <div class="collapse mb-3" id="filtrosExtras">
+        <div class="row g-2">
+            <div class="col-md-2">
+                <select id="filtro-nota" class="form-select">
+                    <option value="">Todas notas</option>
+                    <option value="1">1 estrela</option>
+                    <option value="2">2 estrelas</option>
+                    <option value="3">3 estrelas</option>
+                    <option value="4">4 estrelas</option>
+                    <option value="5">5 estrelas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="filtro-status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="visivel">Visível</option>
+                    <option value="oculto">Oculto</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="filtro-data-inicio" class="form-control">
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="filtro-data-fim" class="form-control">
+            </div>
+            <div class="col-md-2 d-flex">
+                <button type="button" id="btn-limpar" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form de atualização em lote -->
+    <form method="post" action="{% url 'atualizar_feedbacks_lote' %}">
+        {% csrf_token %}
+        <div class="mb-3 d-flex align-items-center">
+            <select name="visibilidade" class="form-select w-auto me-2">
+                <option value="visivel">Marcar como Visível</option>
+                <option value="oculto">Marcar como Oculto</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Aplicar em Lote</button>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle text-center">
+                        <thead class="table-dark">
+                            <tr>
+                                <th></th>
+                                <th>Usuário</th>
+                                <th>Produto</th>
+                                <th>Nota</th>
+                                <th>Comentário</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-feedbacks">
+                            {% for f in feedbacks %}
+                            <tr data-usuario="{{ f.usuario.username|lower }}" 
+                                data-produto="{% if f.produto %}{{ f.produto.nome|lower }}{% else %}—{% endif %}"
+                                data-nota="{{ f.nota }}"
+                                data-status="{% if f.visivel %}visivel{% else %}oculto{% endif %}"
+                                data-data="{{ f.data_criacao|date:'Y-m-d' }}"
+                                data-comentario="{{ f.comentario|lower }}"
+                                onclick="if(!event.target.closest('input[type=checkbox]')) { window.location='{% url 'detalhes_feedback' f.id %}'; }"
+                                style="cursor:pointer;">
+                                <td><input type="checkbox" name="feedbacks" value="{{ f.id }}"></td>
+                                <td>{{ f.usuario.username }}</td>
+                                <td>{% if f.produto %}{{ f.produto.nome }}{% else %}—{% endif %}</td>
+                                <td>{{ f.nota }}</td>
+                                <td>{{ f.comentario|default:"(Sem comentário)" }}</td>
+                                <td>{{ f.data_criacao|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if f.visivel %}
+                                        <span class="badge bg-success">Visível</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Oculto</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-muted text-center">Nenhum feedback encontrado.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script>
+const filtroBusca = document.getElementById("filtro-busca");
+const filtroNota = document.getElementById("filtro-nota");
+const filtroStatus = document.getElementById("filtro-status");
+const filtroDataInicio = document.getElementById("filtro-data-inicio");
+const filtroDataFim = document.getElementById("filtro-data-fim");
+const btnLimpar = document.getElementById("btn-limpar");
+const selectAll = document.getElementById("select-all");
+
+const linhas = document.querySelectorAll("#tabela-feedbacks tr[data-usuario]");
+
+function aplicarFiltros() {
+    const termo = filtroBusca.value.trim().toLowerCase();
+    const nota = filtroNota.value;
+    const status = filtroStatus.value;
+    const dataInicio = filtroDataInicio.value;
+    const dataFim = filtroDataFim.value;
+
+    linhas.forEach(tr => {
+        const usuario = tr.dataset.usuario;
+        const produto = tr.dataset.produto;
+        const comentario = tr.dataset.comentario;
+        const notaTr = tr.dataset.nota;
+        const statusTr = tr.dataset.status;
+        const dataTr = tr.dataset.data;
+
+        const matchBusca = usuario.includes(termo) || produto.includes(termo) || comentario.includes(termo);
+        const matchNota = !nota || notaTr === nota;
+        const matchStatus = !status || statusTr === status;
+        const matchDataInicio = !dataInicio || dataTr >= dataInicio;
+        const matchDataFim = !dataFim || dataTr <= dataFim;
+
+        tr.style.display = (matchBusca && matchNota && matchStatus && matchDataInicio && matchDataFim) ? "" : "none";
+    });
+}
+
+// Filtros automáticos
+[filtroBusca, filtroNota, filtroStatus, filtroDataInicio, filtroDataFim].forEach(el => {
+    el?.addEventListener("input", aplicarFiltros);
+});
+
+// Botão limpar
+btnLimpar.addEventListener("click", () => {
+    filtroBusca.value = "";
+    filtroNota.value = "";
+    filtroStatus.value = "";
+    filtroDataInicio.value = "";
+    filtroDataFim.value = "";
+    aplicarFiltros();
+});
+
+// Selecionar todos
+selectAll.addEventListener("change", function(){
+    document.querySelectorAll('input[name="feedbacks"]').forEach(cb => cb.checked = this.checked);
+});
+</script>
+{% endblock %}
+{% endblock %}

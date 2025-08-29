@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import uuid
 
-
 class Produto(models.Model):
     nome = models.CharField(max_length=200)
     descricao = models.TextField()
@@ -114,3 +113,29 @@ class PedidoItem(models.Model):
 
     def __str__(self):
         return f"{self.quantidade}x {self.produto.nome} no Pedido #{self.pedido.id}"
+
+# ------------------------------
+# Model para armazenar feedbacks
+# ------------------------------
+class Feedback(models.Model):
+    NOTA_CHOICES = [
+        (1, "1 - Péssimo"),
+        (2, "2 - Ruim"),
+        (3, "3 - Regular"),
+        (4, "4 - Bom"),
+        (5, "5 - Excelente"),
+    ]
+
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name="feedbacks")
+    produto = models.ForeignKey("Produto", on_delete=models.CASCADE, related_name="feedbacks", null=True, blank=True)
+    pedido = models.ForeignKey("Pedido", on_delete=models.CASCADE, related_name="feedbacks", null=True, blank=True)
+
+    nota = models.PositiveSmallIntegerField(choices=NOTA_CHOICES)
+    comentario = models.TextField(blank=True, null=True)
+    visivel = models.BooleanField(default=True)  # 👈 novo campo
+
+    data_criacao = models.DateTimeField(default=timezone.now)
+    data_atualizacao = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.usuario.username} - {self.nota}⭐ ({'visível' if self.visivel else 'oculto'})"

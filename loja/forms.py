@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from .models import Feedback
 
 class RegistroForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -34,3 +35,12 @@ class RegistroForm(forms.ModelForm):
         if commit:
             user.save()
         return user
+    
+class FeedbackForm(forms.ModelForm):
+    class Meta:
+        model = Feedback
+        fields = ['nota', 'comentario']
+        widgets = {
+            'nota': forms.HiddenInput(),  # campo oculto, controlado via JS
+            'comentario': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

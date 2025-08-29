@@ -1,5 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
-
+{% load static %}
 {% block title %}Relatórios{% endblock %}
 
 {% block content %}
@@ -79,7 +79,7 @@
 
 {% block extra_js %}
   <!-- Chart.js (se já estiver incluso no layout, remova para evitar duplicar) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'loja/js/chart.js' %}"></script>
 
   <script>
     // Dados injetados pela view

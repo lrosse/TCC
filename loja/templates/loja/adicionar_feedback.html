@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliar Produto</title>
+    <!-- Bootstrap CSS + Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body { background-color: #f8f9fa; }
+        .product-img {
+            max-height: 220px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .star-rating {
+            display: flex;
+            gap: 5px;
+            font-size: 2rem;
+        }
+        .star {
+            cursor: pointer;
+            color: #ddd;
+            transition: color 0.2s, transform 0.2s;
+        }
+        .star.hovered,
+        .star.selected {
+            color: #ffc107;
+        }
+        .star:hover {
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="row g-0">
+                    <!-- Imagem do produto -->
+                    <div class="col-md-5 d-flex align-items-center justify-content-center bg-light p-3">
+                        {% if produto.imagem %}
+                            <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="img-fluid product-img">
+                        {% else %}
+                            <i class="bi bi-box-seam display-4 text-muted"></i>
+                        {% endif %}
+                    </div>
+
+                    <!-- Formulário -->
+                    <div class="col-md-7">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2 text-primary fw-bold">{{ produto.nome }}</h5>
+                            <p class="text-muted small">{{ produto.descricao|truncatechars:80 }}</p>
+                            <hr>
+
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label class="form-label">Sua Nota</label>
+                                    <div class="star-rating" id="starRating">
+                                        <i class="bi bi-star-fill star" data-value="1"></i>
+                                        <i class="bi bi-star-fill star" data-value="2"></i>
+                                        <i class="bi bi-star-fill star" data-value="3"></i>
+                                        <i class="bi bi-star-fill star" data-value="4"></i>
+                                        <i class="bi bi-star-fill star" data-value="5"></i>
+                                    </div>
+                                    {{ form.nota }}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="id_comentario" class="form-label">Comentário</label>
+                                    {{ form.comentario }}
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'produto_detalhe' produto.id %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left"></i> Voltar
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-send"></i> Enviar Feedback
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div> <!-- row -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const stars = document.querySelectorAll(".star");
+    const hiddenInput = document.getElementById("id_nota");
+
+    stars.forEach(star => {
+        star.addEventListener("mouseover", function () {
+            resetHover();
+            this.classList.add("hovered");
+            let val = parseInt(this.dataset.value);
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= val) s.classList.add("hovered");
+            });
+        });
+
+        star.addEventListener("click", function () {
+            let val = this.dataset.value;
+            hiddenInput.value = val;
+            resetSelection();
+            stars.forEach(s => {
+                if (parseInt(s.dataset.value) <= val) s.classList.add("selected");
+            });
+        });
+
+        star.addEventListener("mouseout", function () {
+            resetHover();
+        });
+    });
+
+    function resetHover() {
+        stars.forEach(s => s.classList.remove("hovered"));
+    }
+
+    function resetSelection() {
+        stars.forEach(s => s.classList.remove("selected"));
+    }
+</script>
+</body>
+</html>

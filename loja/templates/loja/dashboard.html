@@ -1,5 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
-
+{% load static %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -83,7 +83,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'loja/js/chart.js' %}"></script>
 <script>
   const miniLabels = {{ mini_mes_labels_json|safe }};
 const miniValues = {{ mini_mes_values_json|safe }};
