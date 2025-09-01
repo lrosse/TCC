@@ -17,15 +17,21 @@
         }
 
         .product-card {
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
         }
 
-        .product-card:hover { transform: scale(1.02); }
-
-        .product-img { height: 200px; object-fit: cover; }
+        /* 🔹 Altura fixa para imagens */
+        .product-img {
+            height: 250px;
+            object-fit: cover;
+            width: 100%;
+        }
 
         .btn-cart { width: 100%; }
 
@@ -173,16 +179,23 @@
   <h1 class="text-center text-primary mb-5">Vitrine de Produtos</h1>
   <div class="row">
     {% for produto in produtos %}
-      <div class="col-md-4 mb-4">
+      <div class="col-md-3 col-sm-6 mb-4">
         <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
-          <div class="card h-100 shadow-sm">
+          <div class="card h-100 shadow-sm product-card">
+            
+            <!-- Imagem do produto (padronizada) -->
             {% if produto.imagem %}
-              <img src="{{ produto.imagem.url }}" class="card-img-top" alt="{{ produto.nome }}">
+              <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="{{ produto.nome }}">
+            {% else %}
+              <div class="d-flex align-items-center justify-content-center bg-light product-img">
+                <i class="bi bi-image text-muted" style="font-size:2rem;"></i>
+              </div>
             {% endif %}
-            <div class="card-body">
-              <h5 class="card-title">{{ produto.nome }}</h5>
-              <p class="card-text text-muted">{{ produto.descricao|truncatechars:80 }}</p>
-              <p class="card-text fw-bold text-success">R$ {{ produto.preco }}</p>
+            
+            <!-- Corpo do card -->
+            <div class="card-body text-center">
+              <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
+              <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
             </div>
           </div>
         </a>

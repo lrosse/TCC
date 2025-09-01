@@ -227,6 +227,23 @@ def dashboard(request):
         'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
         'mini_mes_values_json': json.dumps(mini_values),
     }
+
+    # Resumo dos pedidos
+    pedidos_pendentes = Pedido.objects.filter(status="Pendente").count()
+    pedidos_pagos = Pedido.objects.filter(status="Pago").count()
+    pedidos_cancelados = Pedido.objects.filter(status="Cancelado").count()
+
+    # Últimos 3 pedidos
+    ultimos_pedidos = Pedido.objects.select_related("cliente").order_by("-data_criacao")[:3]
+
+    ctx.update({
+        "pedidos_pendentes": pedidos_pendentes,
+        "pedidos_pagos": pedidos_pagos,
+        "pedidos_cancelados": pedidos_cancelados,
+        "ultimos_pedidos": ultimos_pedidos,
+    })
+
+
     return render(request, 'loja/dashboard.html', ctx)
 
 def criar_produto(request):

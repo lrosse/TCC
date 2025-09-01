@@ -73,14 +73,18 @@
                     <table class="table table-striped align-middle text-center">
                         <thead class="table-dark">
                             <tr>
-                                <th></th>
+                                <!-- 🔹 Apenas botão "Selecionar Todos" -->
+                                <th class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-light" id="btnSelecionarTodos">
+                                        Selecionar Todos
+                                    </button>
+                                </th>
                                 <th>Código do Pedido</th>
                                 <th>Cliente</th>
                                 <th>Status</th>
                                 <th>Valor Total</th>
                                 <th>Data</th>
                                 <th>Ações</th>
-
                             </tr>
                         </thead>
                         <tbody>
@@ -142,9 +146,24 @@
 
 <!-- Script para selecionar todos -->
 <script>
-document.getElementById('selecionarTodos').addEventListener('change', function() {
-    let checkboxes = document.querySelectorAll('input[name="pedidos"]');
-    checkboxes.forEach(cb => cb.checked = this.checked);
+const btnSelecionarTodos = document.getElementById('btnSelecionarTodos');
+
+// 🔹 Função para pegar todos os checkboxes
+function getCheckboxes() {
+    return document.querySelectorAll('input[name="pedidos"]');
+}
+
+// 🔹 Estado atual (se todos estão marcados ou não)
+let todosSelecionados = false;
+
+// 🔹 Clique no botão alterna entre marcar e desmarcar todos
+btnSelecionarTodos.addEventListener('click', function() {
+    const checkboxes = getCheckboxes();
+    todosSelecionados = !todosSelecionados;
+
+    checkboxes.forEach(cb => cb.checked = todosSelecionados);
+
+    btnSelecionarTodos.textContent = todosSelecionados ? "Desmarcar Todos" : "Selecionar Todos";
 });
 </script>
 {% endblock %}
