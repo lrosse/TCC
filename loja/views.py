@@ -25,6 +25,7 @@ from django.db import transaction
 from django.conf import settings
 from urllib.parse import quote
 from decimal import Decimal
+from django.http import JsonResponse
 
 
 # 👇 extras para serializar dados pro Chart.js
@@ -639,6 +640,37 @@ def migrar_carrinho_sessao_para_usuario(request, user):
     if "carrinho" in request.session:
         del request.session["carrinho"]
         request.session.modified = True
+
+def adicionar_carrinho(request, produto_id):
+    produto = get_object_or_404(Produto, id=produto_id)
+
+    if request.user.is_authenticated:
+        carrinho, _ = Carrinho.objects.get_or_create(usuario=request.user)
+    else:
+        carrinho_id = request.session.get("carrinho_id")
+        if carrinho_id:
+            carrinho = Carrinho.objects.get(id=carrinho_id)
+        else:
+            carrinho = Carrinho.objects.create()
+            request.session["carrinho_id"] = carrinho.id
+
+    item, created = ItemCarrinho.objects.get_or_create(
+        carrinho=carrinho,
+        produto=produto,
+        defaults={"quantidade": 1, "preco_unitario": produto.preco}
+    )
+    if not created:
+        item.quantidade += 1
+        item.save()
+
+    total_itens = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
+    request.session["carrinho_itens"] = total_itens
+
+    # 🔹 Retorna JSON sempre que chamado via AJAX
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"success": True, "total_itens": total_itens})
+
+    return JsonResponse({"success": False})
 
 @login_required
 def finalizar_compra(request):

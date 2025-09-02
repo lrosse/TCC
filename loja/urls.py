@@ -49,6 +49,10 @@ urlpatterns = [
     path('feedbacks/', views.listar_feedbacks, name='listar_feedbacks'),
     path('feedbacks/<int:feedback_id>/', views.detalhes_feedback, name='detalhes_feedback'),
     path('feedbacks/atualizar-lote/', views.atualizar_feedbacks_lote, name='atualizar_feedbacks_lote'),
+
+    # API para adicionar ao carrinho via AJAX
+    path("carrinho/adicionar/<int:produto_id>/", views.adicionar_carrinho, name="adicionar_carrinho"),
+
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento
