@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_gestao
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -52,6 +52,13 @@ urlpatterns = [
 
     # API para adicionar ao carrinho via AJAX
     path("carrinho/adicionar/<int:produto_id>/", views.adicionar_carrinho, name="adicionar_carrinho"),
+
+    # Gestão
+    path("gestao/", views_gestao.gestao_index, name="gestao_index"),
+    path("gestao/estoque/", views_gestao.gestao_estoque, name="gestao_estoque"),
+
+    
+
 
 ]
 
