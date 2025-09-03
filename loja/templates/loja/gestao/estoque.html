@@ -3,7 +3,102 @@
 
 {% block content %}
 <div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-4">Gestão de Estoque</h2>
-  <p class="text-muted">Aqui será exibido o controle de estoque futuramente.</p>
+
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-semibold">Gestão de Estoque</h2>
+  </div>
+
+<!-- Row de Cards -->
+<div class="row g-4 mb-4">
+
+  <!-- Card: Total de Produtos -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-box-seam display-5 text-primary mb-2"></i>
+        <h6 class="fw-semibold">Total de Produtos</h6>
+        <p class="fs-4 fw-bold">{{ total_produtos }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Produtos com Estoque Baixo -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-exclamation-triangle display-5 text-warning mb-2"></i>
+        <h6 class="fw-semibold">Estoque Baixo</h6>
+        <p class="fs-4 fw-bold">{{ produtos_baixo_estoque }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Última Movimentação -->
+  <div class="col-md-4">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-clock-history display-5 text-success mb-2"></i>
+        <h6 class="fw-semibold">Última Movimentação</h6>
+        <p class="fs-6">{{ ultima_movimentacao }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  <!-- Barra de Pesquisa + Botão Filtro -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+      <form class="d-flex" method="GET">
+        <input type="text" class="form-control me-2" placeholder="Buscar produto...">
+        <button type="submit" class="btn btn-outline-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <!-- Botão de Filtro -->
+        <button type="button" class="btn btn-outline-secondary">
+          <i class="bi bi-funnel"></i> Filtros
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabela de Produtos com Barra de Estoque -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Produtos em Estoque</h5>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Produto</th>
+              <th>Estoque</th>
+              <th>Última atualização</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in tabela_produtos %}
+            <tr>
+                <td>{{ p.nome }}</td>
+                <td style="width: 250px;">
+                <div class="progress" style="height: 20px;">
+                    <div class="progress-bar {{ p.cor }}" role="progressbar" style="width: {{ p.percentual }}%;">
+                    {{ p.quantidade }}
+                    </div>
+                </div>
+                </td>
+                <td>{{ p.ultima_atualizacao }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center text-muted">Nenhum produto encontrado</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
