@@ -1,0 +1,148 @@
+<!-- templates/loja/_navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'home' %}">Minha Loja</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+
+      <!-- 🔹 Barra de pesquisa → aparece só na Home -->
+      {% if request.resolver_match.url_name == "home" %}
+      <div class="mx-auto">
+        <form class="d-flex" role="search" method="GET" action="{% url 'home' %}" id="formBusca">
+          <input class="form-control form-control-sm me-2" type="search" name="q"
+                 placeholder="Buscar produtos..." value="{{ request.GET.q }}">
+          <button class="btn btn-outline-light btn-sm me-2" type="submit"><i class="bi bi-search"></i></button>
+          <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras">
+            <i class="bi bi-funnel"></i>
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- 🔹 Direita -->
+      <div class="d-flex align-items-center gap-3 ms-auto">
+
+        <!-- Carrinho → aparece sempre -->
+        <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
+          <i class="bi bi-cart3 text-white cart-icon"></i>
+          <span id="cartBadge" class="cart-badge {% if not request.session.carrinho_itens %}d-none{% endif %}">
+            {{ request.session.carrinho_itens|default:0 }}
+          </span>
+        </a>
+
+        <!-- Perfil -->
+        <div class="dropdown navbar-profile">
+          <button class="btn p-0 border-0 bg-transparent d-flex align-items-center">
+            {% if request.user.is_authenticated %}
+              {% if request.user.get_full_name %}
+                <div class="perfil-avatar">{{ request.user.get_full_name|slice:":1"|upper }}</div>
+              {% elif request.user.username %}
+                <div class="perfil-avatar">{{ request.user.username|slice:":1"|upper }}</div>
+              {% else %}
+                <div class="perfil-avatar"><i class="bi bi-person"></i></div>
+              {% endif %}
+            {% else %}
+              <div class="perfil-avatar"><i class="bi bi-person"></i></div>
+            {% endif %}
+            <i class="bi bi-caret-down-fill ms-2 small text-muted"></i>
+          </button>
+
+          <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2">
+            {% if request.user.is_authenticated %}
+              <li class="px-3 py-2 text-muted small">Olá, <strong>{{ request.user.username }}</strong></li>
+              <li><hr class="dropdown-divider"></li>
+
+              <li>
+                <a class="dropdown-item" href="{% url 'meus_pedidos' %}">
+                  <i class="bi bi-box-seam me-2"></i>Meus Pedidos
+                </a>
+              </li>
+
+              {% if request.user.is_staff or request.user.is_superuser %}
+              <li>
+                <a class="dropdown-item" href="{% url 'dashboard' %}">
+                  <i class="bi bi-speedometer2 me-2"></i>Painel
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              {% endif %}
+
+              <li>
+                <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#confirmLogout">
+                  <i class="bi bi-box-arrow-right me-2"></i>Sair
+                </a>
+              </li>
+            {% else %}
+              <li><a class="dropdown-item" href="{% url 'login' %}">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+              </a></li>
+              <li><a class="dropdown-item" href="{% url 'registrar' %}">
+                <i class="bi bi-person-plus me-2"></i>Registrar
+              </a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+/* 🔹 Estilo avatar */
+.perfil-avatar {
+  width: 36px;
+  height: 36px;
+  background: #e9ecef;
+  color: #495057;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: .95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.cart-icon { font-size: 1.4rem; }
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: #dc3545;
+  color: #fff;
+  border-radius: 999px;
+  font-size: .75rem;
+  padding: 2px 6px;
+  line-height: 1;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const profileBtn = document.querySelector(".navbar-profile > button");
+  const dropdownMenu = document.querySelector(".navbar-profile .dropdown-menu");
+
+  let fixedOpen = false;
+
+  // Clique alterna fixar/soltar
+  profileBtn.addEventListener("click", function(e) {
+    e.preventDefault();
+    fixedOpen = !fixedOpen;
+    if (fixedOpen) {
+      dropdownMenu.classList.add("show");
+    } else {
+      dropdownMenu.classList.remove("show");
+    }
+  });
+
+  // Fecha se clicar fora
+  document.addEventListener("click", function(e) {
+    if (!e.target.closest(".navbar-profile")) {
+      fixedOpen = false;
+      dropdownMenu.classList.remove("show");
+    }
+  });
+});
+</script>

@@ -64,7 +64,7 @@
         {% for p in ultimos_pedidos %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
           <div>
-            <span class="fw-semibold">#{{ p.id }}</span> – {{ p.cliente.username }}
+            <span class="fw-semibold">#{{ p.numero_pedido }}</span> – {{ p.cliente.username }}
             <br>
             <small class="text-muted">R$ {{ p.total }}</small>
           </div>
