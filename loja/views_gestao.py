@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.timezone import localtime
 from django.contrib import messages
 from django.db import models
+from django.http import JsonResponse
 from .models import Produto, MovimentacaoEstoque
+
 
 def admin_required(user):
     return user.is_staff or user.is_superuser
@@ -18,7 +20,7 @@ def gestao_index(request):
 def gestao_estoque(request):
     produtos = Produto.objects.all().order_by("nome")
 
-    # Ativa/desativa modo edição
+    # Alterna entre modo edição e modo normal
     modo_edicao = request.GET.get("modo") == "editar"
 
     # Salvar edições de limites
@@ -30,6 +32,12 @@ def gestao_estoque(request):
                 produto.minimo_estoque = int(minimo)
                 produto.ideal_estoque = int(ideal)
                 produto.save()
+
+        # Se for AJAX (fetch)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": True})
+
+        # Fluxo normal
         messages.success(request, "Limites atualizados com sucesso!")
         return redirect("gestao_estoque")
 
@@ -39,14 +47,14 @@ def gestao_estoque(request):
     ultima_mov = MovimentacaoEstoque.objects.order_by("-data").first()
     ultima_movimentacao = localtime(ultima_mov.data).strftime("%d/%m/%Y %H:%M") if ultima_mov else "-"
 
-    # Normalizar barras: maior estoque = 100%
+    # Barra proporcional ao maior estoque
     maior_estoque = produtos.aggregate(models.Max("quantidade"))["quantidade__max"] or 1
 
     tabela_produtos = []
     for produto in produtos:
         percentual = int((produto.quantidade / maior_estoque) * 100)
 
-        # Cor baseada nos limites do produto
+        # Definir cor da barra
         if produto.quantidade <= produto.minimo_estoque:
             cor = "bg-danger"
         elif produto.quantidade <= produto.ideal_estoque:

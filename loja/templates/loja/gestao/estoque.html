@@ -40,20 +40,57 @@
     </div>
   </div>
 
-  <!-- Formulário de Edição/Visualização -->
-  <form method="POST">
-    {% csrf_token %}
-    <div class="card shadow-sm border-0">
-      <div class="card-body">
-        <h5 class="card-title mb-3">Produtos em Estoque</h5>
-        <div class="table-responsive">
+  <!-- Barra de Pesquisa + Botão Filtro -->
+  <div class="card mb-4 shadow-sm border-0">
+    <div class="card-body">
+      <form class="d-flex" method="GET">
+        <input type="text" class="form-control me-2" name="q" placeholder="Buscar produto...">
+        <button type="submit" class="btn btn-outline-primary me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" class="btn btn-outline-secondary">
+          <i class="bi bi-funnel"></i> Filtros
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Card da Tabela -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+
+      <!-- Cabeçalho da tabela com botões -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title">Produtos em Estoque</h5>
+        <div>
+          {% if modo_edicao %}
+            <button type="button" id="btnSalvar" class="btn btn-success me-2">
+              <i class="bi bi-save"></i> Salvar Alterações
+            </button>
+            <a href="{% url 'gestao_estoque' %}" class="btn btn-outline-secondary">Cancelar</a>
+          {% else %}
+            <a href="?modo=editar" class="btn btn-outline-secondary">
+              <i class="bi bi-sliders"></i> Definir Limites
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="table-responsive">
+        <form id="formLimites" method="POST">
+          {% csrf_token %}
           <table class="table align-middle">
             <thead class="table-light">
               <tr>
                 <th>Produto</th>
                 <th>Estoque</th>
-                <th>Mínimo (vermelho)</th>
-                <th>Ideal (verde a partir de)</th>
+                {% if modo_edicao %}
+                  <th>Mínimo (vermelho)</th>
+                  <th>Ideal (verde a partir de)</th>
+                {% else %}
+                  <th>Última atualização</th>
+                {% endif %}
               </tr>
             </thead>
             <tbody>
@@ -67,42 +104,59 @@
                     </div>
                   </div>
                 </td>
-                <td>
-                  {% if modo_edicao %}
-                    <input type="number" name="minimo_{{ p.id }}" value="{{ p.minimo }}" class="form-control">
-                  {% else %}
-                    <span class="text-muted">{{ p.minimo }}</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if modo_edicao %}
-                    <input type="number" name="ideal_{{ p.id }}" value="{{ p.ideal }}" class="form-control">
-                  {% else %}
-                    <span class="text-muted">{{ p.ideal }}</span>
-                  {% endif %}
-                </td>
+
+                {% if modo_edicao %}
+                  <td><input type="number" name="minimo_{{ p.id }}" value="{{ p.minimo }}" class="form-control"></td>
+                  <td><input type="number" name="ideal_{{ p.id }}" value="{{ p.ideal }}" class="form-control"></td>
+                {% else %}
+                  <td>{{ p.ultima_atualizacao }}</td>
+                {% endif %}
               </tr>
               {% endfor %}
             </tbody>
           </table>
-        </div>
+        </form>
       </div>
     </div>
-
-    <!-- Botões -->
-    <div class="text-end mt-3">
-      {% if modo_edicao %}
-        <button type="submit" class="btn btn-success">
-          <i class="bi bi-save"></i> Salvar Alterações
-        </button>
-        <a href="{% url 'gestao_estoque' %}" class="btn btn-outline-secondary">Cancelar</a>
-      {% else %}
-        <a href="?modo=editar" class="btn btn-outline-secondary">
-          <i class="bi bi-sliders"></i> Definir Limites
-        </a>
-      {% endif %}
-    </div>
-  </form>
-
+  </div>
 </div>
+
+<!-- Toast container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055">
+  <div id="toastMsg" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        Limites atualizados com sucesso!
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
+
+{% if modo_edicao %}
+<script>
+document.getElementById("btnSalvar").addEventListener("click", function() {
+  let form = document.getElementById("formLimites");
+  let formData = new FormData(form);
+
+  fetch("{% url 'gestao_estoque' %}?modo=editar", {
+    method: "POST",
+    body: formData,
+    headers: { "X-Requested-With": "XMLHttpRequest" }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Mostrar toast
+      var toastEl = document.getElementById("toastMsg");
+      var toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+      toast.show();
+
+        location.href = "{% url 'gestao_estoque' %}";
+    }
+  })
+  .catch(error => console.error("Erro:", error));
+});
+</script>
+{% endif %}
 {% endblock %}
