@@ -10,6 +10,9 @@ class Produto(models.Model):
     preco = models.DecimalField(max_digits=10, decimal_places=2)
     quantidade = models.IntegerField(default=0)  # Campo adicionado
     imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
+     # 🔹 Novos campos
+    minimo_estoque = models.IntegerField(default=5)   # até aqui = vermelho
+    ideal_estoque = models.IntegerField(default=10)   # até aqui = amarelo, acima = verde
 
     def __str__(self):
         return self.nome
