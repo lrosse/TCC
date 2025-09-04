@@ -83,7 +83,7 @@
             </thead>
             <tbody>
               {% for p in tabela_produtos %}
-              <tr data-produto="{{ p.id }}">
+              <tr data-produto="{{ p.id }}" data-minimo="{{ p.minimo }}" data-ideal="{{ p.ideal }}">
                 <td>{{ p.nome }}</td>
                 <td style="width: 300px;">
                   <div class="progress" style="height: 20px;">
@@ -130,12 +130,15 @@ document.addEventListener("DOMContentLoaded", () => {
       <th>Ideal (verde a partir de)</th>
     `;
 
-    // Transformar última atualização em inputs
+    // Transformar última atualização em inputs preenchidos
     document.querySelectorAll("#tabelaEstoque tbody tr").forEach(row => {
       const id = row.getAttribute("data-produto");
+      const minimo = row.getAttribute("data-minimo");
+      const ideal = row.getAttribute("data-ideal");
+
       row.querySelector(".ultima-atualizacao").outerHTML = `
-        <td><input type="number" name="minimo_${id}" class="form-control" placeholder="Mínimo"></td>
-        <td><input type="number" name="ideal_${id}" class="form-control" placeholder="Ideal"></td>
+        <td><input type="number" name="minimo_${id}" value="${minimo}" class="form-control" placeholder="Mínimo"></td>
+        <td><input type="number" name="ideal_${id}" value="${ideal}" class="form-control" placeholder="Ideal"></td>
       `;
     });
 
@@ -153,33 +156,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Função salvar
   function attachSalvar() {
-  document.getElementById("btnSalvar").addEventListener("click", () => {
-    let form = document.getElementById("formLimites");
-    let formData = new FormData(form);
+    document.getElementById("btnSalvar").addEventListener("click", () => {
+      let form = document.getElementById("formLimites");
+      let formData = new FormData(form);
 
-    fetch("{% url 'gestao_estoque' %}", {
-      method: "POST",
-      body: formData,
-      headers: { "X-Requested-With": "XMLHttpRequest" }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        // ✅ Em vez de manipular células → só recarrega a página no estado padrão
-        location.reload();
+      fetch("{% url 'gestao_estoque' %}", {
+        method: "POST",
+        body: formData,
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          // ✅ volta direto para a tabela normal
+          location.reload();
 
-        // Toast (fica visível depois do reload também se quiser implementar com messages)
-        var toastEl = document.getElementById("toastMsg");
-        new bootstrap.Toast(toastEl, { delay: 3000 }).show();
-      }
+          // Toast
+          var toastEl = document.getElementById("toastMsg");
+          new bootstrap.Toast(toastEl, { delay: 3000 }).show();
+        }
+      });
     });
-  });
-}
+  }
 
   // Função cancelar
   function attachCancelar() {
     document.getElementById("btnCancelar").addEventListener("click", () => {
-      location.reload(); // simplificação → volta pro modo normal sem salvar
+      location.reload(); // volta pro modo normal sem salvar
     });
   }
 });
