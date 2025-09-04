@@ -19,12 +19,10 @@ def gestao_index(request):
 @user_passes_test(admin_required)
 def gestao_estoque(request):
     produtos = Produto.objects.all().order_by("nome")
-
-    # Alterna entre modo edição e modo normal
     modo_edicao = request.GET.get("modo") == "editar"
 
-    # Salvar edições de limites
     if request.method == "POST":
+        atualizados = []
         for produto in produtos:
             minimo = request.POST.get(f"minimo_{produto.id}")
             ideal = request.POST.get(f"ideal_{produto.id}")
@@ -33,11 +31,20 @@ def gestao_estoque(request):
                 produto.ideal_estoque = int(ideal)
                 produto.save()
 
-        # Se for AJAX (fetch)
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse({"success": True})
+                # Pegar última movimentação
+                ultima_mov_produto = MovimentacaoEstoque.objects.filter(produto=produto).order_by("-data").first()
+                data_mov = localtime(ultima_mov_produto.data).strftime("%d/%m/%Y %H:%M") if ultima_mov_produto else "-"
 
-        # Fluxo normal
+                atualizados.append({
+                    "id": produto.id,
+                    "minimo": produto.minimo_estoque,
+                    "ideal": produto.ideal_estoque,
+                    "ultima_atualizacao": data_mov,
+                })
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": True, "atualizados": atualizados})
+
         messages.success(request, "Limites atualizados com sucesso!")
         return redirect("gestao_estoque")
 
@@ -47,14 +54,11 @@ def gestao_estoque(request):
     ultima_mov = MovimentacaoEstoque.objects.order_by("-data").first()
     ultima_movimentacao = localtime(ultima_mov.data).strftime("%d/%m/%Y %H:%M") if ultima_mov else "-"
 
-    # Barra proporcional ao maior estoque
     maior_estoque = produtos.aggregate(models.Max("quantidade"))["quantidade__max"] or 1
 
     tabela_produtos = []
     for produto in produtos:
         percentual = int((produto.quantidade / maior_estoque) * 100)
-
-        # Definir cor da barra
         if produto.quantidade <= produto.minimo_estoque:
             cor = "bg-danger"
         elif produto.quantidade <= produto.ideal_estoque:
@@ -84,3 +88,4 @@ def gestao_estoque(request):
         "tabela_produtos": tabela_produtos,
     }
     return render(request, "loja/gestao/estoque.html", context)
+
