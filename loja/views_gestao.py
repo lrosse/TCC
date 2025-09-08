@@ -1,10 +1,13 @@
+from datetime import timezone
 import json
+import csv
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.timezone import localtime
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
+from django.http import HttpResponse
 from .models import Produto, MovimentacaoEstoque, Pedido, LancamentoFinanceiro
 from django.db.models import Sum
 from .views import (
@@ -12,6 +15,7 @@ from .views import (
     _agregar_vendas_mes_atual_por_dia,
     _contagem_pedidos_por_status
 )
+from reportlab.pdfgen import canvas 
 
 
 
@@ -120,17 +124,28 @@ def gestao_estoque(request):
 @login_required
 @user_passes_test(admin_required)
 def financeiro(request):
-    # Pedidos pagos = receitas automáticas
     pedidos_pagos = Pedido.objects.filter(status="Pago")
-
-    # Entradas manuais + despesas manuais
     lancamentos = LancamentoFinanceiro.objects.all().order_by("-data")
+
+    # Filtros
+    tipo = request.GET.get("tipo")
+    categoria = request.GET.get("categoria")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if tipo:
+        lancamentos = lancamentos.filter(tipo=tipo)
+    if categoria:
+        lancamentos = lancamentos.filter(categoria__icontains=categoria)
+    if data_inicio:
+        lancamentos = lancamentos.filter(data__gte=data_inicio)
+    if data_fim:
+        lancamentos = lancamentos.filter(data__lte=data_fim)
 
     # Totais
     receitas_pedidos = pedidos_pagos.aggregate(total=Sum("total"))["total"] or 0
     receitas_extras = lancamentos.filter(tipo="receita").aggregate(total=Sum("valor"))["total"] or 0
     despesas = lancamentos.filter(tipo="despesa").aggregate(total=Sum("valor"))["total"] or 0
-
     total_receitas = receitas_pedidos + receitas_extras
     lucro_liquido = total_receitas - despesas
 
@@ -138,9 +153,8 @@ def financeiro(request):
     mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
     dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
 
-    # Pizza despesas
     despesas_por_categoria = (
-        lancamentos.filter(tipo="despesa")
+        LancamentoFinanceiro.objects.filter(tipo="despesa")
         .values("categoria")
         .annotate(total=Sum("valor"))
         .order_by("-total")
@@ -161,5 +175,64 @@ def financeiro(request):
         "dia_values_json": json.dumps(dia_values),
         "cat_labels_json": json.dumps(categorias_labels, ensure_ascii=False),
         "cat_values_json": json.dumps(categorias_values),
+        "filtros": {"tipo": tipo, "categoria": categoria, "data_inicio": data_inicio, "data_fim": data_fim},
     }
     return render(request, "loja/gestao/financeiro.html", context)
+
+
+@login_required
+@user_passes_test(admin_required)
+def adicionar_lancamento(request):
+    tipo = request.POST.get("tipo")
+    categoria = request.POST.get("categoria")
+    valor = request.POST.get("valor")
+    data = request.POST.get("data")
+    descricao = request.POST.get("descricao", "")
+
+    if tipo and categoria and valor:
+        LancamentoFinanceiro.objects.create(
+            tipo=tipo,
+            categoria=categoria,
+            valor=valor,
+            data=data or timezone.now().date(),
+            descricao=descricao
+        )
+        messages.success(request, "Lançamento adicionado com sucesso!")
+    else:
+        messages.error(request, "Preencha todos os campos obrigatórios.")
+
+    return redirect("financeiro")
+
+@user_passes_test(admin_required)
+def exportar_financeiro_csv(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="financeiro.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(["Data", "Tipo", "Categoria", "Valor", "Descrição"])
+
+    for l in LancamentoFinanceiro.objects.all().order_by("-data"):
+        writer.writerow([l.data, l.get_tipo_display(), l.categoria, l.valor, l.descricao or ""])
+
+    return response
+
+@user_passes_test(admin_required)
+def exportar_financeiro_pdf(request):
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="financeiro.pdf"'
+
+    p = canvas.Canvas(response)
+    p.setFont("Helvetica", 12)
+    p.drawString(100, 800, "Relatório Financeiro")
+
+    y = 760
+    for l in LancamentoFinanceiro.objects.all().order_by("-data")[:50]:
+        p.drawString(100, y, f"{l.data} - {l.get_tipo_display()} - {l.categoria} - R$ {l.valor}")
+        y -= 20
+        if y < 100:
+            p.showPage()
+            y = 800
+
+    p.showPage()
+    p.save()
+    return response

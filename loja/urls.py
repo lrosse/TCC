@@ -57,6 +57,9 @@ urlpatterns = [
     path("gestao/", views_gestao.gestao_index, name="gestao_index"),
     path("gestao/estoque/", views_gestao.gestao_estoque, name="gestao_estoque"),
     path("gestao/financeiro/", views_gestao.financeiro, name="financeiro"),
+    path("gestao/financeiro/adicionar/", views_gestao.adicionar_lancamento, name="adicionar_lancamento"),
+    path("gestao/financeiro/exportar/csv/", views_gestao.exportar_financeiro_csv, name="exportar_financeiro_csv"),
+    path("gestao/financeiro/exportar/pdf/", views_gestao.exportar_financeiro_pdf, name="exportar_financeiro_pdf"),
 
 
     
