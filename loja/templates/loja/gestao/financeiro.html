@@ -5,219 +5,224 @@
 <div class="container-fluid px-4">
   <h2 class="fw-semibold mb-4">Gestão Financeira</h2>
 
-  <!-- Cards resumo -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="text-muted">Receitas de Pedidos</h6>
-          <p class="fs-4 fw-bold text-success">R$ {{ receitas_pedidos }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="text-muted">Receitas Extras</h6>
-          <p class="fs-4 fw-bold text-success">R$ {{ receitas_extras }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="text-muted">Despesas</h6>
-          <p class="fs-4 fw-bold text-danger">R$ {{ despesas }}</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-3">
-      <div class="card text-center shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="text-muted">Lucro Líquido</h6>
-          <p class="fs-4 fw-bold {% if lucro_liquido >= 0 %}text-success{% else %}text-danger{% endif %}">
-            R$ {{ lucro_liquido }}
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Abas de navegação -->
+  <ul class="nav nav-tabs mb-4" id="financeiroTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#resumo">Resumo Geral</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#produtos">Produtos</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pedidos">Pedidos</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#despesas">Despesas</button></li>
+  </ul>
 
-  <!-- Filtros -->
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-      <form class="row g-2 align-items-end" method="GET">
-        <div class="col-md-2">
-          <label class="form-label">Tipo</label>
-          <select name="tipo" class="form-select">
-            <option value="">Todos</option>
-            <option value="receita" {% if filtros.tipo == "receita" %}selected{% endif %}>Receitas</option>
-            <option value="despesa" {% if filtros.tipo == "despesa" %}selected{% endif %}>Despesas</option>
-          </select>
+  <div class="tab-content">
+
+    <!-- 🔹 RESUMO GERAL -->
+    <div class="tab-pane fade show active" id="resumo">
+      <div class="row g-4 mb-4">
+        <!-- Cards -->
+        <div class="col-md-3">
+          <div class="card text-center shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="text-muted">Receita Total</h6>
+              <p class="fs-4 fw-bold text-success">R$ <!-- FUTURO: total_receitas --></p>
+            </div>
+          </div>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Categoria</label>
-          <input type="text" name="categoria" value="{{ filtros.categoria }}" class="form-control">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Data início</label>
-          <input type="date" name="data_inicio" value="{{ filtros.data_inicio }}" class="form-control">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Data fim</label>
-          <input type="date" name="data_fim" value="{{ filtros.data_fim }}" class="form-control">
-        </div>
-        <div class="col-md-3 d-flex gap-2">
-          <button type="submit" class="btn btn-outline-primary">
-            <i class="bi bi-funnel"></i> Filtrar
-          </button>
-          <a href="{% url 'financeiro' %}" class="btn btn-outline-secondary">Limpar</a>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Formulário novo lançamento -->
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-      <h5 class="fw-semibold mb-3">Novo Lançamento</h5>
-      <form method="POST" action="{% url 'adicionar_lancamento' %}" class="row g-3">
-        {% csrf_token %}
-        <div class="col-md-2">
-          <label class="form-label">Tipo</label>
-          <select name="tipo" class="form-select" required>
-            <option value="receita">Receita</option>
-            <option value="despesa">Despesa</option>
-          </select>
+          <div class="card text-center shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="text-muted">Custo Total</h6>
+              <p class="fs-4 fw-bold text-danger">R$ <!-- FUTURO: custo_total --></p>
+            </div>
+          </div>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Categoria</label>
-          <input type="text" name="categoria" class="form-control" placeholder="Ex: Marketing" required>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Valor (R$)</label>
-          <input type="number" step="0.01" name="valor" class="form-control" required>
-        </div>
-        <div class="col-md-2">
-          <label class="form-label">Data</label>
-          <input type="date" name="data" class="form-control">
+          <div class="card text-center shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="text-muted">Despesas Fixas</h6>
+              <p class="fs-4 fw-bold text-warning">R$ <!-- FUTURO: despesas_fixas --></p>
+            </div>
+          </div>
         </div>
         <div class="col-md-3">
-          <label class="form-label">Descrição</label>
-          <input type="text" name="descricao" class="form-control">
+          <div class="card text-center shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="text-muted">Lucro Líquido</h6>
+              <p class="fs-4 fw-bold text-primary">R$ <!-- FUTURO: lucro_liquido --></p>
+            </div>
+          </div>
         </div>
-        <div class="col-12">
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-plus-circle"></i> Adicionar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
+      </div>
 
-  <!-- Gráficos -->
-  <div class="row g-4 mb-4">
-    <div class="col-md-6">
+      <!-- Gráficos -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Receitas vs Despesas (Mensal)</h6>
+              <canvas id="graficoReceitasDespesas"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h6 class="fw-semibold mb-3">Lucro Líquido (Acumulado)</h6>
+              <canvas id="graficoLucro"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔹 PRODUTOS -->
+    <div class="tab-pane fade" id="produtos">
       <div class="card shadow-sm border-0">
         <div class="card-body">
-          <h6 class="fw-semibold mb-3">Faturamento Mensal</h6>
-          <canvas id="graficoMensal"></canvas>
+          <h5 class="fw-semibold mb-3">Margens de Produtos</h5>
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Custo</th>
+                <th>Preço Venda</th>
+                <th>Margem (%)</th>
+                <th>Lucro Unitário</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- FUTURO: loop sobre produtos -->
+              <tr>
+                <td>Exemplo Produto</td>
+                <td>R$ 50,00</td>
+                <td>R$ 80,00</td>
+                <td>60%</td>
+                <td>R$ 30,00</td>
+              </tr>
+              <!-- /FUTURO -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
+
+    <!-- 🔹 PEDIDOS -->
+    <div class="tab-pane fade" id="pedidos">
       <div class="card shadow-sm border-0">
         <div class="card-body">
-          <h6 class="fw-semibold mb-3">Faturamento Diário (Mês Atual)</h6>
-          <canvas id="graficoDiario"></canvas>
+          <h5 class="fw-semibold mb-3">Lucro por Pedido</h5>
+          <table class="table table-striped align-middle">
+            <thead>
+              <tr>
+                <th>Nº Pedido</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th>Receita</th>
+                <th>Custo</th>
+                <th>Lucro</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- FUTURO: loop sobre pedidos pagos -->
+              <tr>
+                <td>#202509-AB12CD34</td>
+                <td>Cliente Exemplo</td>
+                <td>08/09/2025</td>
+                <td>R$ 500,00</td>
+                <td>R$ 300,00</td>
+                <td class="text-success">R$ 200,00</td>
+              </tr>
+              <!-- /FUTURO -->
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Gráfico de despesas -->
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-      <h6 class="fw-semibold mb-3">Distribuição de Despesas</h6>
-      <canvas id="graficoDespesas"></canvas>
-    </div>
-  </div>
+    <!-- 🔹 DESPESAS -->
+    <div class="tab-pane fade" id="despesas">
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="fw-semibold mb-3">Adicionar Despesa</h5>
+              <form>
+                <!-- FUTURO: POST para adicionar_lancamento -->
+                <div class="mb-3">
+                  <label class="form-label">Categoria</label>
+                  <input type="text" class="form-control" placeholder="Ex: Marketing, Aluguel">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Valor (R$)</label>
+                  <input type="number" step="0.01" class="form-control">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Data</label>
+                  <input type="date" class="form-control">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Descrição</label>
+                  <textarea class="form-control"></textarea>
+                </div>
+                <button class="btn btn-danger" type="submit">Adicionar Despesa</button>
+              </form>
+            </div>
+          </div>
+        </div>
 
-  <!-- Tabela de lançamentos -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-semibold">Lançamentos Financeiros</h5>
-        <div>
-          <a href="{% url 'exportar_financeiro_csv' %}" class="btn btn-outline-secondary btn-sm me-2">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
-          </a>
-          <a href="{% url 'exportar_financeiro_pdf' %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-          </a>
+        <div class="col-md-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <h5 class="fw-semibold mb-3">Despesas Registradas</h5>
+              <table class="table table-striped align-middle">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Categoria</th>
+                    <th>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- FUTURO: loop sobre despesas -->
+                  <tr>
+                    <td>01/09/2025</td>
+                    <td>Aluguel</td>
+                    <td>R$ 1.200,00</td>
+                  </tr>
+                  <!-- /FUTURO -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
-      <table class="table table-striped align-middle">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Categoria</th>
-            <th>Tipo</th>
-            <th>Valor</th>
-            <th>Descrição</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for l in lancamentos %}
-          <tr>
-            <td>{{ l.data|date:"d/m/Y" }}</td>
-            <td>{{ l.categoria }}</td>
-            <td>
-              {% if l.tipo == "receita" %}
-              <span class="badge bg-success">Receita</span>
-              {% else %}
-              <span class="badge bg-danger">Despesa</span>
-              {% endif %}
-            </td>
-            <td>R$ {{ l.valor }}</td>
-            <td>{{ l.descricao|default:"-" }}</td>
-          </tr>
-          {% empty %}
-          <tr><td colspan="5" class="text-center text-muted">Nenhum lançamento encontrado</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     </div>
-  </div>
+
+  </div> <!-- tab-content -->
 </div>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const ctxMensal = document.getElementById('graficoMensal');
-new Chart(ctxMensal, {
+// Gráfico Receitas vs Despesas
+new Chart(document.getElementById('graficoReceitasDespesas'), {
   type: 'bar',
   data: {
-    labels: {{ mes_labels_json|safe }},
-    datasets: [{ label: 'Receitas (R$)', data: {{ mes_values_json|safe }}, backgroundColor: '#0d6efd' }]
+    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+    datasets: [
+      { label: 'Receitas', data: [1000, 1200, 900, 1400, 2000, 1800], backgroundColor: '#198754' },
+      { label: 'Despesas', data: [500, 600, 400, 800, 1000, 950], backgroundColor: '#dc3545' }
+    ]
   }
 });
 
-const ctxDiario = document.getElementById('graficoDiario');
-new Chart(ctxDiario, {
+// Gráfico Lucro Acumulado
+new Chart(document.getElementById('graficoLucro'), {
   type: 'line',
   data: {
-    labels: {{ dia_labels_json|safe }},
-    datasets: [{ label: 'Receitas (R$)', data: {{ dia_values_json|safe }}, borderColor: '#198754', fill: true, backgroundColor: 'rgba(25,135,84,0.2)' }]
-  }
-});
-
-const ctxDespesas = document.getElementById('graficoDespesas');
-new Chart(ctxDespesas, {
-  type: 'doughnut',
-  data: {
-    labels: {{ cat_labels_json|safe }},
-    datasets: [{ data: {{ cat_values_json|safe }}, backgroundColor: ['#dc3545','#ffc107','#0d6efd','#198754','#6f42c1'] }]
+    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+    datasets: [
+      { label: 'Lucro Líquido', data: [500, 600, 500, 600, 1000, 850], borderColor: '#0d6efd', fill: true }
+    ]
   }
 });
 </script>
