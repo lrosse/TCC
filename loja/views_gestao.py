@@ -21,6 +21,23 @@ def gestao_estoque(request):
     produtos = Produto.objects.all().order_by("nome")
     modo_edicao = request.GET.get("modo") == "editar"
 
+    # 🔍 --- BUSCA POR NOME ---
+    q = request.GET.get("q")
+    if q:
+        produtos = produtos.filter(nome__icontains=q)
+
+    # 🔽 --- FILTROS DE ESTOQUE ---
+    filtro = request.GET.get("filtro")
+    if filtro == "baixo":
+        produtos = produtos.filter(quantidade__lt=models.F("minimo_estoque"))
+    elif filtro == "medio":
+        produtos = produtos.filter(
+            quantidade__gte=models.F("minimo_estoque"),
+            quantidade__lt=models.F("ideal_estoque")
+        )
+    elif filtro == "alto":
+        produtos = produtos.filter(quantidade__gte=models.F("ideal_estoque"))
+
     if request.method == "POST":
         atualizados = []
         for produto in produtos:
@@ -31,7 +48,6 @@ def gestao_estoque(request):
                 produto.ideal_estoque = int(ideal)
                 produto.save()
 
-                # Pegar última movimentação
                 ultima_mov_produto = MovimentacaoEstoque.objects.filter(produto=produto).order_by("-data").first()
                 data_mov = localtime(ultima_mov_produto.data).strftime("%d/%m/%Y %H:%M") if ultima_mov_produto else "-"
 
@@ -80,6 +96,10 @@ def gestao_estoque(request):
             "ideal": produto.ideal_estoque,
         })
 
+    # 🔹 Retorno JSON quando é requisição AJAX (busca/filtro dinâmico)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"produtos": tabela_produtos})
+
     context = {
         "modo_edicao": modo_edicao,
         "total_produtos": total_produtos,
@@ -88,4 +108,3 @@ def gestao_estoque(request):
         "tabela_produtos": tabela_produtos,
     }
     return render(request, "loja/gestao/estoque.html", context)
-

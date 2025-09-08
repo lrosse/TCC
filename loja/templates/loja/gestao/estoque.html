@@ -40,21 +40,6 @@
     </div>
   </div>
 
-  <!-- Barra de Pesquisa + Botão Filtro -->
-  <div class="card mb-4 shadow-sm border-0">
-    <div class="card-body">
-      <form class="d-flex" method="GET">
-        <input type="text" class="form-control me-2" name="q" placeholder="Buscar produto...">
-        <button type="submit" class="btn btn-outline-primary me-2">
-          <i class="bi bi-search"></i> Buscar
-        </button>
-        <button type="button" class="btn btn-outline-secondary">
-          <i class="bi bi-funnel"></i> Filtros
-        </button>
-      </form>
-    </div>
-  </div>
-
   <!-- Card da Tabela -->
   <div class="card shadow-sm border-0">
     <div class="card-body">
@@ -68,6 +53,31 @@
           </a>
         </div>
       </div>
+
+      <!-- 🔹 ÚNICA BARRA DE BUSCA/FILTRO -->
+      <form id="formBusca" class="row g-2 align-items-center mb-3" method="GET">
+        <div class="col-md-6">
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" name="q" placeholder="Buscar produto..." value="{{ request.GET.q }}">
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <select name="filtro" class="form-select">
+            <option value="">-- Todos --</option>
+            <option value="baixo" {% if request.GET.filtro == "baixo" %}selected{% endif %}>Abaixo do mínimo</option>
+            <option value="medio" {% if request.GET.filtro == "medio" %}selected{% endif %}>Entre mínimo e ideal</option>
+            <option value="alto" {% if request.GET.filtro == "alto" %}selected{% endif %}>Acima do ideal</option>
+          </select>
+        </div>
+
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-funnel"></i> Aplicar
+          </button>
+        </div>
+      </form>
 
       <!-- Tabela -->
       <div class="table-responsive">
@@ -113,50 +123,14 @@
   </div>
 </div>
 
+<!-- Script -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const tabelaHead = document.getElementById("tabelaHead");
-  const btnArea = document.getElementById("btnArea");
+  const formBusca = document.getElementById("formBusca");
+  const tabelaBody = document.querySelector("#tabelaEstoque tbody");
 
-  // Ativar modo edição
-  document.getElementById("btnDefinir").addEventListener("click", (e) => {
-    e.preventDefault();
-
-    // Trocar cabeçalho
-    tabelaHead.innerHTML = `
-      <th>Produto</th>
-      <th>Estoque</th>
-      <th>Mínimo (vermelho)</th>
-      <th>Ideal (verde a partir de)</th>
-    `;
-
-    // Transformar última atualização em inputs preenchidos
-    document.querySelectorAll("#tabelaEstoque tbody tr").forEach(row => {
-      const id = row.getAttribute("data-produto");
-      const minimo = row.getAttribute("data-minimo");
-      const ideal = row.getAttribute("data-ideal");
-
-      row.querySelector(".ultima-atualizacao").outerHTML = `
-        <td><input type="number" name="minimo_${id}" value="${minimo}" class="form-control" placeholder="Mínimo"></td>
-        <td><input type="number" name="ideal_${id}" value="${ideal}" class="form-control" placeholder="Ideal"></td>
-      `;
-    });
-
-    // Trocar botões
-    btnArea.innerHTML = `
-      <button type="button" id="btnSalvar" class="btn btn-success me-2">
-        <i class="bi bi-save"></i> Salvar Alterações
-      </button>
-      <button type="button" id="btnCancelar" class="btn btn-outline-secondary">Cancelar</button>
-    `;
-
-    attachSalvar();
-    attachCancelar();
-  });
-
-  // Função salvar
   function attachSalvar() {
-    document.getElementById("btnSalvar").addEventListener("click", () => {
+    document.getElementById("btnSalvar")?.addEventListener("click", () => {
       let form = document.getElementById("formLimites");
       let formData = new FormData(form);
 
@@ -168,24 +142,96 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // ✅ volta direto para a tabela normal
           location.reload();
-
-          // Toast
-          var toastEl = document.getElementById("toastMsg");
-          new bootstrap.Toast(toastEl, { delay: 3000 }).show();
         }
       });
     });
   }
 
-  // Função cancelar
   function attachCancelar() {
-    document.getElementById("btnCancelar").addEventListener("click", () => {
-      location.reload(); // volta pro modo normal sem salvar
+    document.getElementById("btnCancelar")?.addEventListener("click", () => {
+      location.reload();
     });
   }
+
+  function attachDefinir() {
+    document.getElementById("btnDefinir")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const tabelaHead = document.getElementById("tabelaHead");
+      const btnArea = document.getElementById("btnArea");
+
+      tabelaHead.innerHTML = `
+        <th>Produto</th>
+        <th>Estoque</th>
+        <th>Mínimo (vermelho)</th>
+        <th>Ideal (verde a partir de)</th>
+      `;
+
+      document.querySelectorAll("#tabelaEstoque tbody tr").forEach(row => {
+        const id = row.getAttribute("data-produto");
+        const minimo = row.getAttribute("data-minimo");
+        const ideal = row.getAttribute("data-ideal");
+
+        row.querySelector(".ultima-atualizacao").outerHTML = `
+          <td><input type="number" name="minimo_${id}" value="${minimo}" class="form-control"></td>
+          <td><input type="number" name="ideal_${id}" value="${ideal}" class="form-control"></td>
+        `;
+      });
+
+      btnArea.innerHTML = `
+        <button type="button" id="btnSalvar" class="btn btn-success me-2">
+          <i class="bi bi-save"></i> Salvar Alterações
+        </button>
+        <button type="button" id="btnCancelar" class="btn btn-outline-secondary">Cancelar</button>
+      `;
+
+      attachSalvar();
+      attachCancelar();
+    });
+  }
+
+  function rebindEvents() {
+    attachDefinir();
+    attachSalvar();
+    attachCancelar();
+  }
+
+  // 🔍 AJAX Busca/Filtro
+  formBusca.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    let formData = new FormData(formBusca);
+    let params = new URLSearchParams(formData).toString();
+
+    fetch("{% url 'gestao_estoque' %}?" + params, {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(res => res.json())
+    .then(data => {
+      tabelaBody.innerHTML = "";
+
+      data.produtos.forEach(p => {
+        let row = `
+          <tr data-produto="${p.id}" data-minimo="${p.minimo}" data-ideal="${p.ideal}">
+            <td>${p.nome}</td>
+            <td style="width: 300px;">
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar ${p.cor}" role="progressbar" style="width: ${p.percentual}%;">
+                  ${p.quantidade}
+                </div>
+              </div>
+            </td>
+            <td class="ultima-atualizacao">${p.ultima_atualizacao}</td>
+          </tr>
+        `;
+        tabelaBody.insertAdjacentHTML("beforeend", row);
+      });
+
+      rebindEvents();
+    });
+  });
+
+  rebindEvents();
 });
 </script>
-
 {% endblock %}
