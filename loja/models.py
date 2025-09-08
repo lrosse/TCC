@@ -142,3 +142,19 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username} - {self.nota}⭐ ({'visível' if self.visivel else 'oculto'})"
+
+
+class LancamentoFinanceiro(models.Model):
+    TIPO_CHOICES = [
+        ('receita', 'Receita'),
+        ('despesa', 'Despesa'),
+    ]
+
+    categoria = models.CharField(max_length=100)
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data = models.DateField(default=timezone.now)
+    descricao = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.categoria} - R$ {self.valor}"

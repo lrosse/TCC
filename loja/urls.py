@@ -56,6 +56,8 @@ urlpatterns = [
     # Gestão
     path("gestao/", views_gestao.gestao_index, name="gestao_index"),
     path("gestao/estoque/", views_gestao.gestao_estoque, name="gestao_estoque"),
+    path("gestao/financeiro/", views_gestao.financeiro, name="financeiro"),
+
 
     
 

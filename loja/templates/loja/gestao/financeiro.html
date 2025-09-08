@@ -1,0 +1,142 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Gestão Financeira{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fw-semibold mb-4">Gestão Financeira</h2>
+
+  <!-- Cards resumo -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Receitas de Pedidos</h6>
+          <p class="fs-4 fw-bold text-success">R$ {{ receitas_pedidos }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Receitas Extras</h6>
+          <p class="fs-4 fw-bold text-success">R$ {{ receitas_extras }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Despesas</h6>
+          <p class="fs-4 fw-bold text-danger">R$ {{ despesas }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Lucro Líquido</h6>
+          <p class="fs-4 fw-bold {% if lucro_liquido >= 0 %}text-success{% else %}text-danger{% endif %}">
+            R$ {{ lucro_liquido }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Faturamento Mensal</h6>
+          <canvas id="graficoMensal"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Faturamento Diário (Mês Atual)</h6>
+          <canvas id="graficoDiario"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de despesas -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+      <h6 class="fw-semibold mb-3">Distribuição de Despesas</h6>
+      <canvas id="graficoDespesas"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabela de lançamentos -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <h5 class="fw-semibold mb-3">Lançamentos Financeiros</h5>
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Categoria</th>
+            <th>Tipo</th>
+            <th>Valor</th>
+            <th>Descrição</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in lancamentos %}
+          <tr>
+            <td>{{ l.data|date:"d/m/Y" }}</td>
+            <td>{{ l.categoria }}</td>
+            <td>
+              {% if l.tipo == "receita" %}
+              <span class="badge bg-success">Receita</span>
+              {% else %}
+              <span class="badge bg-danger">Despesa</span>
+              {% endif %}
+            </td>
+            <td>R$ {{ l.valor }}</td>
+            <td>{{ l.descricao|default:"-" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-center text-muted">Nenhum lançamento registrado</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctxMensal = document.getElementById('graficoMensal');
+new Chart(ctxMensal, {
+  type: 'bar',
+  data: {
+    labels: {{ mes_labels_json|safe }},
+    datasets: [{ label: 'Receitas (R$)', data: {{ mes_values_json|safe }}, backgroundColor: '#0d6efd' }]
+  }
+});
+
+const ctxDiario = document.getElementById('graficoDiario');
+new Chart(ctxDiario, {
+  type: 'line',
+  data: {
+    labels: {{ dia_labels_json|safe }},
+    datasets: [{ label: 'Receitas (R$)', data: {{ dia_values_json|safe }}, borderColor: '#198754', fill: true, backgroundColor: 'rgba(25,135,84,0.2)' }]
+  }
+});
+
+const ctxDespesas = document.getElementById('graficoDespesas');
+new Chart(ctxDespesas, {
+  type: 'doughnut',
+  data: {
+    labels: {{ cat_labels_json|safe }},
+    datasets: [{ data: {{ cat_values_json|safe }}, backgroundColor: ['#dc3545','#ffc107','#0d6efd','#198754','#6f42c1'] }]
+  }
+});
+</script>
+{% endblock %}

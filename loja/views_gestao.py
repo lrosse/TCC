@@ -1,10 +1,18 @@
+import json
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.timezone import localtime
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
-from .models import Produto, MovimentacaoEstoque
+from .models import Produto, MovimentacaoEstoque, Pedido, LancamentoFinanceiro
+from django.db.models import Sum
+from .views import (
+    _agregar_vendas_por_mes,
+    _agregar_vendas_mes_atual_por_dia,
+    _contagem_pedidos_por_status
+)
+
 
 
 def admin_required(user):
@@ -108,3 +116,50 @@ def gestao_estoque(request):
         "tabela_produtos": tabela_produtos,
     }
     return render(request, "loja/gestao/estoque.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def financeiro(request):
+    # Pedidos pagos = receitas automáticas
+    pedidos_pagos = Pedido.objects.filter(status="Pago")
+
+    # Entradas manuais + despesas manuais
+    lancamentos = LancamentoFinanceiro.objects.all().order_by("-data")
+
+    # Totais
+    receitas_pedidos = pedidos_pagos.aggregate(total=Sum("total"))["total"] or 0
+    receitas_extras = lancamentos.filter(tipo="receita").aggregate(total=Sum("valor"))["total"] or 0
+    despesas = lancamentos.filter(tipo="despesa").aggregate(total=Sum("valor"))["total"] or 0
+
+    total_receitas = receitas_pedidos + receitas_extras
+    lucro_liquido = total_receitas - despesas
+
+    # Gráficos
+    mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
+    dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
+
+    # Pizza despesas
+    despesas_por_categoria = (
+        lancamentos.filter(tipo="despesa")
+        .values("categoria")
+        .annotate(total=Sum("valor"))
+        .order_by("-total")
+    )
+    categorias_labels = [d["categoria"] for d in despesas_por_categoria]
+    categorias_values = [float(d["total"]) for d in despesas_por_categoria]
+
+    context = {
+        "receitas_pedidos": receitas_pedidos,
+        "receitas_extras": receitas_extras,
+        "despesas": despesas,
+        "total_receitas": total_receitas,
+        "lucro_liquido": lucro_liquido,
+        "lancamentos": lancamentos,
+        "mes_labels_json": json.dumps(mes_labels, ensure_ascii=False),
+        "mes_values_json": json.dumps(mes_values),
+        "dia_labels_json": json.dumps(dia_labels, ensure_ascii=False),
+        "dia_values_json": json.dumps(dia_values),
+        "cat_labels_json": json.dumps(categorias_labels, ensure_ascii=False),
+        "cat_values_json": json.dumps(categorias_values),
+    }
+    return render(request, "loja/gestao/financeiro.html", context)
