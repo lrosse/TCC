@@ -61,8 +61,10 @@ urlpatterns = [
     path("gestao/financeiro/exportar/csv/", views_gestao.exportar_financeiro_csv, name="exportar_financeiro_csv"),
     path("gestao/financeiro/exportar/pdf/", views_gestao.exportar_financeiro_pdf, name="exportar_financeiro_pdf"),
 
+    path("gestao/despesa/<int:pk>/editar/", views_gestao.editar_despesa, name="editar_despesa"),
+    path("gestao/despesa/<int:pk>/excluir/", views_gestao.excluir_despesa, name="excluir_despesa"),
 
-    
+        
 
 
 ]

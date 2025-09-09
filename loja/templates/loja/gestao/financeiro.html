@@ -239,26 +239,35 @@
           <h5 class="fw-semibold mb-3">Despesas Registradas</h5>
           <table class="table table-striped align-middle">
             <thead>
-              <tr>
+                <tr>
                 <th>Data</th>
                 <th>Categoria</th>
                 <th>Tipo</th>
                 <th>Valor</th>
-              </tr>
+                <th>Ações</th>
+                </tr>
             </thead>
             <tbody>
-              {% for d in despesas %}
-              <tr>
+                {% for d in despesas %}
+                <tr>
                 <td>{{ d.data|date:"d/m/Y" }}</td>
                 <td>{{ d.categoria }}</td>
                 <td>{{ d.tipo }}</td>
                 <td>R$ {{ d.valor|floatformat:2 }}</td>
-              </tr>
-              {% empty %}
-              <tr><td colspan="4" class="text-center text-muted">Nenhuma despesa registrada</td></tr>
-              {% endfor %}
+                <td>
+                    <a href="{% url 'editar_despesa' d.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'excluir_despesa' d.id %}" class="btn btn-sm btn-outline-danger">
+                    <i class="bi bi-trash"></i>
+                    </a>
+                </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted">Nenhuma despesa registrada</td></tr>
+                {% endfor %}
             </tbody>
-          </table>
+            </table>
         </div>
       </div>
     </div>

@@ -1,0 +1,14 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Excluir Despesa{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h3>Excluir Despesa</h3>
+  <p>Tem certeza que deseja excluir a despesa <strong>{{ despesa.categoria }}</strong> no valor de 
+     <strong>R$ {{ despesa.valor|floatformat:2 }}</strong>?</p>
+  <form method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Excluir</button>
+    <a href="{% url 'financeiro' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

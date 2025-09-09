@@ -1,7 +1,7 @@
 from datetime import timezone
 import json
 import csv
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.timezone import localtime
 from django.utils import timezone
@@ -407,3 +407,31 @@ def financeiro(request):
     }
 
     return render(request, "loja/gestao/financeiro.html", ctx)
+
+@login_required
+@user_passes_test(admin_required)
+def editar_despesa(request, pk):
+    despesa = get_object_or_404(Despesa, pk=pk)
+    if request.method == "POST":
+        despesa.categoria = request.POST.get("categoria")
+        despesa.tipo = request.POST.get("tipo")
+        despesa.valor = request.POST.get("valor")
+        despesa.data = request.POST.get("data")
+        despesa.descricao = request.POST.get("descricao", "")
+        despesa.save()
+        messages.success(request, "Despesa atualizada com sucesso!")
+        return redirect("financeiro")
+
+    return render(request, "loja/gestao/editar_despesa.html", {"despesa": despesa})
+
+
+@login_required
+@user_passes_test(admin_required)
+def excluir_despesa(request, pk):
+    despesa = get_object_or_404(Despesa, pk=pk) # pyright: ignore[reportUndefinedVariable]
+    if request.method == "POST":
+        despesa.delete()
+        messages.success(request, "Despesa excluída com sucesso!")
+        return redirect("financeiro")
+
+    return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})
