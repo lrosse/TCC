@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.timezone import now
 import uuid
 
 class Produto(models.Model):
@@ -158,3 +159,18 @@ class LancamentoFinanceiro(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.categoria} - R$ {self.valor}"
+
+class Despesa(models.Model):
+    TIPOS = [
+        ("Fixo", "Fixo"),
+        ("Variável", "Variável"),
+    ]
+
+    categoria = models.CharField(max_length=100)  # Ex: Aluguel, Marketing
+    tipo = models.CharField(max_length=10, choices=TIPOS)
+    valor = models.DecimalField(max_digits=10, decimal_places=2)
+    data = models.DateField(default=now)
+    descricao = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.categoria} - R$ {self.valor:.2f}"
