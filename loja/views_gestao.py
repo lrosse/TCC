@@ -251,6 +251,29 @@ def financeiro(request):
     meses_labels = list(month_abbr)[1:13]  # ['Jan', 'Feb', 'Mar'...]
 
     # ------------------------------
+    # POST: salvar nova despesa
+    # ------------------------------
+    if request.method == "POST":
+        categoria = request.POST.get("categoria")
+        tipo = request.POST.get("tipo")
+        valor = request.POST.get("valor")
+        data = request.POST.get("data")
+        descricao = request.POST.get("descricao", "")
+
+        if categoria and tipo and valor and data:
+            Despesa.objects.create(
+                categoria=categoria,
+                tipo=tipo,
+                valor=valor,
+                data=data,
+                descricao=descricao
+            )
+            messages.success(request, "Despesa adicionada com sucesso!")
+            return redirect("financeiro")
+        else:
+            messages.error(request, "Preencha todos os campos obrigatórios.")
+
+    # ------------------------------
     # CARDS
     # ------------------------------
     receita_total = Pedido.objects.filter(status="Pago").aggregate(total=Sum("total"))["total"] or 0
@@ -277,7 +300,7 @@ def financeiro(request):
         .annotate(total=Sum("total"))
     ):
         mes = row["m"]
-        if mes:  # evita erro se vier None
+        if mes:
             receitas_mes[mes - 1] = float(row["total"] or 0)
 
     # Custos
@@ -339,10 +362,10 @@ def financeiro(request):
     for p in pedidos:
         receita = p.total or 0
         custo = (
-    PedidoItem.objects.filter(pedido=p)
-    .aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
-    ["total"] or 0
-)
+            PedidoItem.objects.filter(pedido=p)
+            .aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
+            ["total"] or 0
+        )
         lucro = receita - custo
         pedidos_data.append({
             "numero": p.numero_pedido,
@@ -352,6 +375,11 @@ def financeiro(request):
             "custo": float(custo),
             "lucro": float(lucro),
         })
+
+    # ------------------------------
+    # DESPESAS (listagem para tabela)
+    # ------------------------------
+    despesas = Despesa.objects.all().order_by("-data")
 
     ctx = {
         # Cards
@@ -374,8 +402,8 @@ def financeiro(request):
         "top_menos_labels": json.dumps([p["nome"] for p in top_menos], ensure_ascii=False),
         # Pedidos
         "pedidos_data": pedidos_data,
+        # Despesas
+        "despesas": despesas,
     }
 
     return render(request, "loja/gestao/financeiro.html", ctx)
-
-
