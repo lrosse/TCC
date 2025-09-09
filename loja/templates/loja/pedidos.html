@@ -6,46 +6,42 @@
 <div class="container-fluid">
     <h2 class="mb-4">Pedidos Realizados</h2>
 
-    <!-- Barra de busca e botão de filtro -->
-    <form method="get" class="row g-3 align-items-end mb-4">
+    <!-- Barra de busca + botão de filtros -->
+    <div class="row g-2 mb-3">
         <div class="col-md-4">
-            <label for="nome" class="form-label">Buscar por cliente</label>
-            <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: João" value="{{ filtros.nome }}">
+            <input type="text" class="form-control" id="nome" placeholder="Pesquisar por cliente...">
         </div>
-
-        <div class="col-md-2">
-            <button type="button" class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#filtrosAvancados">
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosAvancados" aria-expanded="false" aria-controls="filtrosAvancados">
                 <i class="bi bi-funnel-fill"></i> Filtros
             </button>
         </div>
+    </div>
 
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-primary w-100">Buscar</button>
-        </div>
-
-        <!-- Filtros avançados (colapsável) -->
-        <div class="collapse mt-3" id="filtrosAvancados">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label for="status" class="form-label">Status</label>
-                    <select class="form-select" name="status" id="status">
-                        <option value="">Todos</option>
-                        <option value="Pendente" {% if filtros.status == 'Pendente' %}selected{% endif %}>Pendente</option>
-                        <option value="Pago" {% if filtros.status == 'Pago' %}selected{% endif %}>Pago</option>
-                        <option value="Cancelado" {% if filtros.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="valor" class="form-label">Valor Total</label>
-                    <input type="text" class="form-control" id="valor" name="valor" placeholder="Ex: 99.90" value="{{ filtros.valor }}">
-                </div>
-                <div class="col-md-3">
-                    <label for="data" class="form-label">Data do Pedido</label>
-                    <input type="date" class="form-control" id="data" name="data" value="{{ filtros.data }}">
-                </div>
+    <!-- Filtros avançados (colapsável) -->
+    <div class="collapse mb-3" id="filtrosAvancados">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <select class="form-select" id="status">
+                    <option value="">Todos os status</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="Pago">Pago</option>
+                    <option value="Cancelado">Cancelado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="valor" placeholder="Valor Total (Ex: 99.90)">
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control" id="data">
+            </div>
+            <div class="col-md-2 d-flex">
+                <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-x-circle"></i> Limpar
+                </button>
             </div>
         </div>
-    </form>
+    </div>
 
     <!-- Formulário de alteração em lote -->
     <form method="post" action="{% url 'atualizar_status_pedidos_lote' %}" id="formLote">
@@ -73,7 +69,6 @@
                     <table class="table table-striped align-middle text-center">
                         <thead class="table-dark">
                             <tr>
-                                <!-- 🔹 Apenas botão "Selecionar Todos" -->
                                 <th class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-light" id="btnSelecionarTodos">
                                         Selecionar Todos
@@ -87,9 +82,13 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tabela-pedidos">
                             {% for pedido in pedidos %}
-                            <tr>
+                            <tr data-id="{{ pedido.id }}"
+                                data-cliente="{{ pedido.cliente.username|lower }}"
+                                data-status="{{ pedido.status }}"
+                                data-valor="{{ pedido.total }}"
+                                data-data="{{ pedido.data_criacao|date:'Y-m-d' }}">
                                 <td>
                                     <input type="checkbox" name="pedidos" value="{{ pedido.id }}">
                                 </td>
@@ -144,26 +143,66 @@
     </form>
 </div>
 
-<!-- Script para selecionar todos -->
+<!-- Script -->
 <script>
 const btnSelecionarTodos = document.getElementById('btnSelecionarTodos');
 
-// 🔹 Função para pegar todos os checkboxes
+// 🔹 Selecionar todos
 function getCheckboxes() {
     return document.querySelectorAll('input[name="pedidos"]');
 }
-
-// 🔹 Estado atual (se todos estão marcados ou não)
 let todosSelecionados = false;
-
-// 🔹 Clique no botão alterna entre marcar e desmarcar todos
 btnSelecionarTodos.addEventListener('click', function() {
     const checkboxes = getCheckboxes();
     todosSelecionados = !todosSelecionados;
-
     checkboxes.forEach(cb => cb.checked = todosSelecionados);
-
     btnSelecionarTodos.textContent = todosSelecionados ? "Desmarcar Todos" : "Selecionar Todos";
+});
+
+// ================================
+// 🔹 Filtros em tempo real (front-end)
+// ================================
+const filtroNome = document.getElementById("nome");
+const filtroStatus = document.getElementById("status");
+const filtroValor = document.getElementById("valor");
+const filtroData = document.getElementById("data");
+const btnLimpar = document.getElementById("btn-limpar-filtros");
+const linhas = document.querySelectorAll("#tabela-pedidos tr[data-id]");
+
+function aplicarFiltros() {
+    const termo = filtroNome.value.trim().toLowerCase();
+    const status = filtroStatus.value;
+    const valor = filtroValor.value.trim();
+    const data = filtroData.value;
+
+    linhas.forEach(tr => {
+        const cliente = tr.dataset.cliente;
+        const statusPedido = tr.dataset.status;
+        const valorPedido = tr.dataset.valor;
+        const dataPedido = tr.dataset.data;
+
+        const matchNome = !termo || cliente.includes(termo);
+        const matchStatus = !status || statusPedido === status;
+        const matchValor = !valor || valorPedido.includes(valor);
+        const matchData = !data || dataPedido.startsWith(data);
+
+        tr.style.display = (matchNome && matchStatus && matchValor && matchData) ? "" : "none";
+    });
+}
+
+// Escuta alterações
+[filtroNome, filtroStatus, filtroValor, filtroData].forEach(el => {
+    el?.addEventListener("input", aplicarFiltros);
+    el?.addEventListener("change", aplicarFiltros);
+});
+
+// Botão limpar
+btnLimpar.addEventListener("click", () => {
+    filtroNome.value = "";
+    filtroStatus.value = "";
+    filtroValor.value = "";
+    filtroData.value = "";
+    aplicarFiltros();
 });
 </script>
 {% endblock %}

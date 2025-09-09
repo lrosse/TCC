@@ -32,30 +32,55 @@ from django.http import JsonResponse
 import json
 from calendar import month_name
 from calendar import monthrange
-
+from django.db.models import Avg
+from django.shortcuts import render
+from .models import Produto
 
 def home(request):
-    produtos = Produto.objects.all()
+    produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota"))
 
-    # Pegando os parâmetros da URL
     termo_busca = request.GET.get('q')
     preco_min = request.GET.get('preco_min')
     preco_max = request.GET.get('preco_max')
+    nota_min = request.GET.get('nota_min')
 
-    # Filtro por nome (busca)
     if termo_busca:
         produtos = produtos.filter(nome__icontains=termo_busca)
 
-    # Filtro por faixa de preço
     if preco_min:
         produtos = produtos.filter(preco__gte=preco_min)
     if preco_max:
         produtos = produtos.filter(preco__lte=preco_max)
 
+    if nota_min:
+        produtos = produtos.filter(media_nota__gte=nota_min)
+
     context = {
         'produtos': produtos,
+        'filtros': {
+            'q': termo_busca or '',
+            'preco_min': preco_min or '',
+            'preco_max': preco_max or '',
+            'nota_min': nota_min or '',
+        }
     }
     return render(request, 'loja/home.html', context)
+
+def buscar_produtos(request):
+    termo = request.GET.get("q", "").strip()
+    resultados = []
+
+    if termo:
+        produtos = Produto.objects.filter(nome__icontains=termo)[:10]
+        for p in produtos:
+            resultados.append({
+                "id": p.id,
+                "nome": p.nome,
+                "imagem": p.imagem.url if p.imagem else None,
+                "url": f"/produto/{p.id}/"
+            })
+
+    return JsonResponse(resultados, safe=False)
 
 def registrar(request):
     next_url = request.GET.get("next") or request.POST.get("next")
@@ -69,6 +94,11 @@ def registrar(request):
             # 🔄 Migra carrinho da sessão para o banco
             migrar_carrinho_sessao_para_usuario(request, user)
 
+            # 🔹 Recalcula contador da navbar pelo banco
+            carrinho = get_or_create_carrinho(user)
+            request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
+            request.session.modified = True
+
             # 🔀 Redireciona para origem, se existir
             return redirect(next_url or 'home')
     else:
@@ -78,6 +108,7 @@ def registrar(request):
         'form': form,
         'next': next_url
     })
+
 
 def entrar(request):
     next_url = request.GET.get("next") or request.POST.get("next")
@@ -91,6 +122,11 @@ def entrar(request):
             # 🔄 Migra carrinho da sessão para o banco
             migrar_carrinho_sessao_para_usuario(request, user)
 
+            # 🔹 Recalcula contador da navbar pelo banco
+            carrinho = get_or_create_carrinho(user)
+            request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
+            request.session.modified = True
+
             # 🔀 Redireciona para origem, se existir
             return redirect(next_url or 'home')
     else:
@@ -100,7 +136,6 @@ def entrar(request):
         'form': form,
         'next': next_url
     })
-
 def sair(request):
     logout(request)
     return redirect('home')
@@ -489,51 +524,64 @@ def adicionar_ao_carrinho(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
 
     if request.user.is_authenticated:
-        # 🔒 Usuário logado → usa Carrinho do banco
+        # 🔒 Usuário logado → Carrinho no banco
         carrinho = get_or_create_carrinho(request.user)
-        item_carrinho, criado = ItemCarrinho.objects.get_or_create(
+        item, criado = ItemCarrinho.objects.get_or_create(
             carrinho=carrinho,
             produto=produto,
             defaults={'preco_unitario': produto.preco, 'quantidade': 1}
         )
         if not criado:
-            item_carrinho.quantidade += 1
-            item_carrinho.save()
+            item.quantidade += 1
+            item.save()
         carrinho.calcular_total()
-        messages.success(request, f"'{produto.nome}' foi adicionado ao seu carrinho.")
-        return redirect('ver_carrinho')
+
+        # 🔹 Atualiza contador na navbar
+        request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
 
     else:
-        # 👤 Usuário anônimo → salva na sessão
+        # 👤 Usuário anônimo → Carrinho na sessão
         carrinho_sessao = request.session.get("carrinho", {})
-
         if str(produto_id) in carrinho_sessao:
             carrinho_sessao[str(produto_id)]["quantidade"] += 1
         else:
             carrinho_sessao[str(produto_id)] = {
                 "nome": produto.nome,
-                "preco_unitario": str(produto.preco),  # Decimal → string
+                "preco_unitario": str(produto.preco),
                 "quantidade": 1,
                 "imagem": produto.imagem.url if produto.imagem else None,
             }
-
         request.session["carrinho"] = carrinho_sessao
-        request.session.modified = True  # Garante que a sessão será salva
 
-        messages.success(request, f"'{produto.nome}' foi adicionado ao seu carrinho (sessão).")
-        return redirect('ver_carrinho')
+        # 🔹 Atualiza contador na navbar
+        request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
+
+    request.session.modified = True
+    messages.success(request, f"'{produto.nome}' foi adicionado ao carrinho.")
+    return redirect('ver_carrinho')
 
 
 def ver_carrinho(request):
     if request.user.is_authenticated:
         # 🔒 Usuário logado → usa carrinho do banco
         carrinho = get_or_create_carrinho(request.user)
-        itens = ItemCarrinho.objects.filter(carrinho=carrinho)
+        itens = []
+
+        for item in ItemCarrinho.objects.filter(carrinho=carrinho):
+            itens.append({
+                "id": item.id,
+                "nome": item.produto.nome,  # ✅ padroniza com o mesmo nome do anônimo
+                "quantidade": item.quantidade,
+                "preco_unitario": item.preco_unitario,
+                "subtotal": item.subtotal(),
+                "imagem": item.produto.imagem.url if item.produto.imagem else None,
+            })
+
         total = carrinho.valor_total
         return render(request, 'loja/carrinho.html', {
             'itens': itens,
             'total': total,
-            'sessao': False  # flag para template saber a origem
+            'sessao': False
         })
 
     else:
@@ -547,7 +595,7 @@ def ver_carrinho(request):
             total += subtotal
             itens.append({
                 "id": produto_id,
-                "nome": dados["nome"],
+                "nome": dados["nome"],  # ✅ mesma chave que no logado
                 "quantidade": dados["quantidade"],
                 "preco_unitario": Decimal(dados["preco_unitario"]),
                 "subtotal": subtotal,
@@ -557,16 +605,19 @@ def ver_carrinho(request):
         return render(request, 'loja/carrinho.html', {
             'itens': itens,
             'total': total,
-            'sessao': True  # flag para template saber a origem
+            'sessao': True
         })
-
+        
 def remover_do_carrinho(request, item_id):
     if request.user.is_authenticated:
         # 🔒 Usuário logado → remove do banco
         item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
+        carrinho = item.carrinho
         item.delete()
-        item.carrinho.calcular_total()
-        return redirect('ver_carrinho')
+        carrinho.calcular_total()
+
+        # 🔹 Atualiza contador na navbar
+        request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
 
     else:
         # 👤 Usuário anônimo → remove da sessão
@@ -574,8 +625,12 @@ def remover_do_carrinho(request, item_id):
         if str(item_id) in carrinho_sessao:
             del carrinho_sessao[str(item_id)]
             request.session["carrinho"] = carrinho_sessao
-            request.session.modified = True
-        return redirect('ver_carrinho')
+
+        # 🔹 Atualiza contador na navbar
+        request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
+
+    request.session.modified = True
+    return redirect('ver_carrinho')
 
 def alterar_quantidade(request, item_id):
     if request.user.is_authenticated:
@@ -589,7 +644,9 @@ def alterar_quantidade(request, item_id):
             else:
                 item.delete()
             item.carrinho.calcular_total()
-        return redirect('ver_carrinho')
+
+            # 🔹 Atualiza contador na navbar
+            request.session["carrinho_itens"] = sum(i.quantidade for i in item.carrinho.itemcarrinho_set.all())
 
     else:
         # 👤 Usuário anônimo → altera na sessão
@@ -606,9 +663,12 @@ def alterar_quantidade(request, item_id):
                 del carrinho_sessao[str(item_id)]
 
             request.session["carrinho"] = carrinho_sessao
-            request.session.modified = True
 
-        return redirect('ver_carrinho')
+        # 🔹 Atualiza contador na navbar
+        request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
+
+    request.session.modified = True
+    return redirect('ver_carrinho')
 
 def migrar_carrinho_sessao_para_usuario(request, user):
     carrinho_sessao = request.session.get("carrinho", {})
@@ -749,7 +809,11 @@ def finalizar_compra(request):
             itens.delete()
             carrinho.valor_total = Decimal('0.00')
             carrinho.save()
-            
+
+            # 🔹 Zera contador da navbar
+            request.session["carrinho_itens"] = 0
+            request.session.modified = True
+
             print("🧹 Carrinho limpo")
 
         except Exception as e:
@@ -795,9 +859,9 @@ def finalizar_compra(request):
         # 9) SUCESSO!
         return render(request, "loja/pedido_confirmado.html", {
             "whatsapp_url": whatsapp_url,
-            "pedido_id": pedido.id,  # pode remover se não usar mais
+            "pedido_id": pedido.id,
             "nome_cliente": nome,
-            "numero_pedido": pedido.numero_pedido,  # 👈 garante que o template recebe
+            "numero_pedido": pedido.numero_pedido,
         })
 
     # GET

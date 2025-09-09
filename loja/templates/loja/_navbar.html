@@ -11,25 +11,31 @@
 
       <!-- 🔹 Barra de pesquisa → aparece só na Home -->
       {% if request.resolver_match.url_name == "home" %}
-      <div class="mx-auto">
-        <form class="d-flex" role="search" method="GET" action="{% url 'home' %}" id="formBusca">
-          <input class="form-control form-control-sm me-2" type="search" name="q"
-                 placeholder="Buscar produtos..." value="{{ request.GET.q }}">
-          <button class="btn btn-outline-light btn-sm me-2" type="submit"><i class="bi bi-search"></i></button>
+      <div class="mx-auto position-relative w-50">
+        <form class="d-flex" role="search" onsubmit="return false;">
+          <input id="filtro-busca" class="form-control form-control-sm me-2"
+                 type="search" placeholder="Buscar produtos..." value="{{ filtros.q }}" autocomplete="off">
+
+          <!-- Botão filtros → colapsável -->
           <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras">
             <i class="bi bi-funnel"></i>
           </button>
         </form>
+
+        <!-- 🔽 Dropdown autocomplete -->
+        <ul id="resultado-busca" class="list-group position-absolute w-100 shadow-sm mt-1 d-none"
+            style="z-index:1050; max-height:300px; overflow-y:auto;"></ul>
       </div>
       {% endif %}
 
       <!-- 🔹 Direita -->
       <div class="d-flex align-items-center gap-3 ms-auto">
 
-        <!-- Carrinho → aparece sempre -->
+        <!-- Carrinho -->
         <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
           <i class="bi bi-cart3 text-white cart-icon"></i>
-          <span id="cartBadge" class="cart-badge {% if not request.session.carrinho_itens %}d-none{% endif %}">
+          <!-- 🔹 Badge sempre visível agora -->
+          <span id="cartBadge" class="cart-badge">
             {{ request.session.carrinho_itens|default:0 }}
           </span>
         </a>
@@ -91,42 +97,80 @@
   </div>
 </nav>
 
+<!-- 🔹 Modal Logout (disponível em todas as páginas que usam a navbar) -->
+<div class="modal fade" id="confirmLogout" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar saída</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">Tem certeza que deseja sair?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <a href="{% url 'logout' %}" class="btn btn-danger">Sair</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 🔹 Filtros colapsáveis -->
+<div class="collapse container mt-2" id="filtrosExtras">
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Preço mín." value="{{ filtros.preco_min }}">
+        </div>
+        <div class="col-md-3">
+          <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Preço máx." value="{{ filtros.preco_max }}">
+        </div>
+        <div class="col-md-3">
+          <select class="form-select form-select-sm" id="nota_min">
+            <option value="">Todas</option>
+            <option value="1" {% if filtros.nota_min == '1' %}selected{% endif %}>⭐ 1+</option>
+            <option value="2" {% if filtros.nota_min == '2' %}selected{% endif %}>⭐ 2+</option>
+            <option value="3" {% if filtros.nota_min == '3' %}selected{% endif %}>⭐ 3+</option>
+            <option value="4" {% if filtros.nota_min == '4' %}selected{% endif %}>⭐ 4+</option>
+            <option value="5" {% if filtros.nota_min == '5' %}selected{% endif %}>⭐ 5</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex">
+          <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100">
+            <i class="bi bi-x-circle"></i> Limpar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
-/* 🔹 Estilo avatar */
 .perfil-avatar {
-  width: 36px;
-  height: 36px;
-  background: #e9ecef;
-  color: #495057;
-  border-radius: 50%;
-  font-weight: 700;
-  font-size: .95rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px; height: 36px;
+  background: #e9ecef; color: #495057;
+  border-radius: 50%; font-weight: 700;
+  font-size: .95rem; display: inline-flex;
+  align-items: center; justify-content: center;
 }
 .cart-icon { font-size: 1.4rem; }
 .cart-badge {
-  position: absolute;
-  top: -6px;
-  right: -10px;
-  background: #dc3545;
+  position: absolute; top: -6px; right: -10px;
+  background: #0d6efd; /* azul Bootstrap */
   color: #fff;
-  border-radius: 999px;
-  font-size: .75rem;
-  padding: 2px 6px;
-  line-height: 1;
+  border-radius: 999px; font-size: .75rem;
+  padding: 2px 6px; line-height: 1;
+  min-width: 18px; text-align: center;
 }
 </style>
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  // 🔹 Dropdown perfil → mesma lógica do antigo
   const profileBtn = document.querySelector(".navbar-profile > button");
   const dropdownMenu = document.querySelector(".navbar-profile .dropdown-menu");
-
   let fixedOpen = false;
 
-  // Clique alterna fixar/soltar
   profileBtn.addEventListener("click", function(e) {
     e.preventDefault();
     fixedOpen = !fixedOpen;
@@ -137,11 +181,93 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Fecha se clicar fora
   document.addEventListener("click", function(e) {
     if (!e.target.closest(".navbar-profile")) {
       fixedOpen = false;
       dropdownMenu.classList.remove("show");
+    }
+  });
+
+  // 🔹 Filtros em tempo real
+  const inputBusca = document.getElementById("filtro-busca");
+  const resultadoDiv = document.getElementById("resultado-busca");
+  const precoMin = document.getElementById("preco_min");
+  const precoMax = document.getElementById("preco_max");
+  const notaMin = document.getElementById("nota_min");
+  const btnLimpar = document.getElementById("btn-limpar-filtros");
+
+  function aplicarFiltros() {
+    const termo = inputBusca.value.trim().toLowerCase();
+    const min = parseFloat(precoMin?.value) || 0;
+    const max = parseFloat(precoMax?.value) || Infinity;
+    const nota = parseInt(notaMin?.value) || 0;
+
+    document.querySelectorAll(".produto-card").forEach(card => {
+      const nome = card.dataset.nome;
+      const preco = parseFloat(card.dataset.preco);
+      const media = parseFloat(card.dataset.nota);
+
+      const matchNome = !termo || nome.includes(termo);
+      const matchPreco = preco >= min && preco <= max;
+      const matchNota = media >= nota;
+
+      card.style.display = (matchNome && matchPreco && matchNota) ? "" : "none";
+    });
+  }
+
+  [inputBusca, precoMin, precoMax, notaMin].forEach(el => {
+    el?.addEventListener("input", aplicarFiltros);
+    el?.addEventListener("change", aplicarFiltros);
+  });
+
+  btnLimpar?.addEventListener("click", () => {
+    precoMin.value = "";
+    precoMax.value = "";
+    notaMin.value = "";
+    inputBusca.value = "";
+    aplicarFiltros();
+  });
+
+  // 🔹 Autocomplete
+  inputBusca?.addEventListener("input", async function() {
+    const termo = this.value.trim();
+    if (termo.length < 2) {
+      resultadoDiv.innerHTML = "";
+      resultadoDiv.classList.add("d-none");
+      return;
+    }
+
+    const resp = await fetch(`/buscar-produtos/?q=${encodeURIComponent(termo)}`);
+    const produtos = await resp.json();
+
+    if (produtos.length === 0) {
+      resultadoDiv.innerHTML = `<li class="list-group-item text-muted">Nenhum produto encontrado</li>`;
+      resultadoDiv.classList.remove("d-none");
+      return;
+    }
+
+    resultadoDiv.innerHTML = produtos.map(p => `
+      <li class="list-group-item d-flex align-items-center">
+        <img src="${p.imagem || '/static/img/sem-imagem.png'}"
+             alt="" class="me-2" style="width:32px; height:32px; object-fit:cover; border-radius:4px;">
+        <a href="${p.url}" class="text-decoration-none flex-grow-1">${p.nome}</a>
+      </li>
+    `).join("");
+
+    resultadoDiv.innerHTML += `
+      <li class="list-group-item text-center bg-light">
+        <a href="/?q=${encodeURIComponent(termo)}" class="text-decoration-none">
+          Ver todos os resultados para "<strong>${termo}</strong>"
+        </a>
+      </li>
+    `;
+
+    resultadoDiv.classList.remove("d-none");
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest("#filtro-busca") && !e.target.closest("#resultado-busca")) {
+      resultadoDiv.classList.add("d-none");
     }
   });
 });
