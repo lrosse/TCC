@@ -4,11 +4,13 @@ import csv
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.timezone import localtime
+from django.utils import timezone
+from django.utils.timezone import now
 from django.contrib import messages
 from django.db import models
 from django.http import JsonResponse
 from django.http import HttpResponse
-from .models import Produto, MovimentacaoEstoque, Pedido, LancamentoFinanceiro
+from .models import Produto, MovimentacaoEstoque, Pedido, LancamentoFinanceiro, PedidoItem, Despesa
 from django.db.models import Sum
 from .views import (
     _agregar_vendas_por_mes,
@@ -236,3 +238,144 @@ def exportar_financeiro_pdf(request):
     p.showPage()
     p.save()
     return response
+
+@login_required
+@user_passes_test(admin_required)
+def financeiro(request):
+    from django.db.models import Sum, F, DecimalField, ExpressionWrapper
+    from django.db.models.functions import ExtractMonth
+    from calendar import month_abbr
+    import json
+
+    ano_atual = timezone.localdate().year
+    meses_labels = list(month_abbr)[1:13]  # ['Jan', 'Feb', 'Mar'...]
+
+    # ------------------------------
+    # CARDS
+    # ------------------------------
+    receita_total = Pedido.objects.filter(status="Pago").aggregate(total=Sum("total"))["total"] or 0
+    custo_total = PedidoItem.objects.filter(pedido__status="Pago").aggregate(
+        total=Sum(ExpressionWrapper(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
+    )["total"] or 0
+    despesas_fixas = Despesa.objects.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0
+    despesas_variaveis = Despesa.objects.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0
+    lucro_liquido = receita_total - custo_total - despesas_fixas - despesas_variaveis
+
+    # ------------------------------
+    # GRÁFICO Receitas vs Despesas (por mês)
+    # ------------------------------
+    receitas_mes = [0] * 12
+    despesas_mes = [0] * 12
+    lucro_mes = [0] * 12
+    custos_mes = [0] * 12
+
+    # Receitas
+    for row in (
+        Pedido.objects.filter(status="Pago", data_criacao__year=ano_atual)
+        .annotate(m=ExtractMonth("data_criacao"))
+        .values("m")
+        .annotate(total=Sum("total"))
+    ):
+        mes = row["m"]
+        if mes:  # evita erro se vier None
+            receitas_mes[mes - 1] = float(row["total"] or 0)
+
+    # Custos
+    for row in (
+        PedidoItem.objects.filter(pedido__status="Pago", pedido__data_criacao__year=ano_atual)
+        .annotate(m=ExtractMonth("pedido__data_criacao"))
+        .values("m")
+        .annotate(
+            total=Sum(ExpressionWrapper(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
+        )
+    ):
+        mes = row["m"]
+        if mes:
+            custos_mes[mes - 1] = float(row["total"] or 0)
+
+    # Despesas
+    for row in (
+        Despesa.objects.filter(data__year=ano_atual)
+        .annotate(m=ExtractMonth("data"))
+        .values("m")
+        .annotate(total=Sum("valor"))
+    ):
+        mes = row["m"]
+        if mes:
+            despesas_mes[mes - 1] = float(row["total"] or 0)
+
+    # Lucro líquido mês a mês
+    for i in range(12):
+        lucro_mes[i] = receitas_mes[i] - custos_mes[i] - despesas_mes[i]
+
+    # ------------------------------
+    # PRODUTOS (top 5 mais/menos rentáveis)
+    # ------------------------------
+    produtos_data = []
+    for produto in Produto.objects.all():
+        vendidos = PedidoItem.objects.filter(produto=produto, pedido__status="Pago")
+        receita = vendidos.aggregate(total=Sum(F("quantidade") * F("preco_unitario"), output_field=DecimalField()))["total"] or 0
+        custo = vendidos.aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))["total"] or 0
+        lucro = receita - custo
+        margem = (lucro / custo * 100) if custo > 0 else 0
+
+        produtos_data.append({
+            "nome": produto.nome,
+            "custo": float(custo),
+            "preco": float(produto.preco),
+            "margem": round(margem, 2),
+            "lucro_unitario": float(produto.preco - produto.preco),  # ajuste se tiver campo de custo
+            "lucro_total": float(lucro),
+        })
+
+    top_mais = sorted(produtos_data, key=lambda x: x["lucro_total"], reverse=True)[:5]
+    top_menos = sorted(produtos_data, key=lambda x: x["lucro_total"])[:5]
+
+    # ------------------------------
+    # PEDIDOS (lucro por pedido)
+    # ------------------------------
+    pedidos_data = []
+    pedidos = Pedido.objects.filter(status="Pago").select_related("cliente")
+    for p in pedidos:
+        receita = p.total or 0
+        custo = (
+    PedidoItem.objects.filter(pedido=p)
+    .aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
+    ["total"] or 0
+)
+        lucro = receita - custo
+        pedidos_data.append({
+            "numero": p.numero_pedido,
+            "cliente": p.cliente.username,
+            "data": p.data_criacao.strftime("%d/%m/%Y"),
+            "receita": float(receita),
+            "custo": float(custo),
+            "lucro": float(lucro),
+        })
+
+    ctx = {
+        # Cards
+        "receita_total": receita_total,
+        "custo_total": custo_total,
+        "despesas_fixas": despesas_fixas,
+        "lucro_liquido": lucro_liquido,
+        # Gráficos
+        "meses_labels_json": json.dumps(meses_labels, ensure_ascii=False),
+        "receitas_mes_json": json.dumps(receitas_mes),
+        "despesas_mes_json": json.dumps(despesas_mes),
+        "lucro_mes_json": json.dumps(lucro_mes),
+        "fixas_valor": float(despesas_fixas),
+        "variaveis_valor": float(despesas_variaveis),
+        # Produtos
+        "produtos_data": produtos_data,
+        "top_mais_json": json.dumps([p["lucro_total"] for p in top_mais]),
+        "top_mais_labels": json.dumps([p["nome"] for p in top_mais], ensure_ascii=False),
+        "top_menos_json": json.dumps([p["lucro_total"] for p in top_menos]),
+        "top_menos_labels": json.dumps([p["nome"] for p in top_menos], ensure_ascii=False),
+        # Pedidos
+        "pedidos_data": pedidos_data,
+    }
+
+    return render(request, "loja/gestao/financeiro.html", ctx)
+
+

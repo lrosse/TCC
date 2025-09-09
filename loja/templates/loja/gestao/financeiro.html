@@ -6,10 +6,12 @@
   <h2 class="fw-semibold mb-4">Gestão Financeira</h2>
 
   <!-- 🔔 Avisos Inteligentes -->
+  {% if lucro_liquido < 0 %}
   <div class="alert alert-danger d-flex align-items-center" role="alert">
     <i class="bi bi-exclamation-triangle me-2"></i>
     Gastos do mês estão acima da receita! Revise suas despesas.
   </div>
+  {% endif %}
 
   <!-- Abas -->
   <ul class="nav nav-tabs mb-4" id="financeiroTabs" role="tablist">
@@ -23,27 +25,13 @@
 
     <!-- 🔹 RESUMO GERAL -->
     <div class="tab-pane fade show active" id="resumo">
-      <!-- Filtro único para todos os cards -->
-      <div class="d-flex justify-content-end mb-3">
-        <select class="form-select w-auto me-2">
-          <option>2024</option>
-          <option selected>2025</option>
-        </select>
-        <select class="form-select w-auto">
-          <option>Janeiro</option>
-          <option>Fevereiro</option>
-          <option selected>Março</option>
-        </select>
-      </div>
-
       <div class="row g-4 mb-4">
         <!-- Receita -->
         <div class="col-md-3">
           <div class="card text-center shadow-sm border-0">
             <div class="card-body">
               <h6 class="text-muted">Receita Total</h6>
-              <p class="fs-5 fw-bold text-success">R$ <!-- FUTURO: total_receitas --></p>
-              <small class="text-success">+15% em relação ao mês anterior</small>
+              <p class="fs-5 fw-bold text-success">R$ {{ receita_total|floatformat:2 }}</p>
             </div>
           </div>
         </div>
@@ -52,8 +40,7 @@
           <div class="card text-center shadow-sm border-0">
             <div class="card-body">
               <h6 class="text-muted">Custo Total</h6>
-              <p class="fs-5 fw-bold text-danger">R$ <!-- FUTURO: custo_total --></p>
-              <small class="text-danger">+10% em relação ao mês anterior</small>
+              <p class="fs-5 fw-bold text-danger">R$ {{ custo_total|floatformat:2 }}</p>
             </div>
           </div>
         </div>
@@ -62,8 +49,7 @@
           <div class="card text-center shadow-sm border-0">
             <div class="card-body">
               <h6 class="text-muted">Despesas Fixas</h6>
-              <p class="fs-5 fw-bold text-warning">R$ <!-- FUTURO: despesas_fixas --></p>
-              <small class="text-warning">-5% em relação ao mês anterior</small>
+              <p class="fs-5 fw-bold text-warning">R$ {{ despesas_fixas|floatformat:2 }}</p>
             </div>
           </div>
         </div>
@@ -72,8 +58,9 @@
           <div class="card text-center shadow-sm border-0">
             <div class="card-body">
               <h6 class="text-muted">Lucro Líquido</h6>
-              <p class="fs-5 fw-bold text-primary">R$ <!-- FUTURO: lucro_liquido_mes --></p>
-              <small class="text-primary">+8% em relação ao mês anterior</small>
+              <p class="fs-5 fw-bold {% if lucro_liquido < 0 %}text-danger{% else %}text-primary{% endif %}">
+                R$ {{ lucro_liquido|floatformat:2 }}
+              </p>
             </div>
           </div>
         </div>
@@ -85,36 +72,16 @@
         <div class="col-md-4">
           <div class="card shadow-sm border-0">
             <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-semibold">Receitas vs Despesas</h6>
-                <div class="d-flex">
-                  <select class="form-select form-select-sm me-2">
-                    <option selected>2025</option>
-                  </select>
-                  <select class="form-select form-select-sm">
-                    <option selected>Março</option>
-                  </select>
-                </div>
-              </div>
+              <h6 class="fw-semibold mb-2">Receitas vs Despesas</h6>
               <canvas id="graficoReceitasDespesas"></canvas>
             </div>
           </div>
         </div>
-        <!-- Lucro Líquido Acumulado -->
+        <!-- Lucro Líquido -->
         <div class="col-md-4">
           <div class="card shadow-sm border-0">
             <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="fw-semibold">Lucro Líquido Acumulado</h6>
-                <div class="d-flex">
-                  <select class="form-select form-select-sm me-2">
-                    <option selected>2025</option>
-                  </select>
-                  <select class="form-select form-select-sm">
-                    <option selected>Março</option>
-                  </select>
-                </div>
-              </div>
+              <h6 class="fw-semibold mb-2">Lucro Líquido</h6>
               <canvas id="graficoLucro"></canvas>
             </div>
           </div>
@@ -150,13 +117,15 @@
               </tr>
             </thead>
             <tbody id="tabelaProdutos">
+              {% for p in produtos_data %}
               <tr>
-                <td>Produto Exemplo</td>
-                <td>R$ 50,00</td>
-                <td>R$ 80,00</td>
-                <td>60%</td>
-                <td>R$ 30,00</td>
+                <td>{{ p.nome }}</td>
+                <td>R$ {{ p.custo|floatformat:2 }}</td>
+                <td>R$ {{ p.preco|floatformat:2 }}</td>
+                <td>{{ p.margem }}%</td>
+                <td>R$ {{ p.lucro_unitario|floatformat:2 }}</td>
               </tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
@@ -202,14 +171,18 @@
               </tr>
             </thead>
             <tbody id="tabelaPedidos">
+              {% for p in pedidos_data %}
               <tr>
-                <td>#202509-AB12CD34</td>
-                <td>Cliente Exemplo</td>
-                <td>08/09/2025</td>
-                <td>R$ 500,00</td>
-                <td>R$ 300,00</td>
-                <td class="text-success">R$ 200,00</td>
+                <td>#{{ p.numero }}</td>
+                <td>{{ p.cliente }}</td>
+                <td>{{ p.data }}</td>
+                <td>R$ {{ p.receita|floatformat:2 }}</td>
+                <td>R$ {{ p.custo|floatformat:2 }}</td>
+                <td class="{% if p.lucro < 0 %}text-danger{% else %}text-success{% endif %}">
+                  R$ {{ p.lucro|floatformat:2 }}
+                </td>
               </tr>
+              {% endfor %}
             </tbody>
           </table>
         </div>
@@ -219,41 +192,7 @@
     <!-- 🔹 DESPESAS -->
     <div class="tab-pane fade" id="despesas">
       <div class="row g-4 mb-4">
-        <div class="col-md-6">
-          <div class="card shadow-sm border-0">
-            <div class="card-body">
-              <h5 class="fw-semibold mb-3">Adicionar Despesa</h5>
-              <form>
-                <div class="mb-3">
-                  <label class="form-label">Categoria</label>
-                  <input type="text" class="form-control" placeholder="Ex: Aluguel, Marketing">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Tipo</label>
-                  <select class="form-select">
-                    <option>Fixo</option>
-                    <option>Variável</option>
-                  </select>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Valor (R$)</label>
-                  <input type="number" step="0.01" class="form-control">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Data</label>
-                  <input type="date" class="form-control">
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Descrição</label>
-                  <textarea class="form-control"></textarea>
-                </div>
-                <button class="btn btn-danger" type="submit"><i class="bi bi-plus-circle"></i> Adicionar</button>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6">
+        <div class="col-md-12">
           <div class="card shadow-sm border-0">
             <div class="card-body">
               <h5 class="fw-semibold mb-3">Despesas Registradas</h5>
@@ -264,20 +203,19 @@
                     <th>Categoria</th>
                     <th>Tipo</th>
                     <th>Valor</th>
-                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {% for d in despesas %}
                   <tr>
-                    <td>01/09/2025</td>
-                    <td>Aluguel</td>
-                    <td>Fixo</td>
-                    <td>R$ 1.200,00</td>
-                    <td>
-                      <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
-                      <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                    </td>
+                    <td>{{ d.data|date:"d/m/Y" }}</td>
+                    <td>{{ d.categoria }}</td>
+                    <td>{{ d.tipo }}</td>
+                    <td>R$ {{ d.valor|floatformat:2 }}</td>
                   </tr>
+                  {% empty %}
+                  <tr><td colspan="4" class="text-center text-muted">Nenhuma despesa registrada.</td></tr>
+                  {% endfor %}
                 </tbody>
               </table>
             </div>
@@ -292,40 +230,53 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Exemplos de gráficos
+const meses = {{ meses_labels_json|safe }};
+const receitas = {{ receitas_mes_json|safe }};
+const despesas = {{ despesas_mes_json|safe }};
+const lucro = {{ lucro_mes_json|safe }};
+const fixas = {{ fixas_valor }};
+const variaveis = {{ variaveis_valor }};
+
+// 📊 Receitas vs Despesas
 new Chart(document.getElementById('graficoReceitasDespesas'), {
   type: 'bar',
-  data: { labels: ['Jan','Fev','Mar'], datasets: [
-    { label: 'Receitas', data: [1000,1200,1500], backgroundColor: '#198754' },
-    { label: 'Despesas', data: [600,800,700], backgroundColor: '#dc3545' }
+  data: { labels: meses, datasets: [
+    { label: 'Receitas', data: receitas, backgroundColor: '#198754' },
+    { label: 'Despesas', data: despesas, backgroundColor: '#dc3545' }
   ]}
 });
+
+// 📊 Lucro líquido
 new Chart(document.getElementById('graficoLucro'), {
   type: 'line',
-  data: { labels: ['Jan','Fev','Mar'], datasets: [
-    { label: 'Lucro Líquido', data: [400,500,800], borderColor: '#0d6efd', fill: true }
+  data: { labels: meses, datasets: [
+    { label: 'Lucro Líquido', data: lucro, borderColor: '#0d6efd', fill: true }
   ]}
 });
+
+// 📊 Despesas fixas vs variáveis
 new Chart(document.getElementById('graficoDespesas'), {
   type: 'doughnut',
   data: { labels: ['Fixas','Variáveis'], datasets: [
-    { data: [2000,1500], backgroundColor: ['#ffc107','#0dcaf0'] }
+    { data: [fixas, variaveis], backgroundColor: ['#ffc107','#0dcaf0'] }
   ]}
 });
+
+// 📊 Top Produtos
 new Chart(document.getElementById('graficoTopMais'), {
   type: 'bar',
-  data: { labels: ['Produto A','Produto B','Produto C'], datasets: [
-    { label: 'Lucro', data: [500,400,300], backgroundColor: '#20c997' }
+  data: { labels: {{ top_mais_labels|safe }}, datasets: [
+    { label: 'Lucro', data: {{ top_mais_json|safe }}, backgroundColor: '#20c997' }
   ]}
 });
 new Chart(document.getElementById('graficoTopMenos'), {
   type: 'bar',
-  data: { labels: ['Produto X','Produto Y','Produto Z'], datasets: [
-    { label: 'Lucro', data: [50,30,10], backgroundColor: '#fd7e14' }
+  data: { labels: {{ top_menos_labels|safe }}, datasets: [
+    { label: 'Lucro', data: {{ top_menos_json|safe }}, backgroundColor: '#fd7e14' }
   ]}
 });
 
-// Busca instantânea
+// 🔍 Filtros rápidos
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("buscaProdutos").addEventListener("input", function() {
     const termo = this.value.toLowerCase();
