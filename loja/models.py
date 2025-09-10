@@ -17,7 +17,14 @@ class Produto(models.Model):
 
     def __str__(self):
         return self.nome
-    
+
+class CustoProduto(models.Model):
+    produto = models.OneToOneField("Produto", on_delete=models.CASCADE, related_name="custo_info")
+    custo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def __str__(self):
+        return f"{self.produto.nome} - Custo: R$ {self.custo}"
+
 class Carrinho(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE)
     valor_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)

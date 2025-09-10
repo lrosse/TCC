@@ -1,0 +1,73 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Gestão Financeira - Pedidos{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fw-semibold mb-4">Pedidos</h2>
+
+  <!-- Abas -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+         href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+         href="{% url 'financeiro_produtos' %}">Produtos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+         href="{% url 'financeiro_pedidos' %}">Pedidos</a>
+    </li>
+  </ul>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-semibold">Lucro por Pedido</h5>
+        <input type="text" id="buscaPedidos" class="form-control w-25" placeholder="Buscar pedido...">
+      </div>
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Nº Pedido</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th>Custo</th>
+            <th>Receita</th>
+            <th>Lucro</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaPedidos">
+          {% for p in pedidos_data %}
+          <tr>
+            <td>#{{ p.numero }}</td>
+            <td>{{ p.cliente }}</td>
+            <td>{{ p.data }}</td>
+            <td>R$ {{ p.custo|floatformat:2 }}</td>
+            <td>R$ {{ p.receita|floatformat:2 }}</td>
+            <td class="{% if p.lucro < 0 %}text-danger{% else %}text-success{% endif %}">
+              R$ {{ p.lucro|floatformat:2 }}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center text-muted">Nenhum pedido encontrado</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const inputBusca = document.getElementById("buscaPedidos");
+  inputBusca.addEventListener("input", function() {
+    const termo = this.value.toLowerCase();
+    document.querySelectorAll("#tabelaPedidos tr").forEach(row => {
+      row.style.display = row.innerText.toLowerCase().includes(termo) ? "" : "none";
+    });
+  });
+});
+</script>
+{% endblock %}

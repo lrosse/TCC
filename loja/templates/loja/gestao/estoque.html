@@ -54,11 +54,10 @@
         </div>
       </div>
 
-      <!-- 🔹 ÚNICA BARRA DE BUSCA/FILTRO -->
+      <!-- 🔹 Busca e Filtros -->
       <form id="formBusca" class="row g-2 align-items-center mb-3" method="GET">
-        <div class="col-md-6">
+        <div class="col-md-5">
           <div class="input-group">
-            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
             <input type="text" class="form-control" name="q" placeholder="Buscar produto..." value="{{ request.GET.q }}">
           </div>
         </div>
@@ -71,13 +70,20 @@
             <option value="alto" {% if request.GET.filtro == "alto" %}selected{% endif %}>Acima do ideal</option>
           </select>
         </div>
-
-        <div class="col-md-2 d-grid">
-          <button type="submit" class="btn btn-outline-primary">
-            <i class="bi bi-funnel"></i> Aplicar
-          </button>
-        </div>
       </form>
+
+      <!-- Legenda -->
+      <div class="d-flex justify-content-end mb-2">
+        <span class="me-3">
+          <span class="badge bg-danger">&nbsp;&nbsp;</span> Abaixo do mínimo
+        </span>
+        <span class="me-3">
+          <span class="badge bg-success">&nbsp;&nbsp;</span> Bom (entre mínimo e ideal)
+        </span>
+        <span>
+          <span class="badge bg-warning text-dark">&nbsp;&nbsp;</span> Acima do ideal
+        </span>
+      </div>
 
       <!-- Tabela -->
       <div class="table-responsive">
@@ -87,7 +93,8 @@
             <thead class="table-light">
               <tr id="tabelaHead">
                 <th>Produto</th>
-                <th>Estoque</th>
+                <th>Quantidade Atual</th>
+                <th>Estoque (%)</th>
                 <th>Última atualização</th>
               </tr>
             </thead>
@@ -95,10 +102,11 @@
               {% for p in tabela_produtos %}
               <tr data-produto="{{ p.id }}" data-minimo="{{ p.minimo }}" data-ideal="{{ p.ideal }}">
                 <td>{{ p.nome }}</td>
+                <td>{{ p.quantidade }}</td>
                 <td style="width: 300px;">
                   <div class="progress" style="height: 20px;">
                     <div class="progress-bar {{ p.cor }}" role="progressbar" style="width: {{ p.percentual }}%;">
-                      {{ p.quantidade }}
+                      {{ p.percentual }}%
                     </div>
                   </div>
                 </td>
@@ -128,6 +136,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const formBusca = document.getElementById("formBusca");
   const tabelaBody = document.querySelector("#tabelaEstoque tbody");
+  const inputBusca = formBusca.querySelector("input[name='q']");
+  const selectFiltro = formBusca.querySelector("select[name='filtro']");
 
   function attachSalvar() {
     document.getElementById("btnSalvar")?.addEventListener("click", () => {
@@ -162,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tabelaHead.innerHTML = `
         <th>Produto</th>
-        <th>Estoque</th>
+        <th>Quantidade Atual</th>
         <th>Mínimo (vermelho)</th>
         <th>Ideal (verde a partir de)</th>
       `;
@@ -172,10 +182,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const minimo = row.getAttribute("data-minimo");
         const ideal = row.getAttribute("data-ideal");
 
-        row.querySelector(".ultima-atualizacao").outerHTML = `
-          <td><input type="number" name="minimo_${id}" value="${minimo}" class="form-control"></td>
-          <td><input type="number" name="ideal_${id}" value="${ideal}" class="form-control"></td>
-        `;
+        row.querySelectorAll("td").forEach((cell, index) => {
+          if (index === 2) {
+            cell.innerHTML = `<input type="number" name="minimo_${id}" value="${minimo}" class="form-control">`;
+          }
+          if (index === 3) {
+            cell.innerHTML = `<input type="number" name="ideal_${id}" value="${ideal}" class="form-control">`;
+          }
+        });
       });
 
       btnArea.innerHTML = `
@@ -196,10 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
     attachCancelar();
   }
 
-  // 🔍 AJAX Busca/Filtro
-  formBusca.addEventListener("submit", function(e) {
-    e.preventDefault();
-
+  // 🔄 Atualiza tabela em tempo real
+  function atualizarTabela() {
     let formData = new FormData(formBusca);
     let params = new URLSearchParams(formData).toString();
 
@@ -214,10 +226,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let row = `
           <tr data-produto="${p.id}" data-minimo="${p.minimo}" data-ideal="${p.ideal}">
             <td>${p.nome}</td>
+            <td>${p.quantidade}</td>
             <td style="width: 300px;">
               <div class="progress" style="height: 20px;">
                 <div class="progress-bar ${p.cor}" role="progressbar" style="width: ${p.percentual}%;">
-                  ${p.quantidade}
+                  ${p.percentual}%
                 </div>
               </div>
             </td>
@@ -229,7 +242,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       rebindEvents();
     });
-  });
+  }
+
+  // 🔍 Busca em tempo real
+  inputBusca.addEventListener("input", atualizarTabela);
+
+  // 🔽 Filtro em tempo real
+  selectFiltro.addEventListener("change", atualizarTabela);
+
+  // 🔄 Carregar tabela inicial
+  atualizarTabela();
 
   rebindEvents();
 });

@@ -19,7 +19,8 @@
           <i class="bi bi-cash-coin display-4 text-success mb-3"></i>
           <h5 class="card-title">Controle Financeiro</h5>
           <p class="text-muted small">Acompanhe vendas, pedidos pagos, faturamento e estatísticas financeiras.</p>
-          <a href="{% url 'financeiro' %}"  class="btn btn-outline-success btn-sm">Acessar</a>
+          <!-- 🔹 Agora vai direto para o Resumo Financeiro -->
+          <a href="{% url 'financeiro_resumo' %}" class="btn btn-outline-success btn-sm">Acessar</a>
         </div>
       </div>
     </div>
@@ -43,7 +44,7 @@
           <i class="bi bi-file-earmark-bar-graph display-4 text-warning mb-3"></i>
           <h5 class="card-title">Relatórios Avançados</h5>
           <p class="text-muted small">Filtre informações por data, cliente ou produto e exporte em PDF.</p>
-          <a href="#"  class="btn btn-outline-warning btn-sm">Acessar</a>
+          <a href="#" class="btn btn-outline-warning btn-sm">Acessar</a>
         </div>
       </div>
     </div>

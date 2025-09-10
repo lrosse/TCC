@@ -1,0 +1,122 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Gestão Financeira - Produtos{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fw-semibold mb-4">Produtos</h2>
+
+  <!-- Abas -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+         href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+         href="{% url 'financeiro_produtos' %}">Produtos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+         href="{% url 'financeiro_pedidos' %}">Pedidos</a>
+    </li>
+  </ul>
+
+  <!-- Card da Tabela -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+
+      <!-- Cabeçalho da tabela com botões -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="card-title">Margens de Produtos</h5>
+        <div id="btnArea">
+          <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
+            <i class="bi bi-sliders"></i> Definir Custos
+          </a>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <form id="formCustos" method="POST">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-striped align-middle" id="tabelaProdutos">
+            <thead>
+              <tr id="tabelaHead">
+                <th>Produto</th>
+                <th>Custo</th>
+                <th>Preço Venda</th>
+                <th>Lucro Unitário</th>
+                <th>Margem (%)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in produtos_data %}
+              <tr data-produto="{{ p.id }}">
+                <td>{{ p.nome }}</td>
+                <td class="custo-cell">R$ {{ p.custo|floatformat:2 }}</td>
+                <td>R$ {{ p.preco|floatformat:2 }}</td>
+                <td>R$ {{ p.lucro_unitario|floatformat:2 }}</td>
+                <td>{{ p.margem }}%</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Script -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tabelaBody = document.querySelector("#tabelaProdutos tbody");
+  const btnArea = document.getElementById("btnArea");
+  const tabelaHead = document.getElementById("tabelaHead");
+
+  function attachSalvar() {
+    document.getElementById("btnSalvar")?.addEventListener("click", () => {
+      document.getElementById("formCustos").submit();
+    });
+  }
+
+  function attachCancelar() {
+    document.getElementById("btnCancelar")?.addEventListener("click", () => {
+      location.reload();
+    });
+  }
+
+  document.getElementById("btnDefinir").addEventListener("click", (e) => {
+    e.preventDefault();
+
+    tabelaHead.innerHTML = `
+      <th>Produto</th>
+      <th>Custo (R$)</th>
+      <th>Preço Venda</th>
+      <th>Lucro Unitário</th>
+      <th>Margem (%)</th>
+    `;
+
+    tabelaBody.querySelectorAll("tr").forEach(row => {
+      const id = row.getAttribute("data-produto");
+      const custoCell = row.querySelector(".custo-cell");
+      const custoAtual = custoCell.innerText.replace("R$", "").trim();
+
+      custoCell.innerHTML = `
+        <input type="number" step="0.01" name="custo_${id}" value="${custoAtual}" class="form-control">
+      `;
+    });
+
+    btnArea.innerHTML = `
+      <button type="button" id="btnSalvar" class="btn btn-success me-2">
+        <i class="bi bi-save"></i> Salvar Custos
+      </button>
+      <button type="button" id="btnCancelar" class="btn btn-outline-secondary">Cancelar</button>
+    `;
+
+    attachSalvar();
+    attachCancelar();
+  });
+});
+</script>
+{% endblock %}

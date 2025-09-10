@@ -1,0 +1,54 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Gestão Financeira - Resumo{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fw-semibold mb-4">Resumo Geral</h2>
+
+  <!-- Abas -->
+  <ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+         href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+         href="{% url 'financeiro_produtos' %}">Produtos</a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+         href="{% url 'financeiro_pedidos' %}">Pedidos</a>
+    </li>
+  </ul>
+
+  <!-- Cards -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Receita Total</h6>
+          <p class="fs-5 fw-bold text-success">R$ {{ receita_total|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Custo Total</h6>
+          <p class="fs-5 fw-bold text-danger">R$ {{ custo_total|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="text-muted">Lucro Líquido</h6>
+          <p class="fs-5 fw-bold {% if lucro_liquido < 0 %}text-danger{% else %}text-primary{% endif %}">
+            R$ {{ lucro_liquido|floatformat:2 }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,33 +1,30 @@
-from datetime import timezone
-import json
-import csv
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.utils.timezone import localtime
-from django.utils import timezone
-from django.utils.timezone import now
 from django.contrib import messages
-from django.db import models
 from django.http import JsonResponse
-from django.http import HttpResponse
-from .models import Produto, MovimentacaoEstoque, Pedido, LancamentoFinanceiro, PedidoItem, Despesa
 from django.db.models import Sum
-from .views import (
-    _agregar_vendas_por_mes,
-    _agregar_vendas_mes_atual_por_dia,
-    _contagem_pedidos_por_status
-)
-from reportlab.pdfgen import canvas 
+from .models import Produto, CustoProduto, Pedido, PedidoItem
 
-
-
+# 🔹 Apenas a regra de admin permanece
 def admin_required(user):
     return user.is_staff or user.is_superuser
 
+# 🔹 Página inicial da Gestão
 @login_required
 @user_passes_test(admin_required)
 def gestao_index(request):
     return render(request, "loja/gestao/index.html")
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render, redirect
+from django.utils.timezone import localtime
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db import models
+from .models import Produto, MovimentacaoEstoque
+
+def admin_required(user):
+    return user.is_staff or user.is_superuser
 
 @login_required
 @user_passes_test(admin_required)
@@ -47,11 +44,12 @@ def gestao_estoque(request):
     elif filtro == "medio":
         produtos = produtos.filter(
             quantidade__gte=models.F("minimo_estoque"),
-            quantidade__lt=models.F("ideal_estoque")
+            quantidade__lte=models.F("ideal_estoque")
         )
     elif filtro == "alto":
-        produtos = produtos.filter(quantidade__gte=models.F("ideal_estoque"))
+        produtos = produtos.filter(quantidade__gt=models.F("ideal_estoque"))
 
+    # 🔄 --- ATUALIZAÇÃO DE LIMITES ---
     if request.method == "POST":
         atualizados = []
         for produto in produtos:
@@ -78,23 +76,31 @@ def gestao_estoque(request):
         messages.success(request, "Limites atualizados com sucesso!")
         return redirect("gestao_estoque")
 
-    # Cards
+    # 📊 --- CARDS ---
     total_produtos = produtos.count()
-    produtos_baixo_estoque = produtos.filter(quantidade__lte=models.F("minimo_estoque")).count()
+    produtos_baixo_estoque = produtos.filter(quantidade__lt=models.F("minimo_estoque")).count()
     ultima_mov = MovimentacaoEstoque.objects.order_by("-data").first()
     ultima_movimentacao = localtime(ultima_mov.data).strftime("%d/%m/%Y %H:%M") if ultima_mov else "-"
 
-    maior_estoque = produtos.aggregate(models.Max("quantidade"))["quantidade__max"] or 1
-
+    # 📋 --- TABELA DE PRODUTOS ---
     tabela_produtos = []
     for produto in produtos:
-        percentual = int((produto.quantidade / maior_estoque) * 100)
-        if produto.quantidade <= produto.minimo_estoque:
-            cor = "bg-danger"
-        elif produto.quantidade <= produto.ideal_estoque:
-            cor = "bg-warning text-dark"
+        minimo = produto.minimo_estoque or 0
+        ideal = produto.ideal_estoque or 1
+        qtd = produto.quantidade
+
+        # Percentual baseado no ideal
+        percentual = int((qtd / ideal) * 100) if ideal > 0 else 0
+        if percentual > 100:
+            percentual = 100  # barra nunca passa de 100%
+
+        # Regras de cor
+        if qtd < minimo:
+            cor = "bg-danger"  # vermelho
+        elif qtd <= ideal:
+            cor = "bg-success"  # verde
         else:
-            cor = "bg-success"
+            cor = "bg-warning text-dark"  # amarelo
 
         ultima_mov_produto = MovimentacaoEstoque.objects.filter(produto=produto).order_by("-data").first()
         data_mov = localtime(ultima_mov_produto.data).strftime("%d/%m/%Y %H:%M") if ultima_mov_produto else "-"
@@ -102,7 +108,7 @@ def gestao_estoque(request):
         tabela_produtos.append({
             "id": produto.id,
             "nome": produto.nome,
-            "quantidade": produto.quantidade,
+            "quantidade": qtd,
             "percentual": percentual,
             "cor": cor,
             "ultima_atualizacao": data_mov,
@@ -125,313 +131,99 @@ def gestao_estoque(request):
 
 @login_required
 @user_passes_test(admin_required)
-def financeiro(request):
-    pedidos_pagos = Pedido.objects.filter(status="Pago")
-    lancamentos = LancamentoFinanceiro.objects.all().order_by("-data")
+def financeiro_produtos(request):
+    produtos = Produto.objects.all().order_by("nome")
 
-    # Filtros
-    tipo = request.GET.get("tipo")
-    categoria = request.GET.get("categoria")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
-
-    if tipo:
-        lancamentos = lancamentos.filter(tipo=tipo)
-    if categoria:
-        lancamentos = lancamentos.filter(categoria__icontains=categoria)
-    if data_inicio:
-        lancamentos = lancamentos.filter(data__gte=data_inicio)
-    if data_fim:
-        lancamentos = lancamentos.filter(data__lte=data_fim)
-
-    # Totais
-    receitas_pedidos = pedidos_pagos.aggregate(total=Sum("total"))["total"] or 0
-    receitas_extras = lancamentos.filter(tipo="receita").aggregate(total=Sum("valor"))["total"] or 0
-    despesas = lancamentos.filter(tipo="despesa").aggregate(total=Sum("valor"))["total"] or 0
-    total_receitas = receitas_pedidos + receitas_extras
-    lucro_liquido = total_receitas - despesas
-
-    # Gráficos
-    mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
-    dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
-
-    despesas_por_categoria = (
-        LancamentoFinanceiro.objects.filter(tipo="despesa")
-        .values("categoria")
-        .annotate(total=Sum("valor"))
-        .order_by("-total")
-    )
-    categorias_labels = [d["categoria"] for d in despesas_por_categoria]
-    categorias_values = [float(d["total"]) for d in despesas_por_categoria]
-
-    context = {
-        "receitas_pedidos": receitas_pedidos,
-        "receitas_extras": receitas_extras,
-        "despesas": despesas,
-        "total_receitas": total_receitas,
-        "lucro_liquido": lucro_liquido,
-        "lancamentos": lancamentos,
-        "mes_labels_json": json.dumps(mes_labels, ensure_ascii=False),
-        "mes_values_json": json.dumps(mes_values),
-        "dia_labels_json": json.dumps(dia_labels, ensure_ascii=False),
-        "dia_values_json": json.dumps(dia_values),
-        "cat_labels_json": json.dumps(categorias_labels, ensure_ascii=False),
-        "cat_values_json": json.dumps(categorias_values),
-        "filtros": {"tipo": tipo, "categoria": categoria, "data_inicio": data_inicio, "data_fim": data_fim},
-    }
-    return render(request, "loja/gestao/financeiro.html", context)
-
-
-@login_required
-@user_passes_test(admin_required)
-def adicionar_lancamento(request):
-    tipo = request.POST.get("tipo")
-    categoria = request.POST.get("categoria")
-    valor = request.POST.get("valor")
-    data = request.POST.get("data")
-    descricao = request.POST.get("descricao", "")
-
-    if tipo and categoria and valor:
-        LancamentoFinanceiro.objects.create(
-            tipo=tipo,
-            categoria=categoria,
-            valor=valor,
-            data=data or timezone.now().date(),
-            descricao=descricao
-        )
-        messages.success(request, "Lançamento adicionado com sucesso!")
-    else:
-        messages.error(request, "Preencha todos os campos obrigatórios.")
-
-    return redirect("financeiro")
-
-@user_passes_test(admin_required)
-def exportar_financeiro_csv(request):
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="financeiro.csv"'
-
-    writer = csv.writer(response)
-    writer.writerow(["Data", "Tipo", "Categoria", "Valor", "Descrição"])
-
-    for l in LancamentoFinanceiro.objects.all().order_by("-data"):
-        writer.writerow([l.data, l.get_tipo_display(), l.categoria, l.valor, l.descricao or ""])
-
-    return response
-
-@user_passes_test(admin_required)
-def exportar_financeiro_pdf(request):
-    response = HttpResponse(content_type="application/pdf")
-    response["Content-Disposition"] = 'attachment; filename="financeiro.pdf"'
-
-    p = canvas.Canvas(response)
-    p.setFont("Helvetica", 12)
-    p.drawString(100, 800, "Relatório Financeiro")
-
-    y = 760
-    for l in LancamentoFinanceiro.objects.all().order_by("-data")[:50]:
-        p.drawString(100, y, f"{l.data} - {l.get_tipo_display()} - {l.categoria} - R$ {l.valor}")
-        y -= 20
-        if y < 100:
-            p.showPage()
-            y = 800
-
-    p.showPage()
-    p.save()
-    return response
-
-@login_required
-@user_passes_test(admin_required)
-def financeiro(request):
-    from django.db.models import Sum, F, DecimalField, ExpressionWrapper
-    from django.db.models.functions import ExtractMonth
-    from calendar import month_abbr
-    import json
-
-    ano_atual = timezone.localdate().year
-    meses_labels = list(month_abbr)[1:13]  # ['Jan', 'Feb', 'Mar'...]
-
-    # ------------------------------
-    # POST: salvar nova despesa
-    # ------------------------------
+    # 🔹 Modo edição de custos
     if request.method == "POST":
-        categoria = request.POST.get("categoria")
-        tipo = request.POST.get("tipo")
-        valor = request.POST.get("valor")
-        data = request.POST.get("data")
-        descricao = request.POST.get("descricao", "")
+        for produto in produtos:
+            custo_valor = request.POST.get(f"custo_{produto.id}")
+            if custo_valor is not None:
+                custo_valor = float(custo_valor) if custo_valor else 0
+                custo_obj, _ = CustoProduto.objects.get_or_create(produto=produto)
+                custo_obj.custo = custo_valor
+                custo_obj.save()
+        messages.success(request, "Custos atualizados com sucesso!")
+        return redirect("financeiro_produtos")
 
-        if categoria and tipo and valor and data:
-            Despesa.objects.create(
-                categoria=categoria,
-                tipo=tipo,
-                valor=valor,
-                data=data,
-                descricao=descricao
-            )
-            messages.success(request, "Despesa adicionada com sucesso!")
-            return redirect("financeiro")
-        else:
-            messages.error(request, "Preencha todos os campos obrigatórios.")
-
-    # ------------------------------
-    # CARDS
-    # ------------------------------
-    receita_total = Pedido.objects.filter(status="Pago").aggregate(total=Sum("total"))["total"] or 0
-    custo_total = PedidoItem.objects.filter(pedido__status="Pago").aggregate(
-        total=Sum(ExpressionWrapper(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
-    )["total"] or 0
-    despesas_fixas = Despesa.objects.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0
-    despesas_variaveis = Despesa.objects.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0
-    lucro_liquido = receita_total - custo_total - despesas_fixas - despesas_variaveis
-
-    # ------------------------------
-    # GRÁFICO Receitas vs Despesas (por mês)
-    # ------------------------------
-    receitas_mes = [0] * 12
-    despesas_mes = [0] * 12
-    lucro_mes = [0] * 12
-    custos_mes = [0] * 12
-
-    # Receitas
-    for row in (
-        Pedido.objects.filter(status="Pago", data_criacao__year=ano_atual)
-        .annotate(m=ExtractMonth("data_criacao"))
-        .values("m")
-        .annotate(total=Sum("total"))
-    ):
-        mes = row["m"]
-        if mes:
-            receitas_mes[mes - 1] = float(row["total"] or 0)
-
-    # Custos
-    for row in (
-        PedidoItem.objects.filter(pedido__status="Pago", pedido__data_criacao__year=ano_atual)
-        .annotate(m=ExtractMonth("pedido__data_criacao"))
-        .values("m")
-        .annotate(
-            total=Sum(ExpressionWrapper(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
-        )
-    ):
-        mes = row["m"]
-        if mes:
-            custos_mes[mes - 1] = float(row["total"] or 0)
-
-    # Despesas
-    for row in (
-        Despesa.objects.filter(data__year=ano_atual)
-        .annotate(m=ExtractMonth("data"))
-        .values("m")
-        .annotate(total=Sum("valor"))
-    ):
-        mes = row["m"]
-        if mes:
-            despesas_mes[mes - 1] = float(row["total"] or 0)
-
-    # Lucro líquido mês a mês
-    for i in range(12):
-        lucro_mes[i] = receitas_mes[i] - custos_mes[i] - despesas_mes[i]
-
-    # ------------------------------
-    # PRODUTOS (top 5 mais/menos rentáveis)
-    # ------------------------------
+    # 🔹 Montagem dos dados
     produtos_data = []
-    for produto in Produto.objects.all():
-        vendidos = PedidoItem.objects.filter(produto=produto, pedido__status="Pago")
-        receita = vendidos.aggregate(total=Sum(F("quantidade") * F("preco_unitario"), output_field=DecimalField()))["total"] or 0
-        custo = vendidos.aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))["total"] or 0
-        lucro = receita - custo
-        margem = (lucro / custo * 100) if custo > 0 else 0
+    for p in produtos:
+        custo = getattr(p.custo_info, "custo", 0) if hasattr(p, "custo_info") else 0
+        preco = p.preco
+        lucro_unitario = preco - custo
+        margem = (lucro_unitario / custo * 100) if custo > 0 else 0
 
         produtos_data.append({
-            "nome": produto.nome,
+            "id": p.id,
+            "nome": p.nome,
             "custo": float(custo),
-            "preco": float(produto.preco),
+            "preco": float(preco),
+            "lucro_unitario": float(lucro_unitario),
             "margem": round(margem, 2),
-            "lucro_unitario": float(produto.preco - produto.preco),  # ajuste se tiver campo de custo
-            "lucro_total": float(lucro),
         })
 
-    top_mais = sorted(produtos_data, key=lambda x: x["lucro_total"], reverse=True)[:5]
-    top_menos = sorted(produtos_data, key=lambda x: x["lucro_total"])[:5]
+    context = {"produtos_data": produtos_data}
+    return render(request, "loja/gestao/financeiro_produtos.html", context)
 
-    # ------------------------------
-    # PEDIDOS (lucro por pedido)
-    # ------------------------------
+@login_required
+@user_passes_test(admin_required)
+def financeiro_pedidos(request):
+    # 🔹 Pega pedidos mais recentes primeiro
+    pedidos = Pedido.objects.filter(status="Pago").select_related("cliente").order_by("-data_criacao")
+
     pedidos_data = []
-    pedidos = Pedido.objects.filter(status="Pago").select_related("cliente")
     for p in pedidos:
         receita = p.total or 0
-        custo = (
-            PedidoItem.objects.filter(pedido=p)
-            .aggregate(total=Sum(F("quantidade") * F("produto__preco"), output_field=DecimalField()))
-            ["total"] or 0
-        )
-        lucro = receita - custo
+
+        # 🔹 Calcula custo do pedido
+        itens = PedidoItem.objects.filter(pedido=p).select_related("produto")
+        custo_total = 0
+        for item in itens:
+            if hasattr(item.produto, "custo_info"):
+                custo_produto = item.produto.custo_info.custo
+            else:
+                custo_produto = 0
+            custo_total += item.quantidade * custo_produto
+
+        lucro = receita - custo_total
+
         pedidos_data.append({
-            "numero": p.numero_pedido,
+            "numero": p.numero_pedido or p.id,
             "cliente": p.cliente.username,
             "data": p.data_criacao.strftime("%d/%m/%Y"),
             "receita": float(receita),
-            "custo": float(custo),
+            "custo": float(custo_total),
             "lucro": float(lucro),
         })
 
-    # ------------------------------
-    # DESPESAS (listagem para tabela)
-    # ------------------------------
-    despesas = Despesa.objects.all().order_by("-data")
+    context = {"pedidos_data": pedidos_data}
+    return render(request, "loja/gestao/financeiro_pedidos.html", context)
 
-    ctx = {
-        # Cards
+@login_required
+@user_passes_test(admin_required)
+def financeiro_resumo(request):
+    pedidos = Pedido.objects.filter(status="Pago")
+
+    # Receita total
+    receita_total = pedidos.aggregate(total=Sum("total"))["total"] or 0
+
+    # Custo total
+    custo_total = 0
+    itens = PedidoItem.objects.filter(pedido__in=pedidos).select_related("produto")
+    for item in itens:
+        if hasattr(item.produto, "custo_info"):
+            custo_produto = item.produto.custo_info.custo
+        else:
+            custo_produto = 0
+        custo_total += item.quantidade * custo_produto
+
+    # Lucro líquido
+    lucro_liquido = receita_total - custo_total
+
+    context = {
         "receita_total": receita_total,
         "custo_total": custo_total,
-        "despesas_fixas": despesas_fixas,
         "lucro_liquido": lucro_liquido,
-        # Gráficos
-        "meses_labels_json": json.dumps(meses_labels, ensure_ascii=False),
-        "receitas_mes_json": json.dumps(receitas_mes),
-        "despesas_mes_json": json.dumps(despesas_mes),
-        "lucro_mes_json": json.dumps(lucro_mes),
-        "fixas_valor": float(despesas_fixas),
-        "variaveis_valor": float(despesas_variaveis),
-        # Produtos
-        "produtos_data": produtos_data,
-        "top_mais_json": json.dumps([p["lucro_total"] for p in top_mais]),
-        "top_mais_labels": json.dumps([p["nome"] for p in top_mais], ensure_ascii=False),
-        "top_menos_json": json.dumps([p["lucro_total"] for p in top_menos]),
-        "top_menos_labels": json.dumps([p["nome"] for p in top_menos], ensure_ascii=False),
-        # Pedidos
-        "pedidos_data": pedidos_data,
-        # Despesas
-        "despesas": despesas,
     }
-
-    return render(request, "loja/gestao/financeiro.html", ctx)
-
-@login_required
-@user_passes_test(admin_required)
-def editar_despesa(request, pk):
-    despesa = get_object_or_404(Despesa, pk=pk)
-    if request.method == "POST":
-        despesa.categoria = request.POST.get("categoria")
-        despesa.tipo = request.POST.get("tipo")
-        despesa.valor = request.POST.get("valor")
-        despesa.data = request.POST.get("data")
-        despesa.descricao = request.POST.get("descricao", "")
-        despesa.save()
-        messages.success(request, "Despesa atualizada com sucesso!")
-        return redirect("financeiro")
-
-    return render(request, "loja/gestao/editar_despesa.html", {"despesa": despesa})
-
-
-@login_required
-@user_passes_test(admin_required)
-def excluir_despesa(request, pk):
-    despesa = get_object_or_404(Despesa, pk=pk) # pyright: ignore[reportUndefinedVariable]
-    if request.method == "POST":
-        despesa.delete()
-        messages.success(request, "Despesa excluída com sucesso!")
-        return redirect("financeiro")
-
-    return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})
+    return render(request, "loja/gestao/financeiro_resumo.html", context)
