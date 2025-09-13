@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Sum
-from .models import Produto, CustoProduto, Pedido, PedidoItem
+from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa
+from .forms import DespesaForm
+from dateutil.relativedelta import relativedelta
 
 # 🔹 Apenas a regra de admin permanece
 def admin_required(user):
@@ -227,3 +229,42 @@ def financeiro_resumo(request):
         "lucro_liquido": lucro_liquido,
     }
     return render(request, "loja/gestao/financeiro_resumo.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def gestao_despesas(request):
+    despesas = Despesa.objects.all().order_by("-data")  # mais recentes primeiro
+    context = {
+        "despesas": despesas,
+    }
+    return render(request, "loja/gestao/gestao_despesas.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def criar_despesa(request):
+    if request.method == "POST":
+        form = DespesaForm(request.POST)
+        if form.is_valid():
+            despesa = form.save(commit=False)
+
+            # número de parcelas
+            num_parcelas = despesa.parcelas if despesa.parcelas > 0 else 1
+            data_base = despesa.data
+
+            for i in range(num_parcelas):
+                nova_despesa = Despesa.objects.create(
+                    categoria=despesa.categoria,
+                    tipo=despesa.tipo,
+                    valor=despesa.valor,
+                    data=data_base + relativedelta(months=i),
+                    descricao=despesa.descricao,
+                    fornecedor=despesa.fornecedor,
+                    parcelas=1  # cada registro individual representa 1 parcela
+                )
+
+            messages.success(request, f"{num_parcelas} despesa(s) cadastrada(s) com sucesso!")
+            return redirect("gestao_despesas")
+    else:
+        form = DespesaForm()
+
+    return render(request, "loja/gestao/criar_despesa.html", {"form": form})

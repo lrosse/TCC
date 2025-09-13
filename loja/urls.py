@@ -62,6 +62,10 @@ urlpatterns = [
     path("gestao/financeiro/resumo/", views_gestao.financeiro_resumo, name="financeiro_resumo"),
     path("gestao/financeiro/produtos/", views_gestao.financeiro_produtos, name="financeiro_produtos"),
     path("gestao/financeiro/pedidos/", views_gestao.financeiro_pedidos, name="financeiro_pedidos"),
+    
+    # Despesas (separado)
+    path("gestao/despesas/", views_gestao.gestao_despesas, name="gestao_despesas"),
+    path("gestao/despesas/nova/", views_gestao.criar_despesa, name="criar_despesa"),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

@@ -176,8 +176,11 @@ class Despesa(models.Model):
     categoria = models.CharField(max_length=100)  # Ex: Aluguel, Marketing
     tipo = models.CharField(max_length=10, choices=TIPOS)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
-    data = models.DateField(default=now)
+    data = models.DateField(default=now)  # data inicial
     descricao = models.TextField(blank=True, null=True)
 
+    fornecedor = models.CharField(max_length=150, blank=True, null=True)  # 🔹 novo campo
+    parcelas = models.PositiveIntegerField(default=1)  # 🔹 número de parcelas
+
     def __str__(self):
-        return f"{self.categoria} - R$ {self.valor:.2f}"
+        return f"{self.categoria} - R$ {self.valor:.2f} ({self.fornecedor or 'Sem fornecedor'})"

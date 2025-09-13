@@ -1,0 +1,58 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Nova Despesa{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h2 class="fw-semibold mb-4">Nova Despesa</h2>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Categoria</label>
+            {{ form.categoria }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Fornecedor</label>
+            {{ form.fornecedor }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tipo</label>
+          {{ form.tipo }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Valor</label>
+          {{ form.valor }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Data</label>
+          {{ form.data }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Parcelas</label>
+            {{ form.parcelas }}
+            <small class="text-muted">Informe o número de parcelas (ex.: 12 para 12 meses)</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Descrição</label>
+          {{ form.descricao }}
+        </div>
+
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

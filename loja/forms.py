@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Feedback
+from .models import Feedback, Despesa
 
 class RegistroForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
@@ -43,4 +43,18 @@ class FeedbackForm(forms.ModelForm):
         widgets = {
             'nota': forms.HiddenInput(),  # campo oculto, controlado via JS
             'comentario': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        
+class DespesaForm(forms.ModelForm):
+    class Meta:
+        model = Despesa
+        fields = ["categoria", "tipo", "valor", "data", "parcelas", "fornecedor", "descricao"]
+        widgets = {
+            "categoria": forms.TextInput(attrs={"class": "form-control"}),
+            "tipo": forms.Select(attrs={"class": "form-select"}),
+            "valor": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "data": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "parcelas": forms.NumberInput(attrs={"class": "form-control", "min": 1, "value": 1}),
+            "fornecedor": forms.TextInput(attrs={"class": "form-control"}),
+            "descricao": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
         }
