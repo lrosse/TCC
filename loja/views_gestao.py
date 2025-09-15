@@ -3,9 +3,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Sum
-from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa
+from django.utils.timezone import localtime
+from django.db import models
+from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque
 from .forms import DespesaForm
 from dateutil.relativedelta import relativedelta
+from django.shortcuts import render, redirect, get_object_or_404
 
 # 🔹 Apenas a regra de admin permanece
 def admin_required(user):
@@ -16,14 +19,6 @@ def admin_required(user):
 @user_passes_test(admin_required)
 def gestao_index(request):
     return render(request, "loja/gestao/index.html")
-
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import render, redirect
-from django.utils.timezone import localtime
-from django.contrib import messages
-from django.http import JsonResponse
-from django.db import models
-from .models import Produto, MovimentacaoEstoque
 
 def admin_required(user):
     return user.is_staff or user.is_superuser
@@ -268,3 +263,30 @@ def criar_despesa(request):
         form = DespesaForm()
 
     return render(request, "loja/gestao/criar_despesa.html", {"form": form})
+
+@login_required
+@user_passes_test(admin_required)
+def editar_despesa(request, pk):
+    despesa = get_object_or_404(Despesa, pk=pk)
+    if request.method == "POST":
+        form = DespesaForm(request.POST, instance=despesa)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Despesa atualizada com sucesso!")
+            return redirect("gestao_despesas")
+    else:
+        form = DespesaForm(instance=despesa)
+
+    return render(request, "loja/gestao/editar_despesa.html", {"form": form, "despesa": despesa})
+
+
+@login_required
+@user_passes_test(admin_required)
+def excluir_despesa(request, pk):
+    despesa = get_object_or_404(Despesa, pk=pk)
+    if request.method == "POST":
+        despesa.delete()
+        messages.success(request, "Despesa excluída com sucesso!")
+        return redirect("gestao_despesas")
+
+    return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})

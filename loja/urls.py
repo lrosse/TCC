@@ -66,6 +66,8 @@ urlpatterns = [
     # Despesas (separado)
     path("gestao/despesas/", views_gestao.gestao_despesas, name="gestao_despesas"),
     path("gestao/despesas/nova/", views_gestao.criar_despesa, name="criar_despesa"),
+    path("gestao/despesas/editar/<int:pk>/", views_gestao.editar_despesa, name="editar_despesa"),
+    path("gestao/despesas/excluir/<int:pk>/", views_gestao.excluir_despesa, name="excluir_despesa"),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento
