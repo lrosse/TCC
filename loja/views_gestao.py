@@ -292,32 +292,146 @@ def excluir_despesa(request, pk):
     return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})
 
 def relatorio_avancado(request):
-    """
-    Página de relatórios avançados com filtros.
-    Por enquanto está funcionando apenas para Produtos.
-    """
-    produtos = Produto.objects.all()
+    tipo = request.GET.get("tipo")  # produtos, pedidos, estoque, financeiro, feedbacks
 
-    # Captura filtros da query string (GET)
-    nome = request.GET.get("nome")
-    preco_min = request.GET.get("preco_min")
-    preco_max = request.GET.get("preco_max")
-    qtd_min = request.GET.get("qtd_min")
-    qtd_max = request.GET.get("qtd_max")
+    context = {"tipo": tipo}
 
-    # Aplica filtros dinamicamente
-    if nome:
-        produtos = produtos.filter(nome__icontains=nome)
-    if preco_min:
-        produtos = produtos.filter(preco__gte=preco_min)
-    if preco_max:
-        produtos = produtos.filter(preco__lte=preco_max)
-    if qtd_min:
-        produtos = produtos.filter(quantidade__gte=qtd_min)
-    if qtd_max:
-        produtos = produtos.filter(quantidade__lte=qtd_max)
+    # -----------------
+    # PRODUTOS
+    # -----------------
+    if tipo == "produtos":
+        produtos = Produto.objects.all()
 
-    context = {
-        "produtos": produtos,
-    }
+        if nome := request.GET.get("nome"):
+            produtos = produtos.filter(nome__icontains=nome)
+
+        if preco_min := request.GET.get("preco_min"):
+            produtos = produtos.filter(preco__gte=preco_min)
+        if preco_max := request.GET.get("preco_max"):
+            produtos = produtos.filter(preco__lte=preco_max)
+
+        if qtd_min := request.GET.get("qtd_min"):
+            produtos = produtos.filter(quantidade__gte=qtd_min)
+        if qtd_max := request.GET.get("qtd_max"):
+            produtos = produtos.filter(quantidade__lte=qtd_max)
+
+        if status := request.GET.get("status_estoque"):
+            if status == "minimo":
+                produtos = produtos.filter(quantidade__lte=models.F("minimo_estoque"))
+            elif status == "ideal":
+                produtos = produtos.filter(
+                    quantidade__gt=models.F("minimo_estoque"),
+                    quantidade__lte=models.F("ideal_estoque")
+                )
+            elif status == "bom":
+                produtos = produtos.filter(quantidade__gt=models.F("ideal_estoque"))
+
+        if ordenar := request.GET.get("ordenar_por"):
+            if ordenar == "nome":
+                produtos = produtos.order_by("nome")
+            elif ordenar == "preco":
+                produtos = produtos.order_by("preco")
+            elif ordenar == "quantidade":
+                produtos = produtos.order_by("quantidade")
+            elif ordenar == "recente":
+                produtos = produtos.order_by("-id")
+
+        context["produtos"] = produtos
+
+    # -----------------
+    # PEDIDOS
+    # -----------------
+    elif tipo == "pedidos":
+        pedidos = Pedido.objects.all()
+
+        if numero := request.GET.get("numero"):
+            pedidos = pedidos.filter(numero_pedido__icontains=numero)
+
+        if cliente := request.GET.get("cliente"):
+            pedidos = pedidos.filter(cliente__username__icontains=cliente)
+
+        if status := request.GET.get("status"):
+            pedidos = pedidos.filter(status=status)
+
+        if valor_min := request.GET.get("valor_min"):
+            pedidos = pedidos.filter(total__gte=valor_min)
+        if valor_max := request.GET.get("valor_max"):
+            pedidos = pedidos.filter(total__lte=valor_max)
+
+        if data_inicio := request.GET.get("data_inicio"):
+            pedidos = pedidos.filter(data_criacao__gte=parse_date(data_inicio))
+        if data_fim := request.GET.get("data_fim"):
+            pedidos = pedidos.filter(data_criacao__lte=parse_date(data_fim))
+
+        context["pedidos"] = pedidos
+
+    # -----------------
+    # ESTOQUE
+    # -----------------
+    elif tipo == "estoque":
+        movs = MovimentacaoEstoque.objects.select_related("produto").all()
+
+        if produto := request.GET.get("produto"):
+            movs = movs.filter(produto__nome__icontains=produto)
+
+        if tipo_mov := request.GET.get("tipo"):
+            movs = movs.filter(tipo=tipo_mov)
+
+        if qtd_min := request.GET.get("qtd_min"):
+            movs = movs.filter(quantidade__gte=qtd_min)
+        if qtd_max := request.GET.get("qtd_max"):
+            movs = movs.filter(quantidade__lte=qtd_max)
+
+        if data_inicio := request.GET.get("data_inicio"):
+            movs = movs.filter(data__gte=parse_date(data_inicio))
+        if data_fim := request.GET.get("data_fim"):
+            movs = movs.filter(data__lte=parse_date(data_fim))
+
+        context["movs"] = movs
+
+    # -----------------
+    # FINANCEIRO
+    # -----------------
+    elif tipo == "financeiro":
+        lancamentos = LancamentoFinanceiro.objects.all()
+
+        if tipo_l := request.GET.get("tipo_lancamento"):
+            lancamentos = lancamentos.filter(tipo=tipo_l)
+
+        if categoria := request.GET.get("categoria"):
+            lancamentos = lancamentos.filter(categoria__icontains=categoria)
+
+        if valor_min := request.GET.get("valor_min"):
+            lancamentos = lancamentos.filter(valor__gte=valor_min)
+        if valor_max := request.GET.get("valor_max"):
+            lancamentos = lancamentos.filter(valor__lte=valor_max)
+
+        if data_inicio := request.GET.get("data_inicio"):
+            lancamentos = lancamentos.filter(data__gte=parse_date(data_inicio))
+        if data_fim := request.GET.get("data_fim"):
+            lancamentos = lancamentos.filter(data__lte=parse_date(data_fim))
+
+        context["lancamentos"] = lancamentos
+
+    # -----------------
+    # FEEDBACKS
+    # -----------------
+    elif tipo == "feedbacks":
+        feedbacks = Feedback.objects.select_related("usuario", "produto").all()
+
+        if produto := request.GET.get("produto"):
+            feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+
+        if usuario := request.GET.get("usuario"):
+            feedbacks = feedbacks.filter(usuario__username__icontains=usuario)
+
+        if nota := request.GET.get("nota"):
+            feedbacks = feedbacks.filter(nota=nota)
+
+        if visivel := request.GET.get("visivel"):
+            if visivel in ["True", "False"]:
+                feedbacks = feedbacks.filter(visivel=(visivel == "True"))
+
+        context["feedbacks"] = feedbacks
+
     return render(request, "loja/gestao/relatorio_avancado.html", context)
