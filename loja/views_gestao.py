@@ -290,3 +290,34 @@ def excluir_despesa(request, pk):
         return redirect("gestao_despesas")
 
     return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})
+
+def relatorio_avancado(request):
+    """
+    Página de relatórios avançados com filtros.
+    Por enquanto está funcionando apenas para Produtos.
+    """
+    produtos = Produto.objects.all()
+
+    # Captura filtros da query string (GET)
+    nome = request.GET.get("nome")
+    preco_min = request.GET.get("preco_min")
+    preco_max = request.GET.get("preco_max")
+    qtd_min = request.GET.get("qtd_min")
+    qtd_max = request.GET.get("qtd_max")
+
+    # Aplica filtros dinamicamente
+    if nome:
+        produtos = produtos.filter(nome__icontains=nome)
+    if preco_min:
+        produtos = produtos.filter(preco__gte=preco_min)
+    if preco_max:
+        produtos = produtos.filter(preco__lte=preco_max)
+    if qtd_min:
+        produtos = produtos.filter(quantidade__gte=qtd_min)
+    if qtd_max:
+        produtos = produtos.filter(quantidade__lte=qtd_max)
+
+    context = {
+        "produtos": produtos,
+    }
+    return render(request, "loja/gestao/relatorio_avancado.html", context)

@@ -1,0 +1,161 @@
+{% extends 'loja/barra_lateral.html' %}
+{% load static %}
+
+{% block title %}Relatório Avançado{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <!-- Título -->
+  <h2 class="fw-semibold mb-4">
+    <i class="bi bi-bar-chart"></i> Relatórios Avançados
+  </h2>
+
+  <!-- Accordion de filtros -->
+  <div class="accordion" id="accordionFiltros">
+
+    <!-- PRODUTOS -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingProdutos">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProdutos" aria-expanded="false" aria-controls="collapseProdutos">
+          <i class="bi bi-box-seam me-2 text-primary"></i> Filtros de Produtos
+        </button>
+      </h2>
+      <div id="collapseProdutos" class="accordion-collapse collapse" aria-labelledby="headingProdutos" data-bs-parent="#accordionFiltros">
+        <div class="accordion-body">
+          <form method="get" class="row g-3 mb-3">
+            <input type="hidden" name="tipo" value="produtos">
+
+            <div class="col-md-4">
+              <label class="form-label">Nome</label>
+              <input type="text" name="nome" class="form-control" value="{{ request.GET.nome }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Preço Mínimo</label>
+              <input type="number" step="0.01" name="preco_min" class="form-control" value="{{ request.GET.preco_min }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Preço Máximo</label>
+              <input type="number" step="0.01" name="preco_max" class="form-control" value="{{ request.GET.preco_max }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Qtd. Mínima</label>
+              <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Qtd. Máxima</label>
+              <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat"></i> Atualizar
+              </button>
+            </div>
+          </form>
+
+          <!-- Tabela Produtos -->
+          {% if request.GET.tipo == "produtos" %}
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>Nome</th>
+                  <th>Preço</th>
+                  <th>Quantidade</th>
+                  <th>Estoque</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in produtos %}
+                <tr>
+                  <td>{{ p.nome }}</td>
+                  <td>R$ {{ p.preco }}</td>
+                  <td>{{ p.quantidade }}</td>
+                  <td>
+                    {% if p.quantidade <= p.minimo_estoque %}
+                      <span class="badge bg-danger">Abaixo do mínimo</span>
+                    {% elif p.quantidade <= p.ideal_estoque %}
+                      <span class="badge bg-warning text-dark">Abaixo do ideal</span>
+                    {% else %}
+                      <span class="badge bg-success">Estoque bom</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center text-muted">
+                    Nenhum produto encontrado.
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <a href="{% url 'relatorio_avancado' %}?tipo=produtos&{{ request.GET.urlencode }}" class="btn btn-outline-danger">
+              <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTROS RELATÓRIOS -->
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingPedidos">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePedidos">
+          <i class="bi bi-receipt me-2 text-success"></i> Filtros de Pedidos
+        </button>
+      </h2>
+      <div id="collapsePedidos" class="accordion-collapse collapse" data-bs-parent="#accordionFiltros">
+        <div class="accordion-body">
+          <p class="text-muted">🔧 Aqui vamos colocar os filtros de pedidos (cliente, status, data, valor)...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingEstoque">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEstoque">
+          <i class="bi bi-box2-heart me-2 text-warning"></i> Filtros de Estoque
+        </button>
+      </h2>
+      <div id="collapseEstoque" class="accordion-collapse collapse" data-bs-parent="#accordionFiltros">
+        <div class="accordion-body">
+          <p class="text-muted">🔧 Aqui vamos colocar os filtros de movimentações de estoque...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingFinanceiro">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFinanceiro">
+          <i class="bi bi-cash-coin me-2 text-danger"></i> Filtros Financeiros
+        </button>
+      </h2>
+      <div id="collapseFinanceiro" class="accordion-collapse collapse" data-bs-parent="#accordionFiltros">
+        <div class="accordion-body">
+          <p class="text-muted">🔧 Aqui vamos colocar os filtros de receitas/despesas...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header" id="headingFeedbacks">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFeedbacks">
+          <i class="bi bi-chat-dots me-2 text-info"></i> Filtros de Feedbacks
+        </button>
+      </h2>
+      <div id="collapseFeedbacks" class="accordion-collapse collapse" data-bs-parent="#accordionFiltros">
+        <div class="accordion-body">
+          <p class="text-muted">🔧 Aqui vamos colocar os filtros de feedbacks...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
