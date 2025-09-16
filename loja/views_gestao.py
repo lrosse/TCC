@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
@@ -8,7 +8,6 @@ from django.db import models
 from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque
 from .forms import DespesaForm
 from dateutil.relativedelta import relativedelta
-from django.shortcuts import render, redirect, get_object_or_404
 
 # 🔹 Apenas a regra de admin permanece
 def admin_required(user):
@@ -19,9 +18,6 @@ def admin_required(user):
 @user_passes_test(admin_required)
 def gestao_index(request):
     return render(request, "loja/gestao/index.html")
-
-def admin_required(user):
-    return user.is_staff or user.is_superuser
 
 @login_required
 @user_passes_test(admin_required)
@@ -218,10 +214,16 @@ def financeiro_resumo(request):
     # Lucro líquido
     lucro_liquido = receita_total - custo_total
 
+    # 🔹 Novos cálculos de despesas
+    despesas_fixas = Despesa.objects.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0
+    despesas_variaveis = Despesa.objects.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0
+
     context = {
         "receita_total": receita_total,
         "custo_total": custo_total,
         "lucro_liquido": lucro_liquido,
+        "despesas_fixas": despesas_fixas,
+        "despesas_variaveis": despesas_variaveis,
     }
     return render(request, "loja/gestao/financeiro_resumo.html", context)
 
@@ -278,7 +280,6 @@ def editar_despesa(request, pk):
         form = DespesaForm(instance=despesa)
 
     return render(request, "loja/gestao/editar_despesa.html", {"form": form, "despesa": despesa})
-
 
 @login_required
 @user_passes_test(admin_required)
