@@ -1,5 +1,7 @@
-{% extends "loja/barra_lateral.html" %}
-{% block title %}Gestão Financeira - Resumo{% endblock %}
+{% extends 'loja/barra_lateral.html' %}
+{% block title %}
+  Gestão Financeira - Resumo
+{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
@@ -8,47 +10,74 @@
   <!-- Abas -->
   <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-         href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}" href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-         href="{% url 'financeiro_produtos' %}">Produtos</a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}" href="{% url 'financeiro_produtos' %}">Produtos</a>
     </li>
     <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-         href="{% url 'financeiro_pedidos' %}">Pedidos</a>
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}" href="{% url 'financeiro_pedidos' %}">Pedidos</a>
     </li>
   </ul>
 
-  <!-- Cards -->
+  <!-- Cards Resumo -->
   <div class="row g-4 mb-4">
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm border-0">
+
+    <!-- Receita -->
+    <div class="col">
+      <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
-          <h6 class="text-muted">Receita Total</h6>
-          <p class="fs-5 fw-bold text-success">R$ {{ receita_total|floatformat:2 }}</p>
+          <i class="bi bi-cash-coin display-5 text-success mb-2"></i>
+          <h6 class="fw-semibold">Receita Total</h6>
+          <p class="fs-5 fw-bold">R$ {{ receita_total|floatformat:2 }}</p>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm border-0">
+
+    <!-- Custos -->
+    <div class="col">
+      <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
-          <h6 class="text-muted">Custo Total</h6>
-          <p class="fs-5 fw-bold text-danger">R$ {{ custo_total|floatformat:2 }}</p>
+          <i class="bi bi-box-seam display-5 text-primary mb-2"></i>
+          <h6 class="fw-semibold">Custos Totais</h6>
+          <p class="fs-5 fw-bold">R$ {{ custo_total|floatformat:2 }}</p>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card text-center shadow-sm border-0">
+
+    <!-- Despesas Fixas -->
+    <div class="col">
+      <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
-          <h6 class="text-muted">Lucro Líquido</h6>
-          <p class="fs-5 fw-bold {% if lucro_liquido < 0 %}text-danger{% else %}text-primary{% endif %}">
-            R$ {{ lucro_liquido|floatformat:2 }}
-          </p>
+          <i class="bi bi-house-check display-5 text-warning mb-2"></i>
+          <h6 class="fw-semibold">Despesas Fixas</h6>
+          <p class="fs-5 fw-bold">R$ {{ despesas_fixas|floatformat:2 }}</p>
         </div>
       </div>
     </div>
+
+    <!-- Despesas Variáveis -->
+    <div class="col">
+      <div class="card shadow-sm border-0 text-center h-100">
+        <div class="card-body">
+          <i class="bi bi-receipt display-5 text-danger mb-2"></i>
+          <h6 class="fw-semibold">Despesas Variáveis</h6>
+          <p class="fs-5 fw-bold">R$ {{ despesas_variaveis|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lucro Líquido -->
+    <div class="col">
+      <div class="card shadow-sm border-0 text-center h-100">
+        <div class="card-body">
+          <i class="bi bi-graph-up display-5 text-success mb-2"></i>
+          <h6 class="fw-semibold">Lucro Líquido</h6>
+          <p class="fs-5 fw-bold">R$ {{ lucro_liquido|floatformat:2 }}</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 {% endblock %}
