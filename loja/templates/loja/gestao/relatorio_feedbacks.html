@@ -1,0 +1,84 @@
+{% extends 'loja/barra_lateral.html' %}
+{% load static %}
+
+{% block title %}Relatório de Feedbacks{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <h2 class="fw-semibold mb-4">
+    <i class="bi bi-chat-dots text-info"></i> Relatório de Feedbacks
+  </h2>
+
+  <!-- Formulário de filtros -->
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label">Produto</label>
+      <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Usuário</label>
+      <input type="text" name="usuario" class="form-control" value="{{ request.GET.usuario }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Nota</label>
+      <select name="nota" class="form-select">
+        <option value="">Todas</option>
+        <option value="1" {% if request.GET.nota == "1" %}selected{% endif %}>1</option>
+        <option value="2" {% if request.GET.nota == "2" %}selected{% endif %}>2</option>
+        <option value="3" {% if request.GET.nota == "3" %}selected{% endif %}>3</option>
+        <option value="4" {% if request.GET.nota == "4" %}selected{% endif %}>4</option>
+        <option value="5" {% if request.GET.nota == "5" %}selected{% endif %}>5</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Visível</label>
+      <select name="visivel" class="form-select">
+        <option value="">Todos</option>
+        <option value="True" {% if request.GET.visivel == "True" %}selected{% endif %}>Sim</option>
+        <option value="False" {% if request.GET.visivel == "False" %}selected{% endif %}>Não</option>
+      </select>
+    </div>
+
+    <!-- Botões -->
+    <div class="col-12 d-flex justify-content-end">
+      <a href="{% url 'relatorio_feedbacks' %}" class="btn btn-secondary me-2">
+        <i class="bi bi-x-circle"></i> Resetar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-arrow-repeat"></i> Atualizar
+      </button>
+    </div>
+  </form>
+
+  <!-- Tabela Feedbacks -->
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Usuário</th>
+          <th>Produto</th>
+          <th>Nota</th>
+          <th>Comentário</th>
+          <th>Visível</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in feedbacks %}
+        <tr>
+          <td>{{ f.usuario.username }}</td>
+          <td>{{ f.produto.nome }}</td>
+          <td>{{ f.nota }} ⭐</td>
+          <td>{{ f.comentario|default:"-" }}</td>
+          <td>{% if f.visivel %}Sim{% else %}Não{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">Nenhum feedback encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

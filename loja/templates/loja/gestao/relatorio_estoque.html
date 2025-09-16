@@ -1,0 +1,85 @@
+{% extends 'loja/barra_lateral.html' %}
+{% load static %}
+
+{% block title %}Relatório de Estoque{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <h2 class="fw-semibold mb-4">
+    <i class="bi bi-box2-heart text-warning"></i> Relatório de Estoque
+  </h2>
+
+  <!-- Formulário de filtros -->
+  <form method="get" class="row g-3 mb-3">
+    <div class="col-md-3">
+      <label class="form-label">Produto</label>
+      <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Tipo</label>
+      <select name="tipo" class="form-select">
+        <option value="">Todos</option>
+        <option value="entrada" {% if request.GET.tipo == "entrada" %}selected{% endif %}>Entrada</option>
+        <option value="ajuste" {% if request.GET.tipo == "ajuste" %}selected{% endif %}>Ajuste</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Qtd. mínima</label>
+      <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Qtd. máxima</label>
+      <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Data início</label>
+      <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Data fim</label>
+      <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
+    </div>
+
+    <!-- Botões -->
+    <div class="col-12 d-flex justify-content-end">
+      <a href="{% url 'relatorio_estoque' %}" class="btn btn-secondary me-2">
+        <i class="bi bi-x-circle"></i> Resetar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-arrow-repeat"></i> Atualizar
+      </button>
+    </div>
+  </form>
+
+  <!-- Tabela Estoque -->
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Produto</th>
+          <th>Tipo</th>
+          <th>Quantidade</th>
+          <th>Estoque final</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movs %}
+        <tr>
+          <td>{{ m.produto.nome }}</td>
+          <td>{{ m.get_tipo_display }}</td>
+          <td>{{ m.quantidade }}</td>
+          <td>{{ m.estoque_final }}</td>
+          <td>{{ m.data|date:"d/m/Y H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center text-muted">Nenhuma movimentação encontrada.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.db.models import Sum
 from django.utils.timezone import localtime
 from django.db import models
-from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque
+from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback
 from .forms import DespesaForm
 from dateutil.relativedelta import relativedelta
 
@@ -436,3 +436,179 @@ def relatorio_avancado(request):
         context["feedbacks"] = feedbacks
 
     return render(request, "loja/gestao/relatorio_avancado.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_produtos(request):
+    """
+    Relatório de Produtos – lista com filtros por nome, preço, quantidade e status de estoque.
+    """
+    produtos = Produto.objects.all()
+
+    # Filtros
+    nome = request.GET.get("nome")
+    preco_min = request.GET.get("preco_min")
+    preco_max = request.GET.get("preco_max")
+    qtd_min = request.GET.get("qtd_min")
+    qtd_max = request.GET.get("qtd_max")
+    status_estoque = request.GET.get("status_estoque")
+    ordenar_por = request.GET.get("ordenar_por")
+
+    if nome:
+        produtos = produtos.filter(nome__icontains=nome)
+    if preco_min:
+        produtos = produtos.filter(preco__gte=preco_min)
+    if preco_max:
+        produtos = produtos.filter(preco__lte=preco_max)
+    if qtd_min:
+        produtos = produtos.filter(quantidade__gte=qtd_min)
+    if qtd_max:
+        produtos = produtos.filter(quantidade__lte=qtd_max)
+
+    if status_estoque == "minimo":
+        produtos = produtos.filter(quantidade__lte=models.F("minimo_estoque"))
+    elif status_estoque == "ideal":
+        produtos = produtos.filter(
+            quantidade__gt=models.F("minimo_estoque"),
+            quantidade__lte=models.F("ideal_estoque"),
+        )
+    elif status_estoque == "bom":
+        produtos = produtos.filter(quantidade__gt=models.F("ideal_estoque"))
+
+    # Ordenação
+    if ordenar_por == "nome":
+        produtos = produtos.order_by("nome")
+    elif ordenar_por == "preco":
+        produtos = produtos.order_by("preco")
+    elif ordenar_por == "quantidade":
+        produtos = produtos.order_by("quantidade")
+    elif ordenar_por == "recente":
+        produtos = produtos.order_by("-id")
+
+    context = {"produtos": produtos}
+    return render(request, "loja/gestao/relatorio_produtos.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_pedidos(request):
+    """
+    Relatório de Pedidos – lista com filtros por número, cliente, status, valores e datas.
+    """
+    pedidos = Pedido.objects.all()
+
+    # Filtros
+    numero = request.GET.get("numero")
+    cliente = request.GET.get("cliente")
+    status = request.GET.get("status")
+    valor_min = request.GET.get("valor_min")
+    valor_max = request.GET.get("valor_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if numero:
+        pedidos = pedidos.filter(numero_pedido__icontains=numero)
+    if cliente:
+        pedidos = pedidos.filter(cliente__username__icontains=cliente)
+    if status:
+        pedidos = pedidos.filter(status=status)
+    if valor_min:
+        pedidos = pedidos.filter(total__gte=valor_min)
+    if valor_max:
+        pedidos = pedidos.filter(total__lte=valor_max)
+    if data_inicio:
+        pedidos = pedidos.filter(data_criacao__date__gte=data_inicio)
+    if data_fim:
+        pedidos = pedidos.filter(data_criacao__date__lte=data_fim)
+
+    context = {"pedidos": pedidos}
+    return render(request, "loja/gestao/relatorio_pedidos.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_estoque(request):
+    """
+    Relatório de Estoque – lista com filtros por produto, tipo, quantidade e data.
+    """
+    movs = MovimentacaoEstoque.objects.all()
+
+    # Filtros
+    produto = request.GET.get("produto")
+    tipo = request.GET.get("tipo")
+    qtd_min = request.GET.get("qtd_min")
+    qtd_max = request.GET.get("qtd_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if produto:
+        movs = movs.filter(produto__nome__icontains=produto)
+    if tipo:
+        movs = movs.filter(tipo=tipo)
+    if qtd_min:
+        movs = movs.filter(quantidade__gte=qtd_min)
+    if qtd_max:
+        movs = movs.filter(quantidade__lte=qtd_max)
+    if data_inicio:
+        movs = movs.filter(data__date__gte=data_inicio)
+    if data_fim:
+        movs = movs.filter(data__date__lte=data_fim)
+
+    context = {"movs": movs}
+    return render(request, "loja/gestao/relatorio_estoque.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_financeiro(request):
+    """
+    Relatório Financeiro – lista com filtros por categoria, tipo, valor e data.
+    """
+    lancamentos = LancamentoFinanceiro.objects.all()
+
+    # Filtros
+    categoria = request.GET.get("categoria")
+    tipo_lancamento = request.GET.get("tipo_lancamento")
+    valor_min = request.GET.get("valor_min")
+    valor_max = request.GET.get("valor_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if categoria:
+        lancamentos = lancamentos.filter(categoria__icontains=categoria)
+    if tipo_lancamento:
+        lancamentos = lancamentos.filter(tipo=tipo_lancamento)
+    if valor_min:
+        lancamentos = lancamentos.filter(valor__gte=valor_min)
+    if valor_max:
+        lancamentos = lancamentos.filter(valor__lte=valor_max)
+    if data_inicio:
+        lancamentos = lancamentos.filter(data__gte=data_inicio)
+    if data_fim:
+        lancamentos = lancamentos.filter(data__lte=data_fim)
+
+    context = {"lancamentos": lancamentos}
+    return render(request, "loja/gestao/relatorio_financeiro.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_feedbacks(request):
+    """
+    Relatório de Feedbacks – lista com filtros por produto, usuário, nota e visibilidade.
+    """
+    feedbacks = Feedback.objects.all()
+
+    # Filtros
+    produto = request.GET.get("produto")
+    usuario = request.GET.get("usuario")
+    nota = request.GET.get("nota")
+    visivel = request.GET.get("visivel")
+
+    if produto:
+        feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+    if usuario:
+        feedbacks = feedbacks.filter(usuario__username__icontains=usuario)
+    if nota:
+        feedbacks = feedbacks.filter(nota=nota)
+    if visivel in ["True", "False"]:
+        feedbacks = feedbacks.filter(visivel=(visivel == "True"))
+
+    context = {"feedbacks": feedbacks}
+    return render(request, "loja/gestao/relatorio_feedbacks.html", context)

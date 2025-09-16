@@ -72,6 +72,13 @@ urlpatterns = [
     #relatorio
    path("gestao/relatorio_avancado/", views_gestao.relatorio_avancado, name="relatorio_avancado"),
 
+    #caminho dos relatorios avanacado
+    path("gestao/relatorios/produtos/", views_gestao.relatorio_produtos, name="relatorio_produtos"),
+    path("gestao/relatorios/pedidos/", views_gestao.relatorio_pedidos, name="relatorio_pedidos"),
+    path("gestao/relatorios/estoque/", views_gestao.relatorio_estoque, name="relatorio_estoque"),
+    path("gestao/relatorios/financeiro/", views_gestao.relatorio_financeiro, name="relatorio_financeiro"),
+    path("gestao/relatorios/feedbacks/", views_gestao.relatorio_feedbacks, name="relatorio_feedbacks"),
+
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

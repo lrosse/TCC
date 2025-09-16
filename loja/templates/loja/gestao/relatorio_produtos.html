@@ -1,0 +1,111 @@
+{% extends 'loja/barra_lateral.html' %}
+{% load static %}
+
+{% block title %}Relatório de Produtos{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+  <h2 class="fw-semibold mb-4">
+    <i class="bi bi-box-seam text-primary"></i> Relatório de Produtos
+  </h2>
+
+  <!-- Formulário de filtros -->
+  <form method="get" class="row g-3 mb-3">
+    <!-- Nome -->
+    <div class="col-md-4">
+      <label class="form-label">Nome</label>
+      <input type="text" name="nome" class="form-control" value="{{ request.GET.nome }}">
+    </div>
+
+    <!-- Preço -->
+    <div class="col-md-2">
+      <label class="form-label">Preço Mínimo</label>
+      <input type="number" step="0.01" name="preco_min" class="form-control" value="{{ request.GET.preco_min }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Preço Máximo</label>
+      <input type="number" step="0.01" name="preco_max" class="form-control" value="{{ request.GET.preco_max }}">
+    </div>
+
+    <!-- Quantidade -->
+    <div class="col-md-2">
+      <label class="form-label">Qtd. Mínima</label>
+      <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Qtd. Máxima</label>
+      <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
+    </div>
+
+    <!-- Status de Estoque -->
+    <div class="col-md-3">
+      <label class="form-label">Status de Estoque</label>
+      <select name="status_estoque" class="form-select">
+        <option value="">Todos</option>
+        <option value="minimo" {% if request.GET.status_estoque == "minimo" %}selected{% endif %}>Abaixo do mínimo</option>
+        <option value="ideal" {% if request.GET.status_estoque == "ideal" %}selected{% endif %}>Abaixo do ideal</option>
+        <option value="bom" {% if request.GET.status_estoque == "bom" %}selected{% endif %}>Bom</option>
+      </select>
+    </div>
+
+    <!-- Ordenação -->
+    <div class="col-md-3">
+      <label class="form-label">Ordenar por</label>
+      <select name="ordenar_por" class="form-select">
+        <option value="">Padrão</option>
+        <option value="nome" {% if request.GET.ordenar_por == "nome" %}selected{% endif %}>Nome</option>
+        <option value="preco" {% if request.GET.ordenar_por == "preco" %}selected{% endif %}>Preço</option>
+        <option value="quantidade" {% if request.GET.ordenar_por == "quantidade" %}selected{% endif %}>Quantidade</option>
+        <option value="recente" {% if request.GET.ordenar_por == "recente" %}selected{% endif %}>Mais recente</option>
+      </select>
+    </div>
+
+    <!-- Botões -->
+    <div class="col-12 d-flex justify-content-end">
+      <a href="{% url 'relatorio_produtos' %}" class="btn btn-secondary me-2">
+        <i class="bi bi-x-circle"></i> Resetar
+      </a>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-arrow-repeat"></i> Atualizar
+      </button>
+    </div>
+  </form>
+
+  <!-- Tabela Produtos -->
+  <div class="table-responsive">
+    <table class="table table-striped align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Nome</th>
+          <th>Preço</th>
+          <th>Quantidade</th>
+          <th>Estoque</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produtos %}
+        <tr>
+          <td>{{ p.nome }}</td>
+          <td>R$ {{ p.preco }}</td>
+          <td>{{ p.quantidade }}</td>
+          <td>
+            {% if p.quantidade <= p.minimo_estoque %}
+              <span class="badge bg-danger">Abaixo do mínimo</span>
+            {% elif p.quantidade <= p.ideal_estoque %}
+              <span class="badge bg-warning text-dark">Abaixo do ideal</span>
+            {% else %}
+              <span class="badge bg-success">Estoque bom</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="text-center text-muted">Nenhum produto encontrado.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
