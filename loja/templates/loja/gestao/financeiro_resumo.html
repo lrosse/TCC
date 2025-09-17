@@ -7,6 +7,23 @@
 <div class="container-fluid px-4">
   <h2 class="fw-semibold mb-4">Resumo Geral</h2>
 
+  <!-- Filtro de datas -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-auto">
+      <label for="data_inicio" class="form-label">Data início</label>
+      <input type="date" id="data_inicio" name="data_inicio" class="form-control"
+             value="{{ data_inicio }}">
+    </div>
+    <div class="col-auto">
+      <label for="data_fim" class="form-label">Data fim</label>
+      <input type="date" id="data_fim" name="data_fim" class="form-control"
+             value="{{ data_fim }}">
+    </div>
+    <div class="col-auto align-self-end">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+
   <!-- Abas -->
   <ul class="nav nav-tabs mb-4">
     <li class="nav-item">
@@ -19,7 +36,6 @@
       <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}" href="{% url 'financeiro_pedidos' %}">Pedidos</a>
     </li>
   </ul>
-
   <!-- Cards Resumo -->
   <div class="row g-4 mb-4">
 
