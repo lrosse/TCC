@@ -199,12 +199,28 @@ def financeiro_pedidos(request):
 @login_required
 @user_passes_test(admin_required)
 def financeiro_resumo(request):
-    pedidos = Pedido.objects.filter(status="Pago")
+    # Recebe datas do filtro GET ou usa padrão
+    data_inicio = request.GET.get("data_inicio") or "2025-09-01"
+    data_fim = request.GET.get("data_fim") or "2025-09-30"
 
-    # Receita total
+    pedidos = Pedido.objects.filter(
+        status="Pago",
+        data_criacao__gte=data_inicio,
+        data_criacao__lte=data_fim
+    )
+    despesas_fixas = Despesa.objects.filter(
+        tipo="Fixo",
+        data__gte=data_inicio,
+        data__lte=data_fim
+    )
+    despesas_variaveis = Despesa.objects.filter(
+        tipo="Variável",
+        data__gte=data_inicio,
+        data__lte=data_fim
+    )
+
     receita_total = pedidos.aggregate(total=Sum("total"))["total"] or 0
 
-    # Custo total
     custo_total = 0
     itens = PedidoItem.objects.filter(pedido__in=pedidos).select_related("produto")
     for item in itens:
@@ -214,19 +230,20 @@ def financeiro_resumo(request):
             custo_produto = 0
         custo_total += item.quantidade * custo_produto
 
-    # Lucro líquido
     lucro_liquido = receita_total - custo_total
 
-    # 🔹 Novos cálculos de despesas
-    despesas_fixas = Despesa.objects.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0
-    despesas_variaveis = Despesa.objects.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0
+    despesas_fixas_valor = despesas_fixas.aggregate(total=Sum("valor"))["total"] or 0
+    despesas_variaveis_valor = despesas_variaveis.aggregate(total=Sum("valor"))["total"] or 0
 
     context = {
         "receita_total": receita_total,
         "custo_total": custo_total,
         "lucro_liquido": lucro_liquido,
-        "despesas_fixas": despesas_fixas,
-        "despesas_variaveis": despesas_variaveis,
+        "despesas_fixas": despesas_fixas_valor,
+        "despesas_variaveis": despesas_variaveis_valor,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "mes": None,
     }
     return render(request, "loja/gestao/financeiro_resumo.html", context)
 
