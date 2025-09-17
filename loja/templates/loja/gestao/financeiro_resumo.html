@@ -95,5 +95,140 @@
     </div>
 
   </div>
+
+  <!-- Linha de gráficos -->
+  <div class="row mb-4">
+    <!-- Gráfico Receita vs Despesas -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Receita vs Despesas Mensal</h6>
+          <canvas id="graficoFinanceiro"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- Gráfico Lucro Líquido -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Lucro Líquido</h6>
+          <canvas id="grafico2"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- Gráfico Pizza Despesas -->
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h6 class="fw-semibold mb-3">Despesas Fixas vs Variáveis</h6>
+          <canvas id="grafico3"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Gráfico Receita vs Despesas
+  const meses = {{ meses_grafico|safe }};
+  const receitas = {{ receitas_grafico|safe }};
+  const despesas = {{ despesas_grafico|safe }};
+
+  new Chart(document.getElementById('graficoFinanceiro').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: meses,
+      datasets: [
+        {
+          label: 'Receita',
+          data: receitas,
+          backgroundColor: 'rgba(40, 167, 69, 0.7)',
+        },
+        {
+          label: 'Despesas',
+          data: despesas,
+          backgroundColor: 'rgba(220, 53, 69, 0.7)',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      aspectRatio: 2,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  // Gráfico Lucro Líquido
+  const labelsLucro = {{ labels_lucro|safe }};
+  const dadosLucro = {{ dados_lucro|safe }};
+
+  new Chart(document.getElementById('grafico2').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labelsLucro,
+      datasets: [{
+        label: 'Lucro Líquido',
+        data: dadosLucro,
+        borderColor: 'rgba(40, 167, 69, 1)',
+        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      aspectRatio: 2,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+
+  // Gráfico Pizza Despesas Fixas vs Variáveis
+  const despesasPizzaLabels = ['Fixas', 'Variáveis'];
+  const despesasPizzaData = [
+    Number({{ despesas_fixas_valor|default:0|floatformat:2 }}),
+    Number({{ despesas_variaveis_valor|default:0|floatformat:2 }})
+  ];
+
+  if (despesasPizzaData[0] > 0 || despesasPizzaData[1] > 0) {
+    new Chart(document.getElementById('grafico3').getContext('2d'), {
+      type: 'pie',
+      data: {
+        labels: despesasPizzaLabels,
+        datasets: [{
+          data: despesasPizzaData,
+          backgroundColor: [
+            'rgba(0, 123, 255, 0.7)', // Azul para fixas
+            'rgba(255, 193, 7, 0.7)'  // Amarelo para variáveis
+          ],
+          borderColor: [
+            'rgba(0, 123, 255, 1)',
+            'rgba(255, 193, 7, 1)'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed || 0;
+                return `${label}: R$ ${value.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+              }
+            }
+          }
+        }
+      }
+    });
+  } else {
+    document.getElementById('grafico3').parentNode.innerHTML += '<div class="text-center mt-4 text-muted">Sem despesas fixas ou variáveis no período.</div>';
+  }
+</script>
 {% endblock %}
