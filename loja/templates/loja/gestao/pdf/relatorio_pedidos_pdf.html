@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Pedidos</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+    th { background: #444; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>Relatório de Pedidos</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Número</th>
+        <th>Cliente</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in pedidos %}
+      <tr>
+        <td>{{ p.numero_pedido }}</td>
+        <td>{{ p.cliente.username }}</td>
+        <td>R$ {{ p.total }}</td>
+        <td>{{ p.status }}</td>
+        <td>{{ p.data_criacao|date:"d/m/Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">Nenhum pedido encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

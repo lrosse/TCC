@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Estoque</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+    th { background: #444; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>Relatório de Estoque</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Tipo</th>
+        <th>Quantidade</th>
+        <th>Estoque final</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in movs %}
+      <tr>
+        <td>{{ m.produto.nome }}</td>
+        <td>{{ m.get_tipo_display }}</td>
+        <td>{{ m.quantidade }}</td>
+        <td>{{ m.estoque_final }}</td>
+        <td>{{ m.data|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">Nenhuma movimentação encontrada.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Financeiro</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+    th { background: #444; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>Relatório Financeiro</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Categoria</th>
+        <th>Tipo</th>
+        <th>Valor</th>
+        <th>Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lancamentos %}
+      <tr>
+        <td>{{ l.categoria }}</td>
+        <td>{{ l.get_tipo_display }}</td>
+        <td>R$ {{ l.valor }}</td>
+        <td>{{ l.data|date:"d/m/Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

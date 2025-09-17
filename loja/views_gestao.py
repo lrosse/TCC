@@ -586,6 +586,48 @@ def relatorio_pedidos(request):
 
 @login_required
 @user_passes_test(admin_required)
+def relatorio_pedidos_pdf(request):
+    """
+    Exporta o Relatório de Pedidos para PDF, aplicando os filtros da tela.
+    """
+    pedidos = Pedido.objects.all()
+
+    # 🔹 Filtros (mesmos do relatorio_pedidos)
+    numero = request.GET.get("numero")
+    cliente = request.GET.get("cliente")
+    status = request.GET.get("status")
+    valor_min = request.GET.get("valor_min")
+    valor_max = request.GET.get("valor_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if numero:
+        pedidos = pedidos.filter(numero_pedido__icontains=numero)
+    if cliente:
+        pedidos = pedidos.filter(cliente__username__icontains=cliente)
+    if status:
+        pedidos = pedidos.filter(status=status)
+    if valor_min:
+        pedidos = pedidos.filter(total__gte=valor_min)
+    if valor_max:
+        pedidos = pedidos.filter(total__lte=valor_max)
+    if data_inicio:
+        pedidos = pedidos.filter(data_criacao__date__gte=data_inicio)
+    if data_fim:
+        pedidos = pedidos.filter(data_criacao__date__lte=data_fim)
+
+    # 🔹 Renderiza template PDF
+    html_string = render_to_string("loja/gestao/pdf/relatorio_pedidos_pdf.html", {"pedidos": pedidos})
+    html = weasyprint.HTML(string=html_string)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_pedidos.pdf"'
+    html.write_pdf(response)
+
+    return response
+
+@login_required
+@user_passes_test(admin_required)
 def relatorio_estoque(request):
     """
     Relatório de Estoque – lista com filtros por produto, tipo, quantidade e data.
@@ -615,6 +657,45 @@ def relatorio_estoque(request):
 
     context = {"movs": movs}
     return render(request, "loja/gestao/relatorio_estoque.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_estoque_pdf(request):
+    """
+    Exporta o Relatório de Estoque para PDF, aplicando os filtros da tela.
+    """
+    movs = MovimentacaoEstoque.objects.all()
+
+    # 🔹 Filtros (mesmos da view normal)
+    produto = request.GET.get("produto")
+    tipo = request.GET.get("tipo")
+    qtd_min = request.GET.get("qtd_min")
+    qtd_max = request.GET.get("qtd_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if produto:
+        movs = movs.filter(produto__nome__icontains=produto)
+    if tipo:
+        movs = movs.filter(tipo=tipo)
+    if qtd_min:
+        movs = movs.filter(quantidade__gte=qtd_min)
+    if qtd_max:
+        movs = movs.filter(quantidade__lte=qtd_max)
+    if data_inicio:
+        movs = movs.filter(data__date__gte=data_inicio)
+    if data_fim:
+        movs = movs.filter(data__date__lte=data_fim)
+
+    # 🔹 Renderiza template PDF
+    html_string = render_to_string("loja/gestao/pdf/relatorio_estoque_pdf.html", {"movs": movs})
+    html = weasyprint.HTML(string=html_string)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_estoque.pdf"'
+    html.write_pdf(response)
+
+    return response
 
 @login_required
 @user_passes_test(admin_required)
@@ -650,6 +731,45 @@ def relatorio_financeiro(request):
 
 @login_required
 @user_passes_test(admin_required)
+def relatorio_financeiro_pdf(request):
+    """
+    Exporta o Relatório Financeiro para PDF, aplicando os filtros da tela.
+    """
+    lancamentos = LancamentoFinanceiro.objects.all()
+
+    # 🔹 Filtros (mesmos da view normal)
+    categoria = request.GET.get("categoria")
+    tipo_lancamento = request.GET.get("tipo_lancamento")
+    valor_min = request.GET.get("valor_min")
+    valor_max = request.GET.get("valor_max")
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+
+    if categoria:
+        lancamentos = lancamentos.filter(categoria__icontains=categoria)
+    if tipo_lancamento:
+        lancamentos = lancamentos.filter(tipo=tipo_lancamento)
+    if valor_min:
+        lancamentos = lancamentos.filter(valor__gte=valor_min)
+    if valor_max:
+        lancamentos = lancamentos.filter(valor__lte=valor_max)
+    if data_inicio:
+        lancamentos = lancamentos.filter(data__gte=data_inicio)
+    if data_fim:
+        lancamentos = lancamentos.filter(data__lte=data_fim)
+
+    # 🔹 Renderiza template PDF
+    html_string = render_to_string("loja/gestao/pdf/relatorio_financeiro_pdf.html", {"lancamentos": lancamentos})
+    html = weasyprint.HTML(string=html_string)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_financeiro.pdf"'
+    html.write_pdf(response)
+
+    return response
+
+@login_required
+@user_passes_test(admin_required)
 def relatorio_feedbacks(request):
     """
     Relatório de Feedbacks – lista com filtros por produto, usuário, nota e visibilidade.
@@ -673,3 +793,36 @@ def relatorio_feedbacks(request):
 
     context = {"feedbacks": feedbacks}
     return render(request, "loja/gestao/relatorio_feedbacks.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_feedbacks_pdf(request):
+    """
+    Exporta o Relatório de Feedbacks para PDF, aplicando os filtros da tela.
+    """
+    feedbacks = Feedback.objects.all()
+
+    # 🔹 Filtros (mesmos da view normal)
+    produto = request.GET.get("produto")
+    usuario = request.GET.get("usuario")
+    nota = request.GET.get("nota")
+    visivel = request.GET.get("visivel")
+
+    if produto:
+        feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+    if usuario:
+        feedbacks = feedbacks.filter(usuario__username__icontains=usuario)
+    if nota:
+        feedbacks = feedbacks.filter(nota=nota)
+    if visivel in ["True", "False"]:
+        feedbacks = feedbacks.filter(visivel=(visivel == "True"))
+
+    # 🔹 Renderiza template PDF
+    html_string = render_to_string("loja/gestao/pdf/relatorio_feedbacks_pdf.html", {"feedbacks": feedbacks})
+    html = weasyprint.HTML(string=html_string)
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_feedbacks.pdf"'
+    html.write_pdf(response)
+
+    return response

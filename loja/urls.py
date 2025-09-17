@@ -81,6 +81,10 @@ urlpatterns = [
 
     #caminho para pdf
     path("gestao/relatorios/produtos/pdf/", views_gestao.relatorio_produtos_pdf, name="relatorio_produtos_pdf"),
+    path("gestao/relatorios/pedidos/pdf/", views_gestao.relatorio_pedidos_pdf, name="relatorio_pedidos_pdf"),
+    path("gestao/relatorios/estoque/pdf/", views_gestao.relatorio_estoque_pdf, name="relatorio_estoque_pdf"),
+    path("gestao/relatorios/financeiro/pdf/", views_gestao.relatorio_financeiro_pdf, name="relatorio_financeiro_pdf"),
+    path("gestao/relatorios/feedbacks/pdf/", views_gestao.relatorio_feedbacks_pdf, name="relatorio_feedbacks_pdf"),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento
