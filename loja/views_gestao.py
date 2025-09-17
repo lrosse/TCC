@@ -219,21 +219,22 @@ def financeiro_resumo(request):
         data__lte=data_fim
     )
 
+    # Receita total
     receita_total = pedidos.aggregate(total=Sum("total"))["total"] or 0
 
+    # Custo total (baseado nos custos cadastrados dos produtos)
     custo_total = 0
     itens = PedidoItem.objects.filter(pedido__in=pedidos).select_related("produto")
     for item in itens:
-        if hasattr(item.produto, "custo_info"):
-            custo_produto = item.produto.custo_info.custo
-        else:
-            custo_produto = 0
+        custo_produto = getattr(item.produto.custo_info, "custo", 0) if hasattr(item.produto, "custo_info") else 0
         custo_total += item.quantidade * custo_produto
 
-    lucro_liquido = receita_total - custo_total
-
+    # Despesas
     despesas_fixas_valor = despesas_fixas.aggregate(total=Sum("valor"))["total"] or 0
     despesas_variaveis_valor = despesas_variaveis.aggregate(total=Sum("valor"))["total"] or 0
+
+    # Lucro líquido final = Receita - Custos - Despesas
+    lucro_liquido = receita_total - custo_total - despesas_fixas_valor - despesas_variaveis_valor
 
     context = {
         "receita_total": receita_total,
