@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório de Produtos</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    h2 { text-align: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+    th { background: #444; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>Relatório de Produtos</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Preço</th>
+        <th>Quantidade</th>
+        <th>Status de Estoque</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in produtos %}
+      <tr>
+        <td>{{ p.nome }}</td>
+        <td>R$ {{ p.preco }}</td>
+        <td>{{ p.quantidade }}</td>
+        <td>
+          {% if p.quantidade <= p.minimo_estoque %}
+            Abaixo do mínimo
+          {% elif p.quantidade <= p.ideal_estoque %}
+            Abaixo do ideal
+          {% else %}
+            Bom
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">Nenhum produto encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

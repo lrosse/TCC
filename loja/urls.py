@@ -79,6 +79,8 @@ urlpatterns = [
     path("gestao/relatorios/financeiro/", views_gestao.relatorio_financeiro, name="relatorio_financeiro"),
     path("gestao/relatorios/feedbacks/", views_gestao.relatorio_feedbacks, name="relatorio_feedbacks"),
 
+    #caminho para pdf
+    path("gestao/relatorios/produtos/pdf/", views_gestao.relatorio_produtos_pdf, name="relatorio_produtos_pdf"),
 ]
 
 # Adiciona a configuração para servir arquivos de mídia durante o desenvolvimento

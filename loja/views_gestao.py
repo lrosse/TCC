@@ -8,6 +8,9 @@ from django.db import models
 from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback
 from .forms import DespesaForm
 from dateutil.relativedelta import relativedelta
+import weasyprint
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 
 # 🔹 Apenas a regra de admin permanece
 def admin_required(user):
@@ -487,6 +490,64 @@ def relatorio_produtos(request):
 
     context = {"produtos": produtos}
     return render(request, "loja/gestao/relatorio_produtos.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def relatorio_produtos_pdf(request):
+    """
+    Exporta o Relatório de Produtos para PDF, aplicando os mesmos filtros da tela.
+    """
+    produtos = Produto.objects.all()
+
+    # 🔹 Reaproveita a lógica dos filtros (igual a relatorio_produtos)
+    nome = request.GET.get("nome")
+    preco_min = request.GET.get("preco_min")
+    preco_max = request.GET.get("preco_max")
+    qtd_min = request.GET.get("qtd_min")
+    qtd_max = request.GET.get("qtd_max")
+    status_estoque = request.GET.get("status_estoque")
+    ordenar_por = request.GET.get("ordenar_por")
+
+    if nome:
+        produtos = produtos.filter(nome__icontains=nome)
+    if preco_min:
+        produtos = produtos.filter(preco__gte=preco_min)
+    if preco_max:
+        produtos = produtos.filter(preco__lte=preco_max)
+    if qtd_min:
+        produtos = produtos.filter(quantidade__gte=qtd_min)
+    if qtd_max:
+        produtos = produtos.filter(quantidade__lte=qtd_max)
+
+    if status_estoque == "minimo":
+        produtos = produtos.filter(quantidade__lte=models.F("minimo_estoque"))
+    elif status_estoque == "ideal":
+        produtos = produtos.filter(
+            quantidade__gt=models.F("minimo_estoque"),
+            quantidade__lte=models.F("ideal_estoque"),
+        )
+    elif status_estoque == "bom":
+        produtos = produtos.filter(quantidade__gt=models.F("ideal_estoque"))
+
+    if ordenar_por == "nome":
+        produtos = produtos.order_by("nome")
+    elif ordenar_por == "preco":
+        produtos = produtos.order_by("preco")
+    elif ordenar_por == "quantidade":
+        produtos = produtos.order_by("quantidade")
+    elif ordenar_por == "recente":
+        produtos = produtos.order_by("-id")
+
+    # 🔹 Renderiza o template PDF
+    html_string = render_to_string("loja/gestao/pdf/relatorio_produtos_pdf.html", {"produtos": produtos})
+    html = weasyprint.HTML(string=html_string)
+
+    # 🔹 Gera o PDF como resposta HTTP
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'inline; filename="relatorio_produtos.pdf"'
+    html.write_pdf(response)
+
+    return response
 
 @login_required
 @user_passes_test(admin_required)
