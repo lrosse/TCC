@@ -13,6 +13,14 @@ import weasyprint
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
+import locale
+
+# Defina o locale para português (Windows pode precisar de 'pt_BR')
+try:
+    locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
+except:
+    locale.setlocale(locale.LC_TIME, 'Portuguese_Brazil')
 
 # 🔹 Apenas a regra de admin permanece
 def admin_required(user):
@@ -218,14 +226,14 @@ def financeiro_resumo(request):
     # Receita total
     receita_total = float(pedidos.aggregate(total=Sum("total"))["total"] or 0)
 
-    # Custo total
+    # Custo total dos produtos vendidos
     custo_total = 0.0
     itens = PedidoItem.objects.filter(pedido__in=pedidos).select_related("produto")
     for item in itens:
         custo_produto = float(getattr(item.produto.custo_info, "custo", 0)) if hasattr(item.produto, "custo_info") else 0.0
         custo_total += item.quantidade * custo_produto
 
-    # Despesas
+    # Despesas fixas e variáveis
     despesas_fixas_valor = float(despesas.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0)
     despesas_variaveis_valor = float(despesas.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0)
 
@@ -235,17 +243,29 @@ def financeiro_resumo(request):
     # Gráfico 1: receita e despesas por mês
     receitas_por_mes = defaultdict(float)
     despesas_por_mes = defaultdict(float)
+    custos_por_mes = defaultdict(float)
+
     for p in pedidos:
         if p.data_criacao:
-            mes = p.data_criacao.strftime("%Y-%m")
-            receitas_por_mes[mes] += float(p.total or 0)
+            mes_label = p.data_criacao.strftime("%b/%y").capitalize()  # Ex: 'Set/25'
+            receitas_por_mes[mes_label] += float(p.total or 0)
+            itens_pedido = PedidoItem.objects.filter(pedido=p).select_related("produto")
+            custos_por_mes[mes_label] += sum(
+                float(getattr(item.produto.custo_info, "custo", 0)) * item.quantidade
+                if hasattr(item.produto, "custo_info") else 0.0
+                for item in itens_pedido
+            )
     for d in despesas:
         if d.data:
-            mes = d.data.strftime("%Y-%m")
-            despesas_por_mes[mes] += float(d.valor or 0)
-    meses = sorted(set(receitas_por_mes.keys()) | set(despesas_por_mes.keys()))
+            mes_label = d.data.strftime("%b/%y").capitalize()
+            despesas_por_mes[mes_label] += float(d.valor or 0)
+
+    meses = sorted(set(receitas_por_mes.keys()) | set(despesas_por_mes.keys()) | set(custos_por_mes.keys()))
     receitas = [receitas_por_mes[mes] for mes in meses]
-    despesas_grafico = [despesas_por_mes[mes] for mes in meses]
+    despesas_grafico = [
+        custos_por_mes[mes] + despesas_por_mes[mes]
+        for mes in meses
+    ]
 
     # Gráfico 2: lucro líquido por mês ou por dia
     # Se o filtro for para um único mês, mostra por dia
@@ -253,23 +273,31 @@ def financeiro_resumo(request):
         # Por dia
         lucro_por_dia = defaultdict(float)
         dias = set()
+        # Descobre o mês e ano do filtro
+        mes_ano = None
         for p in pedidos:
-            dia = p.data_criacao.strftime("%Y-%m-%d")
-            dias.add(dia)
-            receita = float(p.total or 0)
-            itens_pedido = PedidoItem.objects.filter(pedido=p).select_related("produto")
-            custo_pedido = sum(
-                float(getattr(item.produto.custo_info, "custo", 0)) * item.quantidade
-                if hasattr(item.produto, "custo_info") else 0.0
-                for item in itens_pedido
+            dia = p.data_criacao.strftime("%d")  # Apenas o dia
+            lucro_por_dia[dia] += (
+                float(p.total or 0)
+                - sum(
+                    float(getattr(item.produto.custo_info, "custo", 0)) * item.quantidade
+                    if hasattr(item.produto, "custo_info") else 0.0
+                    for item in PedidoItem.objects.filter(pedido=p).select_related("produto")
+                )
+                - float(despesas.filter(data=p.data_criacao.date()).aggregate(total=Sum("valor"))["total"] or 0)
             )
-            # CORREÇÃO: use data=p.data_criacao.date() para DateField
-            despesas_dia = despesas.filter(data=p.data_criacao.date())
-            despesas_dia_valor = float(despesas_dia.aggregate(total=Sum("valor"))["total"] or 0)
-            lucro = receita - custo_pedido - despesas_dia_valor
-            lucro_por_dia[dia] += lucro
-        labels_lucro = sorted(dias)
-        dados_lucro = [lucro_por_dia[d] for d in labels_lucro]
+            dias.add(dia)
+            if not mes_ano:
+                mes_ano = p.data_criacao.strftime("%Y-%m")
+        # Gera todos os dias do mês do filtro
+        if not mes_ano:
+            # Se não há pedidos, pega do filtro
+            mes_ano = data_inicio[:7]
+        from calendar import monthrange
+        ano, mes = map(int, mes_ano.split('-'))
+        num_dias = monthrange(ano, mes)[1]
+        labels_lucro = [f"{str(dia).zfill(2)}" for dia in range(1, num_dias + 1)]
+        dados_lucro = [lucro_por_dia[label] if label in lucro_por_dia else 0 for label in labels_lucro]
     else:
         # Por mês
         lucro_por_mes = defaultdict(float)
