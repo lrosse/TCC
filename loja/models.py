@@ -115,15 +115,20 @@ class Pedido(models.Model):
 # ----------------------------------------------------
 class PedidoItem(models.Model):
     pedido = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='itens')
-    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    produto = models.ForeignKey(Produto, on_delete=models.SET_NULL, null=True, blank=True)  
+    # 🔹 mantém referência ao produto, mas permite null se ele for excluído
+
+    # 🔹 Campos congelados no momento do pedido
+    nome_produto = models.CharField(max_length=200)  
     quantidade = models.PositiveIntegerField()
     preco_unitario = models.DecimalField(max_digits=10, decimal_places=2)
+    custo_unitario = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def subtotal(self):
         return self.quantidade * self.preco_unitario
 
     def __str__(self):
-        return f"{self.quantidade}x {self.produto.nome} no Pedido #{self.pedido.id}"
+        return f"{self.quantidade}x {self.nome_produto} no Pedido #{self.pedido.id}"
 
 # ------------------------------
 # Model para armazenar feedbacks

@@ -182,15 +182,9 @@ def financeiro_pedidos(request):
     for p in pedidos:
         receita = p.total or 0
 
-        # 🔹 Calcula custo do pedido
-        itens = PedidoItem.objects.filter(pedido=p).select_related("produto")
-        custo_total = 0
-        for item in itens:
-            if hasattr(item.produto, "custo_info"):
-                custo_produto = item.produto.custo_info.custo
-            else:
-                custo_produto = 0
-            custo_total += item.quantidade * custo_produto
+        # 🔹 Calcula custo do pedido usando o valor congelado em PedidoItem
+        itens = PedidoItem.objects.filter(pedido=p)
+        custo_total = sum(item.quantidade * item.custo_unitario for item in itens)
 
         lucro = receita - custo_total
 
