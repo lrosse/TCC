@@ -8,6 +8,7 @@ from django.utils.timezone import localtime
 from django.db import models
 from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback, HistoricoCusto
 from .forms import DespesaForm
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import weasyprint
 from django.http import HttpResponse
@@ -300,27 +301,42 @@ def financeiro_resumo(request):
         labels_lucro = [f"{str(dia).zfill(2)}" for dia in range(1, num_dias + 1)]
         dados_lucro = [lucro_por_dia[label] if label in lucro_por_dia else 0 for label in labels_lucro]
     else:
-        # Por mês
         from collections import defaultdict
         lucro_por_mes = defaultdict(float)
 
-        for mes in meses:
-            receita = receitas_por_mes[mes]
-            custo_mes = 0.0
-            for p in pedidos:
-                if p.data_criacao.strftime("%b/%y").capitalize() == mes:
-                    custo_mes += sum(float(item.custo_unitario) * item.quantidade for item in p.itens.all())
-            despesas_mes_valor = float(despesas.filter(data__strftime="%b/%y") if False else 0)  # ajustado abaixo
+        # 🔹 Monta base YYYY-MM para pedidos
+        pedidos_por_mes = defaultdict(list)
+        for p in pedidos:
+            chave = p.data_criacao.strftime("%Y-%m")
+            pedidos_por_mes[chave].append(p)
 
-            # 🔹 Recalcula despesas do mês (forma correta)
-            despesas_mes = despesas.filter(data__month=p.data_criacao.month, data__year=p.data_criacao.year)
-            despesas_mes_valor = float(despesas_mes.aggregate(total=Sum("valor"))["total"] or 0)
+        # 🔹 Monta base YYYY-MM para despesas
+        despesas_por_mes_calc = defaultdict(float)
+        for d in despesas:
+            chave = d.data.strftime("%Y-%m")  # funciona para DateField
+            despesas_por_mes_calc[chave] += float(d.valor or 0)
 
-            lucro = receita - custo_mes - despesas_mes_valor
-            lucro_por_mes[mes] = lucro
+        # 🔹 Une todos os meses existentes
+        todos_meses = sorted(set(pedidos_por_mes.keys()) | set(despesas_por_mes_calc.keys()))
 
-        labels_lucro = meses
-        dados_lucro = [lucro_por_mes[mes] for mes in meses]
+        for chave in todos_meses:
+            receita = sum(float(p.total or 0) for p in pedidos_por_mes.get(chave, []))
+            custo_mes = sum(
+                float(item.custo_unitario) * item.quantidade
+                for p in pedidos_por_mes.get(chave, [])
+                for item in p.itens.all()
+            )
+            despesas_mes_valor = despesas_por_mes_calc.get(chave, 0.0)
+
+            lucro_por_mes[chave] = receita - custo_mes - despesas_mes_valor
+
+        # 🔹 Converte rótulo YYYY-MM → Mês/Ano (ex: 2025-10 → Out/25)
+        from datetime import datetime
+        labels_lucro = [
+            datetime.strptime(chave, "%Y-%m").strftime("%b/%y").capitalize()
+            for chave in todos_meses
+        ]
+        dados_lucro = [lucro_por_mes[chave] for chave in todos_meses]
 
     context = {
         "receita_total": receita_total,
