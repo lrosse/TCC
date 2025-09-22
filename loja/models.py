@@ -129,6 +129,16 @@ class PedidoItem(models.Model):
 
     def __str__(self):
         return f"{self.quantidade}x {self.nome_produto} no Pedido #{self.pedido.id}"
+    
+class HistoricoCusto(models.Model):
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name="historico_custos")
+    custo_antigo = models.DecimalField(max_digits=10, decimal_places=2)
+    custo_novo = models.DecimalField(max_digits=10, decimal_places=2)
+    data = models.DateTimeField(auto_now_add=True)
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"[{self.produto.nome}] {self.custo_antigo} → {self.custo_novo} em {self.data.strftime('%d/%m/%Y %H:%M')}"
 
 # ------------------------------
 # Model para armazenar feedbacks

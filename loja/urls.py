@@ -62,6 +62,7 @@ urlpatterns = [
     path("gestao/financeiro/resumo/", views_gestao.financeiro_resumo, name="financeiro_resumo"),
     path("gestao/financeiro/produtos/", views_gestao.financeiro_produtos, name="financeiro_produtos"),
     path("gestao/financeiro/pedidos/", views_gestao.financeiro_pedidos, name="financeiro_pedidos"),
+    path("gestao/historico-custo/", views_gestao.historico_custo, name="historico_custo"),
     
     # Despesas (separado)
     path("gestao/despesas/", views_gestao.gestao_despesas, name="gestao_despesas"),
@@ -70,7 +71,7 @@ urlpatterns = [
     path("gestao/despesas/excluir/<int:pk>/", views_gestao.excluir_despesa, name="excluir_despesa"),
 
     #relatorio
-   path("gestao/relatorio_avancado/", views_gestao.relatorio_avancado, name="relatorio_avancado"),
+    path("gestao/relatorio_avancado/", views_gestao.relatorio_avancado, name="relatorio_avancado"),
 
     #caminho dos relatorios avanacado
     path("gestao/relatorios/produtos/", views_gestao.relatorio_produtos, name="relatorio_produtos"),

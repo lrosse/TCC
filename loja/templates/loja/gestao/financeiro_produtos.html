@@ -26,14 +26,17 @@
     <div class="card-body">
 
       <!-- Cabeçalho da tabela com botões -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title">Margens de Produtos</h5>
-        <div id="btnArea">
-          <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
-            <i class="bi bi-sliders"></i> Definir Custos
-          </a>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="card-title">Margens de Produtos</h5>
+      <div id="btnArea" class="d-flex gap-2">
+        <a href="{% url 'historico_custo' %}" class="btn btn-outline-primary">
+          <i class="bi bi-clock-history"></i> Ver Histórico
+        </a>
+        <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
+          <i class="bi bi-sliders"></i> Definir Custos
+        </a>
       </div>
+    </div>
 
       <!-- Tabela -->
       <form id="formCustos" method="POST">
@@ -51,12 +54,24 @@
             </thead>
             <tbody>
               {% for p in produtos_data %}
-              <tr data-produto="{{ p.id }}">
-                <td>{{ p.nome }}</td>
+              <tr data-produto="{{ p.produto.id }}">
+                <td>{{ p.produto.nome }}</td>
                 <td class="custo-cell">R$ {{ p.custo|floatformat:2 }}</td>
                 <td>R$ {{ p.preco|floatformat:2 }}</td>
-                <td>R$ {{ p.lucro_unitario|floatformat:2 }}</td>
-                <td>{{ p.margem }}%</td>
+                <td>
+                  {% if p.lucro_unitario %}
+                    R$ {{ p.lucro_unitario|floatformat:2 }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if p.margem %}
+                    {{ p.margem|floatformat:2 }}%
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -103,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const custoAtual = custoCell.innerText.replace("R$", "").trim();
 
       custoCell.innerHTML = `
-        <input type="number" step="0.01" name="custo_${id}" value="${custoAtual}" class="form-control">
+        <input type="number" step="0.01" name="custo_${id}" value="${custoAtual}" class="form-control form-control-sm">
       `;
     });
 

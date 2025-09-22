@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.db.models import Sum
 from django.utils.timezone import localtime
 from django.db import models
-from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback
+from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback, HistoricoCusto
 from .forms import DespesaForm
 from dateutil.relativedelta import relativedelta
 import weasyprint
@@ -138,35 +138,53 @@ def gestao_estoque(request):
 @login_required
 @user_passes_test(admin_required)
 def financeiro_produtos(request):
+    from .models import Produto, CustoProduto, HistoricoCusto
+
     produtos = Produto.objects.all().order_by("nome")
 
-    # 🔹 Modo edição de custos
     if request.method == "POST":
         for produto in produtos:
-            custo_valor = request.POST.get(f"custo_{produto.id}")
-            if custo_valor is not None:
-                custo_valor = float(custo_valor) if custo_valor else 0
-                custo_obj, _ = CustoProduto.objects.get_or_create(produto=produto)
-                custo_obj.custo = custo_valor
+            novo_custo_raw = request.POST.get(f"custo_{produto.id}")
+            if not novo_custo_raw:
+                continue
+
+            try:
+                novo_custo = float(novo_custo_raw)
+            except ValueError:
+                continue
+
+            custo_obj, _ = CustoProduto.objects.get_or_create(produto=produto)
+
+            # 🔹 Se mudou o valor, grava histórico antes de atualizar
+            if custo_obj.custo != novo_custo:
+                HistoricoCusto.objects.create(
+                    produto=produto,
+                    custo_antigo=custo_obj.custo,
+                    custo_novo=novo_custo,
+                    usuario=request.user
+                )
+
+                custo_obj.custo = novo_custo
                 custo_obj.save()
+
         messages.success(request, "Custos atualizados com sucesso!")
         return redirect("financeiro_produtos")
 
-    # 🔹 Montagem dos dados
+    # Contexto para exibir tabela
     produtos_data = []
     for p in produtos:
-        custo = getattr(p.custo_info, "custo", 0) if hasattr(p, "custo_info") else 0
-        preco = p.preco
-        lucro_unitario = preco - custo
-        margem = (lucro_unitario / custo * 100) if custo > 0 else 0
-
+        custo_atual = getattr(p.custo_info, "custo", 0)
+        margem = None
+        lucro_unitario = None
+        if custo_atual > 0:
+            lucro_unitario = p.preco - custo_atual
+            margem = (lucro_unitario / custo_atual) * 100
         produtos_data.append({
-            "id": p.id,
-            "nome": p.nome,
-            "custo": float(custo),
-            "preco": float(preco),
-            "lucro_unitario": float(lucro_unitario),
-            "margem": round(margem, 2),
+            "produto": p,
+            "custo": custo_atual,
+            "preco": p.preco,
+            "lucro_unitario": lucro_unitario,
+            "margem": margem,
         })
 
     context = {"produtos_data": produtos_data}
@@ -330,6 +348,18 @@ def gestao_despesas(request):
         "despesas": despesas,
     }
     return render(request, "loja/gestao/gestao_despesas.html", context)
+
+@login_required
+@user_passes_test(admin_required)
+def historico_custo(request):
+    from .models import HistoricoCusto
+
+    historicos = HistoricoCusto.objects.select_related("produto", "usuario").order_by("-data")
+
+    context = {
+        "historicos": historicos,
+    }
+    return render(request, "loja/gestao/historico_custo.html", context)
 
 @login_required
 @user_passes_test(admin_required)
