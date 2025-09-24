@@ -10,7 +10,7 @@ from django.contrib import messages
 from .models import MovimentacaoEstoque
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, Max
 from django.db import transaction
 from urllib.parse import quote
 from decimal import Decimal
@@ -225,8 +225,10 @@ def _contagem_pedidos_por_status(queryset):
 @staff_required
 def dashboard(request):
     """
-    Dashboard administrativo com mini-gráfico do mês.
+    Dashboard administrativo com mini-gráfico do mês e resumos.
     """
+
+    # Formulário de registro de usuário (já estava no seu código)
     if request.method == "POST":
         form = RegistroForm(request.POST)
         if form.is_valid():
@@ -261,16 +263,9 @@ def dashboard(request):
     # DEBUG
     print(f"🔍 Dashboard DEBUG:")
     print(f"   Pedidos pagos total: {pedidos_pagos.count()}")
-    print(f"   Mini labels: {mini_labels[:5]}...")  # Primeiros 5
-    print(f"   Mini values: {mini_values[:5]}...")   # Primeiros 5
+    print(f"   Mini labels: {mini_labels[:5]}...")
+    print(f"   Mini values: {mini_values[:5]}...")
     print(f"   Vendas mês: {vendas_mes}")
-
-    ctx = {
-        'form': form,
-        'vendas_mes': vendas_mes,
-        'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
-        'mini_mes_values_json': json.dumps(mini_values),
-    }
 
     # Resumo dos pedidos
     pedidos_pendentes = Pedido.objects.filter(status="Pendente").count()
@@ -280,13 +275,36 @@ def dashboard(request):
     # Últimos 3 pedidos
     ultimos_pedidos = Pedido.objects.select_related("cliente").order_by("-data_criacao")[:3]
 
-    ctx.update({
+    # Top 5 produtos mais vendidos (somando quantidades em PedidoItem)
+    top_produtos = (
+        PedidoItem.objects
+        .values("produto__nome")
+        .annotate(
+        total_vendido=Sum("quantidade"),
+        ultima_venda=Max("pedido__data_criacao")  # 👈 pega a última vez vendido
+    )
+        .order_by("-total_vendido")[:5]
+    )
+
+    # 🔹 Últimos feedbacks (exibir 5 últimos)
+    feedbacks = (
+        Feedback.objects
+        .select_related("usuario", "produto")
+        .order_by("-data_criacao")[:5]
+    )
+    # Contexto enviado para o template
+    ctx = {
+        'form': form,
+        'vendas_mes': vendas_mes,
+        'mini_mes_labels_json': json.dumps(mini_labels, ensure_ascii=False),
+        'mini_mes_values_json': json.dumps(mini_values),
         "pedidos_pendentes": pedidos_pendentes,
         "pedidos_pagos": pedidos_pagos,
         "pedidos_cancelados": pedidos_cancelados,
         "ultimos_pedidos": ultimos_pedidos,
-    })
-
+        "top_produtos": top_produtos,  # 👈 adicionado
+        "feedbacks": feedbacks,  # 👈 agora vai para o template
+    }
 
     return render(request, 'loja/dashboard.html', ctx)
 

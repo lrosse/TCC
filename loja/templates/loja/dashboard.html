@@ -15,14 +15,14 @@
   </div>
 </div>
 
-<!-- ROW 1: 2 cards compactos (50% / 50%) -->
+<!-- ROW 1: Vendas do mês + Resumo de Pedidos -->
 <div class="row g-4">
   <!-- 📊 Mini gráfico do mês -->
   <div class="col-12 col-lg-6">
     <div class="card border-0 shadow-sm rounded-4 h-100">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <h5 class="card-title mb-0">Vendas (mês atual)</h5>
+          <h5 class="card-title mb-0">📊 Vendas (mês atual)</h5>
           <a href="{% url 'relatorios' %}" class="text-decoration-none small">
             Ver detalhes <i class="bi bi-arrow-right-short"></i>
           </a>
@@ -33,101 +33,227 @@
   </div>
 
   <!-- 📦 Pedidos -->
-<div class="col-12 col-lg-6">
-  <div class="card border-0 shadow-sm rounded-4 h-100">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="card-title fw-bold">📦 Pedidos</h5>
-        <a href="{% url 'pedidos' %}" class="text-decoration-none small">
-          Ver todos <i class="bi bi-arrow-right-short"></i>
-        </a>
-      </div>
+  <div class="col-12 col-lg-6">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="card-title fw-bold">📦 Pedidos</h5>
+          <a href="{% url 'pedidos' %}" class="text-decoration-none small">
+            Ver todos <i class="bi bi-arrow-right-short"></i>
+          </a>
+        </div>
 
-      <!-- Resumo numérico -->
-      <div class="row text-center mb-3">
-        <div class="col">
-          <span class="d-block fw-bold">{{ pedidos_pendentes }}</span>
-          <small class="text-muted">Pendentes</small>
-        </div>
-        <div class="col">
-          <span class="d-block fw-bold text-success">{{ pedidos_pagos }}</span>
-          <small class="text-muted">Pagos</small>
-        </div>
-        <div class="col">
-          <span class="d-block fw-bold text-danger">{{ pedidos_cancelados }}</span>
-          <small class="text-muted">Cancelados</small>
-        </div>
-      </div>
-
-      <!-- Últimos pedidos -->
-      <ul class="list-group list-group-flush small">
-        {% for p in ultimos_pedidos %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-          <div>
-            <span class="fw-semibold">#{{ p.numero_pedido }}</span> – {{ p.cliente.username }}
-            <br>
-            <small class="text-muted">R$ {{ p.total }}</small>
+        <!-- Resumo numérico -->
+        <div class="row text-center mb-3">
+          <div class="col">
+            <span class="d-block fw-bold">{{ pedidos_pendentes }}</span>
+            <small class="text-muted">Pendentes</small>
           </div>
-          <span class="badge
-            {% if p.status == 'Pendente' %} bg-warning text-dark
-            {% elif p.status == 'Pago' %} bg-success
-            {% elif p.status == 'Cancelado' %} bg-danger
-            {% else %} bg-secondary{% endif %}
-          ">
-            {{ p.status }}
-          </span>
-        </li>
-        {% empty %}
-        <li class="list-group-item text-muted text-center">Nenhum pedido encontrado</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-</div>
-</div>
+          <div class="col">
+            <span class="d-block fw-bold text-success">{{ pedidos_pagos }}</span>
+            <small class="text-muted">Pagos</small>
+          </div>
+          <div class="col">
+            <span class="d-block fw-bold text-danger">{{ pedidos_cancelados }}</span>
+            <small class="text-muted">Cancelados</small>
+          </div>
+        </div>
 
-<!-- ROW 2: Produtos Populares (8) + Vendas no mês (4) -->
-<div class="row g-4 mt-1">
-  <!-- 🔥 Produtos Populares -->
-  <div class="col-12 col-lg-8">
-    <div class="card border-0 shadow-sm rounded-4 h-100">
-      <div class="card-body">
-        <h5 class="card-title fw-bold">🔥 Produtos Populares</h5>
-        <p class="text-muted">Os produtos mais vendidos recentemente.</p>
-        <!-- produtos populares aqui -->
-      </div>
-    </div>
-  </div>
-
-  <!-- 💰 Vendas no mês (valor) -->
-  <div class="col-12 col-lg-4">
-    <div class="card border-0 shadow-sm rounded-4 h-100">
-      <div class="card-body">
-        <h5 class="card-title fw-bold">💰 Vendas no mês</h5>
-        <p class="fs-5 text-success mb-0">R$ {{ vendas_mes|floatformat:2 }}</p>
+        <!-- Últimos pedidos -->
+        <ul class="list-group list-group-flush small">
+          {% for p in ultimos_pedidos %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-semibold">#{{ p.numero_pedido }}</span> – {{ p.cliente.username }}
+              <br>
+              <small class="text-muted">R$ {{ p.total }}</small>
+            </div>
+            <span class="badge
+              {% if p.status == 'Pendente' %} bg-warning text-dark
+              {% elif p.status == 'Pago' %} bg-success
+              {% elif p.status == 'Cancelado' %} bg-danger
+              {% else %} bg-secondary{% endif %}
+            ">
+              {{ p.status }}
+            </span>
+          </li>
+          {% empty %}
+          <li class="list-group-item text-muted text-center">Nenhum pedido encontrado</li>
+          {% endfor %}
+        </ul>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ROW 3: Feedbacks (bloco grande) -->
+<!-- 💰 Vendas no mês (card no meio, abaixo da row 1 e acima do Top 5 Produtos) -->
 <div class="row g-4 mt-1">
   <div class="col-12">
-    <div class="card border-0 shadow-sm rounded-4 h-100">
-      <div class="card-body">
-        <h5 class="card-title fw-bold">📝 Feedbacks</h5>
-        <p class="text-muted mb-0">Últimos comentários dos clientes.</p>
-        <!-- feedbacks recentes -->
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body text-center">
+        <h5 class="card-title fw-bold">💰 Vendas no mês</h5>
+        <p class="fs-4 text-success mb-0">R$ {{ vendas_mes|floatformat:2 }}</p>
       </div>
     </div>
   </div>
 </div>
+
+<!-- ROW 2: Top 5 Produtos -->
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="card shadow-sm rounded-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-line"></i> Top 5 Produtos Mais Vendidos</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="w-60">Produto</th>
+              <th class="w-25 text-center">Última Venda</th>
+              <th class="w-15 text-end">Unidades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in top_produtos %}
+            <tr>
+              <td><span class="fw-semibold product-name">{{ item.produto__nome }}</span></td>
+              <td class="text-center text-muted small">{{ item.ultima_venda|date:"d/m/Y H:i" }}</td>
+              <td class="text-end">
+                <span class="badge bg-gradient-success fs-6 px-3 py-2 shadow-sm">
+                  <i class="bi bi-box-seam"></i> {{ item.total_vendido }} unidades
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="3" class="text-center text-muted">Nenhuma venda registrada ainda.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 3: Feedbacks -->
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="card shadow-sm rounded-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Últimos Feedbacks</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="w-20">Produto</th>
+              <th class="w-15 text-center">Cliente</th>
+              <th class="w-25">Comentário</th>
+              <th class="w-20 text-center">Avaliação</th>
+              <th class="w-20 text-end">Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in feedbacks %}
+            <tr>
+              <!-- Produto -->
+              <td>
+                <span class="product-name">{{ f.produto.nome }}</span>
+              </td>
+
+              <!-- Cliente -->
+              <td class="text-center fw-semibold">
+                {{ f.usuario.username }}
+              </td>
+
+              <!-- Comentário -->
+              <td>
+                <span class="feedback-text">{{ f.comentario }}</span>
+              </td>
+
+              <!-- Avaliação (estrelas) -->
+              <td class="text-center">
+                {% for i in "12345" %}
+                  {% if forloop.counter <= f.nota %}
+                    <i class="bi bi-star-fill text-warning"></i>
+                  {% else %}
+                    <i class="bi bi-star text-muted"></i>
+                  {% endif %}
+                {% endfor %}
+              </td>
+
+              <!-- Data -->
+              <td class="text-end text-muted small">
+                {{ f.data_criacao|date:"d/m/Y H:i" }}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">Nenhum feedback encontrado.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSS extra -->
+<style>
+.product-name, .feedback-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;  /* máximo 3 linhas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+</style>
+
+</div>
+
+<!-- CSS extra -->
+<style>
+/* Comentário limitado em até 3 linhas */
+.feedback-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;  /* máximo 3 linhas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  max-width: 100%; /* garante que respeite a coluna */
+}
+</style>
+
+
+<!-- CSS extra -->
+<style>
+.product-name, .feedback-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* máximo 3 linhas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+.bg-gradient-success {
+  background: linear-gradient(90deg, #28a745, #218838);
+  color: #fff;
+  border-radius: 30px;
+}
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="{% static 'loja/js/chart.js' %}"></script>
 <script>
-  const miniLabels = {{ mini_mes_labels_json|safe }};
+const miniLabels = {{ mini_mes_labels_json|safe }};
 const miniValues = {{ mini_mes_values_json|safe }};
 
 const canvas = document.getElementById('miniChartMes');
@@ -167,4 +293,3 @@ if (canvas) {
 }
 </script>
 {% endblock %}
-
