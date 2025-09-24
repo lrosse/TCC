@@ -830,34 +830,39 @@ def relatorio_pedidos_pdf(request):
 
     return response
 
+from django.utils.dateparse import parse_date
+from datetime import datetime, time
+
 @login_required
 @user_passes_test(admin_required)
 def relatorio_estoque(request):
     """
-    Relatório de Estoque – lista com filtros por produto, tipo, quantidade e data.
+    Relatório de Estoque – lista com filtros por produto, tipo e data.
     """
-    movs = MovimentacaoEstoque.objects.all()
+    movs = MovimentacaoEstoque.objects.select_related("produto").all().order_by("-data")  # 🔹 mais recente primeiro
 
     # Filtros
     produto = request.GET.get("produto")
     tipo = request.GET.get("tipo")
-    qtd_min = request.GET.get("qtd_min")
-    qtd_max = request.GET.get("qtd_max")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
 
     if produto:
         movs = movs.filter(produto__nome__icontains=produto)
     if tipo:
         movs = movs.filter(tipo=tipo)
-    if qtd_min:
-        movs = movs.filter(quantidade__gte=qtd_min)
-    if qtd_max:
-        movs = movs.filter(quantidade__lte=qtd_max)
-    if data_inicio:
-        movs = movs.filter(data__date__gte=data_inicio)
-    if data_fim:
-        movs = movs.filter(data__date__lte=data_fim)
+
+    if data_inicio_raw:
+        data_inicio = parse_date(data_inicio_raw)
+        if data_inicio:
+            dt_inicio = datetime.combine(data_inicio, time.min)
+            movs = movs.filter(data__gte=dt_inicio)
+
+    if data_fim_raw:
+        data_fim = parse_date(data_fim_raw)
+        if data_fim:
+            dt_fim = datetime.combine(data_fim, time.max)
+            movs = movs.filter(data__lte=dt_fim)
 
     context = {"movs": movs}
     return render(request, "loja/gestao/relatorio_estoque.html", context)
@@ -868,30 +873,31 @@ def relatorio_estoque_pdf(request):
     """
     Exporta o Relatório de Estoque para PDF, aplicando os filtros da tela.
     """
-    movs = MovimentacaoEstoque.objects.all()
+    movs = MovimentacaoEstoque.objects.select_related("produto").all().order_by("-data")  # 🔹 mais recente primeiro
 
-    # 🔹 Filtros (mesmos da view normal)
+    # Filtros
     produto = request.GET.get("produto")
     tipo = request.GET.get("tipo")
-    qtd_min = request.GET.get("qtd_min")
-    qtd_max = request.GET.get("qtd_max")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
 
     if produto:
         movs = movs.filter(produto__nome__icontains=produto)
     if tipo:
         movs = movs.filter(tipo=tipo)
-    if qtd_min:
-        movs = movs.filter(quantidade__gte=qtd_min)
-    if qtd_max:
-        movs = movs.filter(quantidade__lte=qtd_max)
-    if data_inicio:
-        movs = movs.filter(data__date__gte=data_inicio)
-    if data_fim:
-        movs = movs.filter(data__date__lte=data_fim)
 
-    # 🔹 Renderiza template PDF
+    if data_inicio_raw:
+        data_inicio = parse_date(data_inicio_raw)
+        if data_inicio:
+            dt_inicio = datetime.combine(data_inicio, time.min)
+            movs = movs.filter(data__gte=dt_inicio)
+
+    if data_fim_raw:
+        data_fim = parse_date(data_fim_raw)
+        if data_fim:
+            dt_fim = datetime.combine(data_fim, time.max)
+            movs = movs.filter(data__lte=dt_fim)
+
     html_string = render_to_string("loja/gestao/pdf/relatorio_estoque_pdf.html", {"movs": movs})
     html = weasyprint.HTML(string=html_string)
 

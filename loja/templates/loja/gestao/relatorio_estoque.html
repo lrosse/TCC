@@ -12,30 +12,29 @@
 
   <!-- Formulário de filtros -->
   <form method="get" class="row g-3 mb-3">
+    <!-- Produto -->
     <div class="col-md-3">
       <label class="form-label">Produto</label>
       <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
     </div>
+
+    <!-- Tipo -->
     <div class="col-md-3">
       <label class="form-label">Tipo</label>
       <select name="tipo" class="form-select">
         <option value="">Todos</option>
         <option value="entrada" {% if request.GET.tipo == "entrada" %}selected{% endif %}>Entrada</option>
-        <option value="ajuste" {% if request.GET.tipo == "ajuste" %}selected{% endif %}>Ajuste</option>
+        <option value="saida" {% if request.GET.tipo == "saida" %}selected{% endif %}>Saída</option>
       </select>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Qtd. mínima</label>
-      <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Qtd. máxima</label>
-      <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
-    </div>
+
+    <!-- Data início -->
     <div class="col-md-3">
       <label class="form-label">Data início</label>
       <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
     </div>
+
+    <!-- Data fim -->
     <div class="col-md-3">
       <label class="form-label">Data fim</label>
       <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
@@ -65,6 +64,7 @@
           <th>Tipo</th>
           <th>Quantidade</th>
           <th>Estoque final</th>
+          <th>Descrição</th>
           <th>Data</th>
         </tr>
       </thead>
@@ -75,11 +75,12 @@
           <td>{{ m.get_tipo_display }}</td>
           <td>{{ m.quantidade }}</td>
           <td>{{ m.estoque_final }}</td>
+          <td>{{ m.observacao|default:"-" }}</td>
           <td>{{ m.data|date:"d/m/Y H:i" }}</td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center text-muted">Nenhuma movimentação encontrada.</td>
+          <td colspan="6" class="text-center text-muted">Nenhuma movimentação encontrada.</td>
         </tr>
         {% endfor %}
       </tbody>
