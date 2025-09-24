@@ -35,7 +35,7 @@
         <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
           <i class="bi bi-cart3 text-white cart-icon"></i>
           <!-- 🔹 Badge sempre visível agora -->
-          <span id="cartBadge" class="cart-badge">
+          <span id="carrinho-contador" class="cart-badge">
             {{ request.session.carrinho_itens|default:0 }}
           </span>
         </a>
