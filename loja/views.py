@@ -26,6 +26,7 @@ from django.conf import settings
 from urllib.parse import quote
 from decimal import Decimal
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 
 # 👇 extras para serializar dados pro Chart.js
@@ -38,11 +39,15 @@ from .models import Produto
 
 def home(request):
     produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota"))
+    produtos = Produto.objects.all().order_by("-id")
 
     termo_busca = request.GET.get('q')
     preco_min = request.GET.get('preco_min')
     preco_max = request.GET.get('preco_max')
     nota_min = request.GET.get('nota_min')
+    paginator = Paginator(produtos, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     if termo_busca:
         produtos = produtos.filter(nome__icontains=termo_busca)
@@ -64,7 +69,10 @@ def home(request):
             'nota_min': nota_min or '',
         }
     }
-    return render(request, 'loja/home.html', context)
+    return render(request, "loja/home.html", {
+        "page_obj": page_obj,
+        "produtos": page_obj,   # para compatibilidade com o template atual
+    })
 
 def buscar_produtos(request):
     termo = request.GET.get("q", "").strip()

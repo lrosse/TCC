@@ -34,6 +34,33 @@
     .card-footer {
       margin-top: auto;
     }
+
+    .pagination .page-item .page-link {
+  border-radius: 8px;          /* cantos arredondados */
+  margin: 0 3px;               /* espaçamento entre botões */
+  color: #0d6efd;              /* azul Bootstrap */
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: #0d6efd;   /* fundo azul ativo */
+      border-color: #0d6efd;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(13, 110, 253, 0.3);
+    }
+
+    .pagination .page-item .page-link:hover {
+      background-color: #e9f2ff;   /* azul clarinho no hover */
+      color: #0a58ca;
+      transform: translateY(-2px); /* sobe levemente no hover */
+    }
+
+    .pagination .page-item.disabled .page-link {
+      color: #adb5bd;              /* cinza */
+      background-color: #f8f9fa;
+    }
   </style>
 </head>
 <body>
@@ -78,9 +105,45 @@
       <p class="text-center text-muted">Nenhum produto disponível.</p>
     {% endfor %}
   </div>
+
+  <!-- 🔹 Paginação -->
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="Navegação de páginas">
+      <ul class="pagination justify-content-center mt-4">
+
+        <!-- Anterior -->
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
+
+        <!-- Números -->
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Próximo -->
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+
+      </ul>
+    </nav>
+  {% endif %}
 </div>
 
-<!-- 🔹 Container para Toasts -->
+<!-- 🔹 Toast -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
   <div id="toast-carrinho" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
@@ -123,14 +186,10 @@ document.addEventListener("DOMContentLoaded", function() {
             badge.textContent = data.total_itens;
           }
 
-          // Exibe toast de sucesso
+          // Exibe toast
           const toastEl = document.getElementById("toast-carrinho");
-          const toast = new bootstrap.Toast(toastEl, {
-            autohide: true,   // 🔹 some automaticamente
-            delay: 2000       // 🔹 tempo em ms (3 segundos)
-          });
+          const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
           toast.show();
-
         } else {
           alert("⚠️ Não foi possível adicionar ao carrinho.");
         }
