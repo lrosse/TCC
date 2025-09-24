@@ -8,7 +8,7 @@ from django.utils.timezone import localtime
 from django.db import models
 from .models import Produto, CustoProduto, Pedido, PedidoItem, Despesa, Produto, MovimentacaoEstoque,LancamentoFinanceiro, Feedback, HistoricoCusto
 from .forms import DespesaForm
-from datetime import datetime
+from datetime import datetime, time
 from dateutil.relativedelta import relativedelta
 import weasyprint
 from django.http import HttpResponse
@@ -16,6 +16,8 @@ from django.template.loader import render_to_string
 from django.db.models.functions import TruncMonth
 from django.utils import timezone
 import locale
+from django.utils.dateparse import parse_date
+from decimal import Decimal, InvalidOperation
 
 # Defina o locale para português (Windows pode precisar de 'pt_BR')
 try:
@@ -691,11 +693,12 @@ def relatorio_produtos_pdf(request):
 @user_passes_test(admin_required)
 def relatorio_pedidos(request):
     """
-    Relatório de Pedidos – lista com filtros por número, cliente, status, valores e datas.
+    Relatório de Pedidos – lista com filtros corrigidos (valor e data).
+    Inclui custo_total e ordena do mais recente para o mais antigo.
     """
-    pedidos = Pedido.objects.all()
+    pedidos = Pedido.objects.all().prefetch_related("itens", "cliente").order_by("-data_criacao")
 
-    # Filtros
+    # 🔎 Filtros
     numero = request.GET.get("numero")
     cliente = request.GET.get("cliente")
     status = request.GET.get("status")
@@ -710,34 +713,66 @@ def relatorio_pedidos(request):
         pedidos = pedidos.filter(cliente__username__icontains=cliente)
     if status:
         pedidos = pedidos.filter(status=status)
-    if valor_min:
-        pedidos = pedidos.filter(total__gte=valor_min)
-    if valor_max:
-        pedidos = pedidos.filter(total__lte=valor_max)
-    if data_inicio:
-        pedidos = pedidos.filter(data_criacao__date__gte=data_inicio)
-    if data_fim:
-        pedidos = pedidos.filter(data_criacao__date__lte=data_fim)
 
-    context = {"pedidos": pedidos}
+    # ✅ Filtro por valores
+    try:
+        if valor_min:
+            pedidos = pedidos.filter(total__gte=Decimal(valor_min))
+        if valor_max:
+            pedidos = pedidos.filter(total__lte=Decimal(valor_max))
+    except (InvalidOperation, ValueError):
+        pass  # ignora valores inválidos sem quebrar
+
+    # ✅ Filtro por datas
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
+
+    if data_inicio_raw:
+        data_inicio = parse_date(data_inicio_raw)
+        if data_inicio:
+            dt_inicio = datetime.combine(data_inicio, time.min)  # 00:00:00
+            pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
+
+    if data_fim_raw:
+        data_fim = parse_date(data_fim_raw)
+        if data_fim:
+            dt_fim = datetime.combine(data_fim, time.max)  # 23:59:59
+            pedidos = pedidos.filter(data_criacao__lte=dt_fim)
+
+    # 🔹 Calcula custo_total
+    pedidos_data = []
+    for p in pedidos:
+        custo_total = sum(item.quantidade * item.custo_unitario for item in p.itens.all())
+        pedidos_data.append({
+            "id": p.id,
+            "numero_pedido": p.numero_pedido,
+            "cliente": p.cliente,
+            "total": p.total,
+            "custo_total": custo_total,
+            "status": p.status,
+            "data_criacao": p.data_criacao,
+        })
+
+    context = {"pedidos": pedidos_data}
     return render(request, "loja/gestao/relatorio_pedidos.html", context)
 
 @login_required
 @user_passes_test(admin_required)
 def relatorio_pedidos_pdf(request):
     """
-    Exporta o Relatório de Pedidos para PDF, aplicando os filtros da tela.
+    Exporta o Relatório de Pedidos para PDF, aplicando os mesmos filtros da tela.
+    Inclui coluna de custo e ordena do mais recente para o mais antigo.
     """
-    pedidos = Pedido.objects.all()
+    pedidos = Pedido.objects.all().prefetch_related("itens", "cliente").order_by("-data_criacao")
 
-    # 🔹 Filtros (mesmos do relatorio_pedidos)
+    # 🔎 Filtros
     numero = request.GET.get("numero")
     cliente = request.GET.get("cliente")
     status = request.GET.get("status")
     valor_min = request.GET.get("valor_min")
     valor_max = request.GET.get("valor_max")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
 
     if numero:
         pedidos = pedidos.filter(numero_pedido__icontains=numero)
@@ -745,17 +780,48 @@ def relatorio_pedidos_pdf(request):
         pedidos = pedidos.filter(cliente__username__icontains=cliente)
     if status:
         pedidos = pedidos.filter(status=status)
-    if valor_min:
-        pedidos = pedidos.filter(total__gte=valor_min)
-    if valor_max:
-        pedidos = pedidos.filter(total__lte=valor_max)
-    if data_inicio:
-        pedidos = pedidos.filter(data_criacao__date__gte=data_inicio)
-    if data_fim:
-        pedidos = pedidos.filter(data_criacao__date__lte=data_fim)
+
+    # ✅ Filtro por valores
+    try:
+        if valor_min:
+            pedidos = pedidos.filter(total__gte=Decimal(valor_min))
+        if valor_max:
+            pedidos = pedidos.filter(total__lte=Decimal(valor_max))
+    except (InvalidOperation, ValueError):
+        pass
+
+    # ✅ Filtro por datas (corrigido p/ DateTimeField)
+    if data_inicio_raw:
+        data_inicio = parse_date(data_inicio_raw)
+        if data_inicio:
+            dt_inicio = datetime.combine(data_inicio, time.min)
+            pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
+
+    if data_fim_raw:
+        data_fim = parse_date(data_fim_raw)
+        if data_fim:
+            dt_fim = datetime.combine(data_fim, time.max)
+            pedidos = pedidos.filter(data_criacao__lte=dt_fim)
+
+    # 🔹 Calcula custo_total
+    pedidos_data = []
+    for p in pedidos:
+        custo_total = sum(item.quantidade * item.custo_unitario for item in p.itens.all())
+        pedidos_data.append({
+            "id": p.id,
+            "numero_pedido": p.numero_pedido,
+            "cliente": p.cliente,
+            "total": p.total,
+            "custo_total": custo_total,
+            "status": p.status,
+            "data_criacao": p.data_criacao,
+        })
 
     # 🔹 Renderiza template PDF
-    html_string = render_to_string("loja/gestao/pdf/relatorio_pedidos_pdf.html", {"pedidos": pedidos})
+    html_string = render_to_string(
+        "loja/gestao/pdf/relatorio_pedidos_pdf.html",
+        {"pedidos": pedidos_data}
+    )
     html = weasyprint.HTML(string=html_string)
 
     response = HttpResponse(content_type="application/pdf")

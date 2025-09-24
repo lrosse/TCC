@@ -13,10 +13,11 @@
 </head>
 <body>
   <h2>Relatório de Produtos</h2>
-  <table>
+    <table>
     <thead>
       <tr>
         <th>Nome</th>
+        <th>Custo</th>
         <th>Preço</th>
         <th>Quantidade</th>
         <th>Status de Estoque</th>
@@ -26,20 +27,21 @@
       {% for p in produtos %}
       <tr>
         <td>{{ p.nome }}</td>
+        <td>R$ {{ p.custo_info.custo|default:"0.00" }}</td>
         <td>R$ {{ p.preco }}</td>
         <td>{{ p.quantidade }}</td>
         <td>
-          {% if p.quantidade <= p.minimo_estoque %}
-            Abaixo do mínimo
+          {% if p.quantidade < p.minimo_estoque %}
+            <span class="danger">Abaixo do mínimo</span>
           {% elif p.quantidade <= p.ideal_estoque %}
-            Abaixo do ideal
+            <span class="success">Entre mínimo e ideal</span>
           {% else %}
-            Bom
+            <span class="warning">Acima do ideal</span>
           {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="4">Nenhum produto encontrado.</td></tr>
+      <tr><td colspan="5">Nenhum produto encontrado.</td></tr>
       {% endfor %}
     </tbody>
   </table>

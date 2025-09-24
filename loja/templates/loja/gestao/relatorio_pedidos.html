@@ -63,12 +63,13 @@
 
   <!-- Tabela Pedidos -->
   <div class="table-responsive">
-    <table class="table table-striped align-middle">
+    <table class="table table-striped align-middle text-center">
       <thead class="table-dark">
         <tr>
           <th>Número</th>
           <th>Cliente</th>
           <th>Total</th>
+          <th>Custo</th>
           <th>Status</th>
           <th>Data</th>
         </tr>
@@ -79,12 +80,21 @@
           <td>{{ p.numero_pedido }}</td>
           <td>{{ p.cliente.username }}</td>
           <td>R$ {{ p.total }}</td>
-          <td><span class="badge bg-info">{{ p.status }}</span></td>
+          <td>R$ {{ p.custo_total|default:"0.00" }}</td>
+          <td>
+            <span class="badge 
+              {% if p.status == 'Pendente' %}bg-warning text-dark
+              {% elif p.status == 'Pago' %}bg-success
+              {% elif p.status == 'Cancelado' %}bg-danger
+              {% endif %}">
+              {{ p.status }}
+            </span>
+          </td>
           <td>{{ p.data_criacao|date:"d/m/Y" }}</td>
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5" class="text-center text-muted">Nenhum pedido encontrado.</td>
+          <td colspan="6" class="text-center text-muted">Nenhum pedido encontrado.</td>
         </tr>
         {% endfor %}
       </tbody>
