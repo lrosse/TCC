@@ -55,6 +55,46 @@
             align-items: center;
             justify-content: center;
         }
+        /* 🔹 Ajusta largura e centralização das colunas */
+        table td, table th {
+        vertical-align: middle;     /* centraliza verticalmente */
+        }
+
+        td:nth-child(2), th:nth-child(2) { /* Quantidade */
+        width: 160px;
+        text-align: center;
+        }
+
+        td:nth-child(3), th:nth-child(3) { /* Preço Unitário */
+        width: 130px;
+        text-align: center;
+        }
+
+        td:nth-child(4), th:nth-child(4) { /* Subtotal */
+        width: 130px;
+        text-align: center;
+        }
+
+        td:nth-child(5), th:nth-child(5) { /* Ações */
+        width: 70px;
+        text-align: center;
+        }
+
+        /* 🔹 Produto: corta se for muito longo */
+        td:nth-child(1) {
+        max-width: 350px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        }
+
+        /* 🔹 Linha total destacada */
+        tr.total-row td {
+        font-weight: bold;
+        font-size: 1.1rem;
+        }
+
+
     </style>
 </head>
 <body>

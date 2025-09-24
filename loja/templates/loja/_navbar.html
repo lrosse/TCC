@@ -9,23 +9,55 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
 
-      <!-- 🔹 Barra de pesquisa → aparece só na Home -->
+      <!-- 🔹 Barra de pesquisa → só na Home -->
       {% if request.resolver_match.url_name == "home" %}
-      <div class="mx-auto position-relative w-50">
-        <form class="d-flex" role="search" onsubmit="return false;">
-          <input id="filtro-busca" class="form-control form-control-sm me-2"
+      <div class="mx-auto position-relative w-50 d-flex align-items-center gap-2">
+        <form class="flex-grow-1 d-flex" role="search" onsubmit="return false;">
+          <input id="filtro-busca" class="form-control form-control-sm"
                  type="search" placeholder="Buscar produtos..." value="{{ filtros.q }}" autocomplete="off">
-
-          <!-- Botão filtros → colapsável -->
-          <button class="btn btn-outline-light btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras">
-            <i class="bi bi-funnel"></i>
-          </button>
         </form>
 
-        <!-- 🔽 Dropdown autocomplete -->
-        <ul id="resultado-busca" class="list-group position-absolute w-100 shadow-sm mt-1 d-none"
-            style="z-index:1050; max-height:300px; overflow-y:auto;"></ul>
+        <!-- 🔹 Dropdown filtros -->
+        <div class="dropdown">
+          <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="filtrosDropdown"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-funnel"></i>
+          </button>
+
+          <div class="dropdown-menu p-3 shadow-lg" style="min-width: 500px;" aria-labelledby="filtrosDropdown">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="preco_min" class="form-label small fw-semibold">Preço mín.</label>
+                <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Ex: 100" value="{{ filtros.preco_min }}">
+              </div>
+              <div class="col-md-4">
+                <label for="preco_max" class="form-label small fw-semibold">Preço máx.</label>
+                <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Ex: 1000" value="{{ filtros.preco_max }}">
+              </div>
+              <div class="col-md-4">
+                <label for="nota_min" class="form-label small fw-semibold">Avaliação</label>
+                <select class="form-select form-select-sm" id="nota_min">
+                  <option value="">Todas</option>
+                  <option value="1" {% if filtros.nota_min == '1' %}selected{% endif %}>⭐ 1+</option>
+                  <option value="2" {% if filtros.nota_min == '2' %}selected{% endif %}>⭐ 2+</option>
+                  <option value="3" {% if filtros.nota_min == '3' %}selected{% endif %}>⭐ 3+</option>
+                  <option value="4" {% if filtros.nota_min == '4' %}selected{% endif %}>⭐ 4+</option>
+                  <option value="5" {% if filtros.nota_min == '5' %}selected{% endif %}>⭐ 5</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100">
+                <i class="bi bi-x-circle"></i> Limpar
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- 🔽 Dropdown autocomplete -->
+      <ul id="resultado-busca" class="list-group position-absolute w-50 shadow-sm mt-1 d-none"
+          style="z-index:1050; max-height:300px; overflow-y:auto;"></ul>
       {% endif %}
 
       <!-- 🔹 Direita -->
@@ -34,7 +66,6 @@
         <!-- Carrinho -->
         <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
           <i class="bi bi-cart3 text-white cart-icon"></i>
-          <!-- 🔹 Badge sempre visível agora -->
           <span id="carrinho-contador" class="cart-badge">
             {{ request.session.carrinho_itens|default:0 }}
           </span>
@@ -97,7 +128,7 @@
   </div>
 </nav>
 
-<!-- 🔹 Modal Logout (disponível em todas as páginas que usam a navbar) -->
+<!-- 🔹 Modal Logout -->
 <div class="modal fade" id="confirmLogout" tabindex="-1">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -114,49 +145,6 @@
   </div>
 </div>
 
-<!-- 🔹 Filtros colapsáveis -->
-<div class="collapse container mt-2 mb-3" id="filtrosExtras">
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <div class="row g-3">
-
-        <!-- Preço mín -->
-        <div class="col-md-3">
-          <label for="preco_min" class="form-label small fw-semibold">Preço mín.</label>
-          <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Ex: 100" value="{{ filtros.preco_min }}">
-        </div>
-
-        <!-- Preço máx -->
-        <div class="col-md-3">
-          <label for="preco_max" class="form-label small fw-semibold">Preço máx.</label>
-          <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Ex: 1000" value="{{ filtros.preco_max }}">
-        </div>
-
-        <!-- Avaliação -->
-        <div class="col-md-3">
-          <label for="nota_min" class="form-label small fw-semibold">Avaliação</label>
-          <select class="form-select form-select-sm" id="nota_min">
-            <option value="">Todas</option>
-            <option value="1" {% if filtros.nota_min == '1' %}selected{% endif %}>⭐ 1+</option>
-            <option value="2" {% if filtros.nota_min == '2' %}selected{% endif %}>⭐ 2+</option>
-            <option value="3" {% if filtros.nota_min == '3' %}selected{% endif %}>⭐ 3+</option>
-            <option value="4" {% if filtros.nota_min == '4' %}selected{% endif %}>⭐ 4+</option>
-            <option value="5" {% if filtros.nota_min == '5' %}selected{% endif %}>⭐ 5</option>
-          </select>
-        </div>
-
-        <!-- Botão limpar -->
-        <div class="col-md-3 d-flex align-items-end">
-          <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100">
-            <i class="bi bi-x-circle"></i> Limpar
-          </button>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
 <style>
 .perfil-avatar {
   width: 36px; height: 36px;
@@ -168,7 +156,7 @@
 .cart-icon { font-size: 1.4rem; }
 .cart-badge {
   position: absolute; top: -6px; right: -10px;
-  background: #0d6efd; /* azul Bootstrap */
+  background: #0d6efd;
   color: #fff;
   border-radius: 999px; font-size: .75rem;
   padding: 2px 6px; line-height: 1;
@@ -178,7 +166,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // 🔹 Dropdown perfil → mesma lógica do antigo
+  // 🔹 Dropdown perfil
   const profileBtn = document.querySelector(".navbar-profile > button");
   const dropdownMenu = document.querySelector(".navbar-profile .dropdown-menu");
   let fixedOpen = false;
@@ -202,14 +190,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // 🔹 Filtros em tempo real
   const inputBusca = document.getElementById("filtro-busca");
-  const resultadoDiv = document.getElementById("resultado-busca");
   const precoMin = document.getElementById("preco_min");
   const precoMax = document.getElementById("preco_max");
   const notaMin = document.getElementById("nota_min");
   const btnLimpar = document.getElementById("btn-limpar-filtros");
 
   function aplicarFiltros() {
-    const termo = inputBusca.value.trim().toLowerCase();
+    const termo = inputBusca?.value.trim().toLowerCase();
     const min = parseFloat(precoMin?.value) || 0;
     const max = parseFloat(precoMax?.value) || Infinity;
     const nota = parseInt(notaMin?.value) || 0;
@@ -236,51 +223,8 @@ document.addEventListener("DOMContentLoaded", function() {
     precoMin.value = "";
     precoMax.value = "";
     notaMin.value = "";
-    inputBusca.value = "";
+    if (inputBusca) inputBusca.value = "";
     aplicarFiltros();
-  });
-
-  // 🔹 Autocomplete
-  inputBusca?.addEventListener("input", async function() {
-    const termo = this.value.trim();
-    if (termo.length < 2) {
-      resultadoDiv.innerHTML = "";
-      resultadoDiv.classList.add("d-none");
-      return;
-    }
-
-    const resp = await fetch(`/buscar-produtos/?q=${encodeURIComponent(termo)}`);
-    const produtos = await resp.json();
-
-    if (produtos.length === 0) {
-      resultadoDiv.innerHTML = `<li class="list-group-item text-muted">Nenhum produto encontrado</li>`;
-      resultadoDiv.classList.remove("d-none");
-      return;
-    }
-
-    resultadoDiv.innerHTML = produtos.map(p => `
-      <li class="list-group-item d-flex align-items-center">
-        <img src="${p.imagem || '/static/img/sem-imagem.png'}"
-             alt="" class="me-2" style="width:32px; height:32px; object-fit:cover; border-radius:4px;">
-        <a href="${p.url}" class="text-decoration-none flex-grow-1">${p.nome}</a>
-      </li>
-    `).join("");
-
-    resultadoDiv.innerHTML += `
-      <li class="list-group-item text-center bg-light">
-        <a href="/?q=${encodeURIComponent(termo)}" class="text-decoration-none">
-          Ver todos os resultados para "<strong>${termo}</strong>"
-        </a>
-      </li>
-    `;
-
-    resultadoDiv.classList.remove("d-none");
-  });
-
-  document.addEventListener("click", e => {
-    if (!e.target.closest("#filtro-busca") && !e.target.closest("#resultado-busca")) {
-      resultadoDiv.classList.add("d-none");
-    }
   });
 });
 </script>
