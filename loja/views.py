@@ -26,6 +26,7 @@ from django.conf import settings
 from urllib.parse import quote
 from decimal import Decimal
 from django.http import JsonResponse
+from django.core.paginator import Paginator
 
 
 # 👇 extras para serializar dados pro Chart.js
@@ -38,11 +39,15 @@ from .models import Produto
 
 def home(request):
     produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota"))
+    produtos = Produto.objects.all().order_by("-id")
 
     termo_busca = request.GET.get('q')
     preco_min = request.GET.get('preco_min')
     preco_max = request.GET.get('preco_max')
     nota_min = request.GET.get('nota_min')
+    paginator = Paginator(produtos, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     if termo_busca:
         produtos = produtos.filter(nome__icontains=termo_busca)
@@ -64,7 +69,10 @@ def home(request):
             'nota_min': nota_min or '',
         }
     }
-    return render(request, 'loja/home.html', context)
+    return render(request, "loja/home.html", {
+        "page_obj": page_obj,
+        "produtos": page_obj,   # para compatibilidade com o template atual
+    })
 
 def buscar_produtos(request):
     termo = request.GET.get("q", "").strip()
@@ -705,32 +713,45 @@ def adicionar_carrinho(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
 
     if request.user.is_authenticated:
+        # 🔒 Usuário logado → Carrinho no banco
         carrinho, _ = Carrinho.objects.get_or_create(usuario=request.user)
+        item, created = ItemCarrinho.objects.get_or_create(
+            carrinho=carrinho,
+            produto=produto,
+            defaults={"quantidade": 1, "preco_unitario": produto.preco}
+        )
+        if not created:
+            item.quantidade += 1
+            item.save()
+
+        total_itens = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
+        request.session["carrinho_itens"] = total_itens
+
     else:
-        carrinho_id = request.session.get("carrinho_id")
-        if carrinho_id:
-            carrinho = Carrinho.objects.get(id=carrinho_id)
+        # 👤 Usuário anônimo → Carrinho na sessão
+        carrinho_sessao = request.session.get("carrinho", {})
+        if str(produto_id) in carrinho_sessao:
+            carrinho_sessao[str(produto_id)]["quantidade"] += 1
         else:
-            carrinho = Carrinho.objects.create()
-            request.session["carrinho_id"] = carrinho.id
+            carrinho_sessao[str(produto_id)] = {
+                "nome": produto.nome,
+                "preco_unitario": str(produto.preco),
+                "quantidade": 1,
+                "imagem": produto.imagem.url if produto.imagem else None,
+            }
+        request.session["carrinho"] = carrinho_sessao
 
-    item, created = ItemCarrinho.objects.get_or_create(
-        carrinho=carrinho,
-        produto=produto,
-        defaults={"quantidade": 1, "preco_unitario": produto.preco}
-    )
-    if not created:
-        item.quantidade += 1
-        item.save()
+        total_itens = sum(item["quantidade"] for item in carrinho_sessao.values())
+        request.session["carrinho_itens"] = total_itens
 
-    total_itens = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
-    request.session["carrinho_itens"] = total_itens
+    request.session.modified = True
 
-    # 🔹 Retorna JSON sempre que chamado via AJAX
+    # 🔹 Sempre retorna JSON no AJAX
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"success": True, "total_itens": total_itens})
 
     return JsonResponse({"success": False})
+
 
 @login_required
 def finalizar_compra(request):
