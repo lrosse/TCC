@@ -115,17 +115,26 @@
 </div>
 
 <!-- 🔹 Filtros colapsáveis -->
-<div class="collapse container mt-2" id="filtrosExtras">
+<div class="collapse container mt-2 mb-3" id="filtrosExtras">
   <div class="card shadow-sm border-0">
     <div class="card-body">
       <div class="row g-3">
+
+        <!-- Preço mín -->
         <div class="col-md-3">
-          <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Preço mín." value="{{ filtros.preco_min }}">
+          <label for="preco_min" class="form-label small fw-semibold">Preço mín.</label>
+          <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Ex: 100" value="{{ filtros.preco_min }}">
         </div>
+
+        <!-- Preço máx -->
         <div class="col-md-3">
-          <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Preço máx." value="{{ filtros.preco_max }}">
+          <label for="preco_max" class="form-label small fw-semibold">Preço máx.</label>
+          <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Ex: 1000" value="{{ filtros.preco_max }}">
         </div>
+
+        <!-- Avaliação -->
         <div class="col-md-3">
+          <label for="nota_min" class="form-label small fw-semibold">Avaliação</label>
           <select class="form-select form-select-sm" id="nota_min">
             <option value="">Todas</option>
             <option value="1" {% if filtros.nota_min == '1' %}selected{% endif %}>⭐ 1+</option>
@@ -135,11 +144,14 @@
             <option value="5" {% if filtros.nota_min == '5' %}selected{% endif %}>⭐ 5</option>
           </select>
         </div>
-        <div class="col-md-3 d-flex">
+
+        <!-- Botão limpar -->
+        <div class="col-md-3 d-flex align-items-end">
           <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100">
             <i class="bi bi-x-circle"></i> Limpar
           </button>
         </div>
+
       </div>
     </div>
   </div>
