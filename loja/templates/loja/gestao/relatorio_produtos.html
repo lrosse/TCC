@@ -14,33 +14,45 @@
   <form method="get" class="row g-3 mb-3">
     <!-- Nome -->
     <div class="col-md-4">
-      <label class="form-label">Nome</label>
+      <label class="form-label">
+        <i class="bi bi-tag"></i> Nome
+      </label>
       <input type="text" name="nome" class="form-control" value="{{ request.GET.nome }}">
     </div>
 
     <!-- Preço -->
     <div class="col-md-2">
-      <label class="form-label">Preço Mínimo</label>
+      <label class="form-label">
+        <i class="bi bi-currency-dollar"></i> Preço Mínimo
+      </label>
       <input type="number" step="0.01" name="preco_min" class="form-control" value="{{ request.GET.preco_min }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label">Preço Máximo</label>
+      <label class="form-label">
+        <i class="bi bi-currency-dollar"></i> Preço Máximo
+      </label>
       <input type="number" step="0.01" name="preco_max" class="form-control" value="{{ request.GET.preco_max }}">
     </div>
 
     <!-- Quantidade -->
     <div class="col-md-2">
-      <label class="form-label">Qtd. Mínima</label>
+      <label class="form-label">
+        <i class="bi bi-123"></i> Qtd. Mínima
+      </label>
       <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
     </div>
     <div class="col-md-2">
-      <label class="form-label">Qtd. Máxima</label>
+      <label class="form-label">
+        <i class="bi bi-123"></i> Qtd. Máxima
+      </label>
       <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
     </div>
 
     <!-- Status de Estoque -->
     <div class="col-md-3">
-      <label class="form-label">Status de Estoque</label>
+      <label class="form-label">
+        <i class="bi bi-box"></i> Status de Estoque
+      </label>
       <select name="status_estoque" class="form-select">
         <option value="">Todos</option>
         <option value="minimo" {% if request.GET.status_estoque == "minimo" %}selected{% endif %}>Abaixo do mínimo</option>
@@ -51,7 +63,9 @@
 
     <!-- Ordenação -->
     <div class="col-md-3">
-      <label class="form-label">Ordenar por</label>
+      <label class="form-label">
+        <i class="bi bi-sort-alpha-down"></i> Ordenar por
+      </label>
       <select name="ordenar_por" class="form-select">
         <option value="">Padrão</option>
         <option value="nome" {% if request.GET.ordenar_por == "nome" %}selected{% endif %}>Nome</option>
