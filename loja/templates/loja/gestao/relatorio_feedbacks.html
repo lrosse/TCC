@@ -10,18 +10,24 @@
     <i class="bi bi-chat-dots text-info"></i> Relatório de Feedbacks
   </h2>
 
-  <!-- Formulário de filtros -->
+  <!-- Formulário de filtros com ícones -->
   <form method="get" class="row g-3 mb-3">
     <div class="col-md-3">
-      <label class="form-label">Produto</label>
+      <label class="form-label">
+        <i class="bi bi-box"></i> Produto
+      </label>
       <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Usuário</label>
+      <label class="form-label">
+        <i class="bi bi-person"></i> Usuário
+      </label>
       <input type="text" name="usuario" class="form-control" value="{{ request.GET.usuario }}">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Nota</label>
+      <label class="form-label">
+        <i class="bi bi-star"></i> Nota
+      </label>
       <select name="nota" class="form-select">
         <option value="">Todas</option>
         <option value="1" {% if request.GET.nota == "1" %}selected{% endif %}>1</option>
@@ -32,7 +38,9 @@
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Visível</label>
+      <label class="form-label">
+        <i class="bi bi-eye"></i> Visível
+      </label>
       <select name="visivel" class="form-select">
         <option value="">Todos</option>
         <option value="True" {% if request.GET.visivel == "True" %}selected{% endif %}>Sim</option>

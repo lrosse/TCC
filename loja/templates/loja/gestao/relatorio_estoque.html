@@ -14,13 +14,17 @@
   <form method="get" class="row g-3 mb-3">
     <!-- Produto -->
     <div class="col-md-3">
-      <label class="form-label">Produto</label>
+      <label class="form-label">
+        <i class="bi bi-box"></i> Produto
+      </label>
       <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
     </div>
 
     <!-- Tipo -->
     <div class="col-md-3">
-      <label class="form-label">Tipo</label>
+      <label class="form-label">
+        <i class="bi bi-arrow-left-right"></i> Tipo
+      </label>
       <select name="tipo" class="form-select">
         <option value="">Todos</option>
         <option value="entrada" {% if request.GET.tipo == "entrada" %}selected{% endif %}>Entrada</option>
@@ -30,13 +34,17 @@
 
     <!-- Data início -->
     <div class="col-md-3">
-      <label class="form-label">Data início</label>
+      <label class="form-label">
+        <i class="bi bi-calendar-date"></i> Data início
+      </label>
       <input type="date" name="data_inicio" class="form-control" value="{{ request.GET.data_inicio }}">
     </div>
 
     <!-- Data fim -->
     <div class="col-md-3">
-      <label class="form-label">Data fim</label>
+      <label class="form-label">
+        <i class="bi bi-calendar-date-fill"></i> Data fim
+      </label>
       <input type="date" name="data_fim" class="form-control" value="{{ request.GET.data_fim }}">
     </div>
 
