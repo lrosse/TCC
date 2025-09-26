@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +11,27 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
   <style>
-    body { background-color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .product-card { border-radius: 12px; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
-    .product-card:hover { transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
-    .product-img { height: 250px; object-fit: cover; width: 100%; }
+    body {
+      background-color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .product-card {
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, .1);
+    }
+
+    .product-img {
+      height: 250px;
+      object-fit: cover;
+      width: 100%;
+    }
 
     .card-body {
       min-height: 120px;
@@ -36,15 +54,19 @@
     }
 
     .pagination .page-item .page-link {
-  border-radius: 8px;          /* cantos arredondados */
-  margin: 0 3px;               /* espaçamento entre botões */
-  color: #0d6efd;              /* azul Bootstrap */
-  font-weight: 500;
-  transition: all 0.2s ease-in-out;
+      border-radius: 8px;
+      /* cantos arredondados */
+      margin: 0 3px;
+      /* espaçamento entre botões */
+      color: #0d6efd;
+      /* azul Bootstrap */
+      font-weight: 500;
+      transition: all 0.2s ease-in-out;
     }
 
     .pagination .page-item.active .page-link {
-      background-color: #0d6efd;   /* fundo azul ativo */
+      background-color: #0d6efd;
+      /* fundo azul ativo */
       border-color: #0d6efd;
       color: #fff;
       font-weight: 600;
@@ -52,154 +74,176 @@
     }
 
     .pagination .page-item .page-link:hover {
-      background-color: #e9f2ff;   /* azul clarinho no hover */
+      background-color: #e9f2ff;
+      /* azul clarinho no hover */
       color: #0a58ca;
-      transform: translateY(-2px); /* sobe levemente no hover */
+      transform: translateY(-2px);
+      /* sobe levemente no hover */
     }
 
     .pagination .page-item.disabled .page-link {
-      color: #adb5bd;              /* cinza */
+      color: #adb5bd;
+      /* cinza */
       background-color: #f8f9fa;
     }
   </style>
 </head>
+
 <body>
 
-<!-- 🔹 Navbar -->
-{% include "loja/_navbar.html" %}
+  <!-- 🔹 Navbar -->
+  {% include "loja/_navbar.html" %}
 
-<!-- 🔹 Vitrine -->
-<div class="container my-5">
-  <h1 class="text-center text-primary mb-5">Vitrine de Produtos</h1>
-  <div class="row" id="vitrine-produtos">
-    {% for produto in produtos %}
-      <div class="col-md-3 col-sm-6 mb-4 produto-card"
-           data-nome="{{ produto.nome|lower }}"
-           data-preco="{{ produto.preco }}"
-           data-nota="{{ produto.media_nota|default:0 }}">
-        <div class="card h-100 shadow-sm product-card">
+  <!-- 🔹 Vitrine -->
+  <div class="container my-5">
+    <h1 class="text-center text-primary mb-5">Vitrine de Produtos</h1>
+    <!-- 🔹 Filtros -->
+    <form method="get" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <input type="text" name="q" class="form-control" placeholder="Buscar produto..." value="{{ request.GET.q }}">
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" name="preco_min" class="form-control" placeholder="Preço mínimo"
+          value="{{ request.GET.preco_min }}">
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.01" name="preco_max" class="form-control" placeholder="Preço máximo"
+          value="{{ request.GET.preco_max }}">
+      </div>
+      <div class="col-md-2">
+        <input type="number" step="0.1" name="nota_min" class="form-control" placeholder="Nota mínima"
+          value="{{ request.GET.nota_min }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+      </div>
+    </form>
 
-          <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
-            {% if produto.imagem %}
-              <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="{{ produto.nome }}">
-            {% endif %}
-            <div class="card-body text-center">
-              <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
-              <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
-            </div>
-          </a>
-
-          <!-- Botão adicionar (rota AJAX correta) -->
-          <div class="card-footer bg-white border-0 p-3">
-            <form method="post" action="{% url 'adicionar_carrinho' produto.id %}" class="add-carrinho-form">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-primary btn-sm w-100">
-                <i class="bi bi-cart-plus me-1"></i> Adicionar ao Carrinho
-              </button>
-            </form>
-          </div>
-
+<div class="row" id="vitrine-produtos">
+  {% for produto in page_obj %}
+  <div class="col-md-3 col-sm-6 mb-4 produto-card" data-nome="{{ produto.nome|lower }}"
+    data-preco="{{ produto.preco }}" data-nota="{{ produto.media_nota|default:0 }}">
+    <div class="card h-100 shadow-sm product-card">
+      <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
+        {% if produto.imagem %}
+        <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="{{ produto.nome }}">
+        {% endif %}
+        <div class="card-body text-center">
+          <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
+          <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
         </div>
+      </a>
+      <div class="card-footer bg-white border-0 p-3">
+        <form method="post" action="{% url 'adicionar_carrinho' produto.id %}" class="add-carrinho-form">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-cart-plus me-1"></i> Adicionar ao Carrinho
+          </button>
+        </form>
       </div>
-    {% empty %}
-      <p class="text-center text-muted">Nenhum produto disponível.</p>
-    {% endfor %}
-  </div>
-
-  <!-- 🔹 Paginação -->
-  {% if page_obj.has_other_pages %}
-    <nav aria-label="Navegação de páginas">
-      <ul class="pagination justify-content-center mt-4">
-
-        <!-- Anterior -->
-        {% if page_obj.has_previous %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-        {% endif %}
-
-        <!-- Números -->
-        {% for num in page_obj.paginator.page_range %}
-          {% if num == page_obj.number %}
-            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-          {% else %}
-            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-          {% endif %}
-        {% endfor %}
-
-        <!-- Próximo -->
-        {% if page_obj.has_next %}
-          <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
-          </li>
-        {% else %}
-          <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-        {% endif %}
-
-      </ul>
-    </nav>
-  {% endif %}
-</div>
-
-<!-- 🔹 Toast -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
-  <div id="toast-carrinho" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="d-flex">
-      <div class="toast-body">
-        ✅ Produto adicionado ao carrinho!
-      </div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
   </div>
+  {% empty %}
+  <p class="text-center text-muted">Nenhum produto disponível.</p>
+  {% endfor %}
 </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- 🔹 Paginação -->
+    {% with request.GET.urlencode as querystring %}
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Navegação de páginas">
+      <ul class="pagination justify-content-center mt-4">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ querystring }}&page={{ page_obj.previous_page_number }}">&laquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+        {% endif %}
 
-<!-- Script AJAX -->
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  document.querySelectorAll(".add-carrinho-form").forEach(form => {
-    form.addEventListener("submit", async function(e) {
-      e.preventDefault();
+        {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% else %}
+        <li class="page-item"><a class="page-link" href="?{{ querystring }}&page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
 
-      const url = this.action;
-      const csrfToken = this.querySelector("[name=csrfmiddlewaretoken]").value;
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{{ querystring }}&page={{ page_obj.next_page_number }}">&raquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    {% endwith %}
+  </div>
 
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": csrfToken,
-            "X-Requested-With": "XMLHttpRequest"
+  <!-- 🔹 Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
+    <div id="toast-carrinho" class="toast align-items-center text-bg-success border-0" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          ✅ Produto adicionado ao carrinho!
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script AJAX -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll(".add-carrinho-form").forEach(form => {
+        form.addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const url = this.action;
+          const csrfToken = this.querySelector("[name=csrfmiddlewaretoken]").value;
+
+          try {
+            const response = await fetch(url, {
+              method: "POST",
+              headers: {
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest"
+              }
+            });
+
+            const data = await response.json();
+            console.log("Resposta do backend:", data);
+
+            if (data.success) {
+              const badge = document.querySelector("#carrinho-contador");
+              if (badge) {
+                badge.textContent = data.total_itens;
+              }
+
+              // Exibe toast
+              const toastEl = document.getElementById("toast-carrinho");
+              const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+              toast.show();
+            } else {
+              alert("⚠️ Não foi possível adicionar ao carrinho.");
+            }
+          } catch (error) {
+            console.error("Erro:", error);
+            alert("❌ Erro ao adicionar produto.");
           }
         });
-
-        const data = await response.json();
-        console.log("Resposta do backend:", data);
-
-        if (data.success) {
-          const badge = document.querySelector("#carrinho-contador");
-          if (badge) {
-            badge.textContent = data.total_itens;
-          }
-
-          // Exibe toast
-          const toastEl = document.getElementById("toast-carrinho");
-          const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
-          toast.show();
-        } else {
-          alert("⚠️ Não foi possível adicionar ao carrinho.");
-        }
-      } catch (error) {
-        console.error("Erro:", error);
-        alert("❌ Erro ao adicionar produto.");
-      }
+      });
     });
-  });
-});
-</script>
+  </script>
 </body>
+
 </html>

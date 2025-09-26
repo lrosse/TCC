@@ -38,40 +38,32 @@ from django.shortcuts import render
 from .models import Produto
 
 def home(request):
-    produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota"))
-    produtos = Produto.objects.all().order_by("-id")
+    # Busca produtos já com média das notas
+    produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota")).order_by("-id")
 
+    # Filtros do formulário
     termo_busca = request.GET.get('q')
     preco_min = request.GET.get('preco_min')
     preco_max = request.GET.get('preco_max')
     nota_min = request.GET.get('nota_min')
-    paginator = Paginator(produtos, 12)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
 
     if termo_busca:
         produtos = produtos.filter(nome__icontains=termo_busca)
-
     if preco_min:
         produtos = produtos.filter(preco__gte=preco_min)
     if preco_max:
         produtos = produtos.filter(preco__lte=preco_max)
-
     if nota_min:
         produtos = produtos.filter(media_nota__gte=nota_min)
 
-    context = {
-        'produtos': produtos,
-        'filtros': {
-            'q': termo_busca or '',
-            'preco_min': preco_min or '',
-            'preco_max': preco_max or '',
-            'nota_min': nota_min or '',
-        }
-    }
+    # Paginação após filtrar
+    paginator = Paginator(produtos, 12)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     return render(request, "loja/home.html", {
         "page_obj": page_obj,
-        "produtos": page_obj,   # para compatibilidade com o template atual
+        "produtos": page_obj,   # compatibilidade com template
     })
 
 def buscar_produtos(request):
