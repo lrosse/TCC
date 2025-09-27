@@ -141,8 +141,18 @@
                                 </form>
                             </td>
 
-                            <td class="text-end">R$ {{ item.preco_unitario }}</td>
-                            <td class="text-end">R$ {{ item.subtotal }}</td>
+                            <td>
+                            <div class="d-flex justify-content-end">
+                                <span class="me-1">R$</span>
+                                <span>{{ item.preco_unitario }}</span>
+                            </div>
+                            </td>
+                            <td>
+                            <div class="d-flex justify-content-end">
+                                <span class="me-1">R$</span>
+                                <span>{{ item.subtotal }}</span>
+                            </div>
+                            </td>
                             <td class="text-center">
                                 <a href="{% url 'remover_do_carrinho' item.id %}" class="btn-remover" title="Remover do carrinho">
                                     <i class="bi bi-trash3-fill"></i>
@@ -151,12 +161,15 @@
                         </tr>
                         {% endfor %}
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3" class="text-end fw-bold">Total:</td>
-                            <td class="text-end fw-bold">R$ {{ total }}</td>
-                            <td></td>
-                        </tr>
+                    <tfoot class="border-0">
+                    <tr class="border-0">
+                        <td colspan="4" class="border-0">
+                        <div class="d-flex justify-content-end fw-bold">
+                            <span class="me-2">Total:</span>
+                            <span id="valor-total">R$ {{ total }}</span>
+                        </div>
+                        </td>
+                    </tr>
                     </tfoot>
                 </table>
             </div>

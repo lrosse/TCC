@@ -43,14 +43,24 @@
             {% if itens %}
             <ul class="list-group mb-3">
                 {% for item in itens %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ item.quantidade }}x {{ item.produto.nome }}
-                    <span>R$ {{ item.subtotal }}</span>
+                <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="me-2">{{ item.quantidade }}x {{ item.produto.nome }}</span>
+                    <div class="d-flex">
+                    <span class="me-1">R$</span>
+                    <span>{{ item.subtotal }}</span>
+                    </div>
+                </div>
                 </li>
                 {% endfor %}
-                <li class="list-group-item d-flex justify-content-between">
-                    <strong>Total:</strong>
-                    <strong>R$ {{ total }}</strong>
+                <li class="list-group-item">
+                <div class="d-flex justify-content-between fw-bold">
+                    <span class="me-2">Total:</span>
+                    <div class="d-flex">
+                    <span class="me-1">R$</span>
+                    <span>{{ total }}</span>
+                    </div>
+                </div>
                 </li>
             </ul>
             {% else %}

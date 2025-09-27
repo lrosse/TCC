@@ -583,22 +583,24 @@ def ver_carrinho(request):
     if request.user.is_authenticated:
         # 🔒 Usuário logado → usa carrinho do banco
         carrinho = get_or_create_carrinho(request.user)
-        itens = []
 
+        # 🔹 recalcula total para garantir que está atualizado
+        carrinho.calcular_total()
+
+        itens = []
         for item in ItemCarrinho.objects.filter(carrinho=carrinho):
             itens.append({
                 "id": item.id,
-                "nome": item.produto.nome,  # ✅ padroniza com o mesmo nome do anônimo
+                "nome": item.produto.nome,
                 "quantidade": item.quantidade,
                 "preco_unitario": item.preco_unitario,
                 "subtotal": item.subtotal(),
                 "imagem": item.produto.imagem.url if item.produto.imagem else None,
             })
 
-        total = carrinho.valor_total
         return render(request, 'loja/carrinho.html', {
             'itens': itens,
-            'total': total,
+            'total': carrinho.total(),  # sempre atualizado
             'sessao': False
         })
 
@@ -613,7 +615,7 @@ def ver_carrinho(request):
             total += subtotal
             itens.append({
                 "id": produto_id,
-                "nome": dados["nome"],  # ✅ mesma chave que no logado
+                "nome": dados["nome"],
                 "quantidade": dados["quantidade"],
                 "preco_unitario": Decimal(dados["preco_unitario"]),
                 "subtotal": subtotal,
