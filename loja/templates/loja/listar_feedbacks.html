@@ -25,6 +25,11 @@
     <div class="collapse mb-3" id="filtrosExtras">
         <div class="row g-2">
             <div class="col-md-2">
+                <label class="form-label">ID Produto</label>
+                <input type="number" id="filtro-id" class="form-control" placeholder="Ex: 15">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Nota</label>
                 <select id="filtro-nota" class="form-select">
                     <option value="">Todas notas</option>
                     <option value="1">1 estrela</option>
@@ -35,6 +40,7 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label">Status</label>
                 <select id="filtro-status" class="form-select">
                     <option value="">Todos</option>
                     <option value="visivel">Visível</option>
@@ -42,17 +48,19 @@
                 </select>
             </div>
             <div class="col-md-2">
+                <label class="form-label">Data início</label>
                 <input type="date" id="filtro-data-inicio" class="form-control">
             </div>
             <div class="col-md-2">
+                <label class="form-label">Data fim</label>
                 <input type="date" id="filtro-data-fim" class="form-control">
             </div>
-            <div class="col-md-2 d-flex">
+            <div class="col-md-2 d-flex align-items-end">
                 <button type="button" id="btn-limpar" class="btn btn-outline-danger w-100">
                     <i class="bi bi-x-circle"></i> Limpar
                 </button>
             </div>
-        </div>
+        </div>  
     </div>
 
     <!-- Form de atualização em lote -->
@@ -75,6 +83,7 @@
                             <tr>
                                 <th></th>
                                 <th>Usuário</th>
+                                <th>ID Produto</th>
                                 <th>Produto</th>
                                 <th>Nota</th>
                                 <th>Comentário</th>
@@ -86,6 +95,7 @@
                             {% for f in feedbacks %}
                             <tr data-usuario="{{ f.usuario.username|lower }}" 
                                 data-produto="{% if f.produto %}{{ f.produto.nome|lower }}{% else %}—{% endif %}"
+                                data-id="{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}"
                                 data-nota="{{ f.nota }}"
                                 data-status="{% if f.visivel %}visivel{% else %}oculto{% endif %}"
                                 data-data="{{ f.data_criacao|date:'Y-m-d' }}"
@@ -94,6 +104,7 @@
                                 style="cursor:pointer;">
                                 <td><input type="checkbox" name="feedbacks" value="{{ f.id }}"></td>
                                 <td>{{ f.usuario.username }}</td>
+                                <td>{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}</td>
                                 <td>{% if f.produto %}{{ f.produto.nome }}{% else %}—{% endif %}</td>
                                 <td>{{ f.nota }}</td>
                                 <td>{{ f.comentario|default:"(Sem comentário)" }}</td>
@@ -108,7 +119,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="7" class="text-muted text-center">Nenhum feedback encontrado.</td>
+                                <td colspan="8" class="text-muted text-center">Nenhum feedback encontrado.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -122,6 +133,7 @@
 {% block extra_js %}
 <script>
 const filtroBusca = document.getElementById("filtro-busca");
+const filtroId = document.getElementById("filtro-id");   // 🔹 Novo campo de ID
 const filtroNota = document.getElementById("filtro-nota");
 const filtroStatus = document.getElementById("filtro-status");
 const filtroDataInicio = document.getElementById("filtro-data-inicio");
@@ -133,6 +145,7 @@ const linhas = document.querySelectorAll("#tabela-feedbacks tr[data-usuario]");
 
 function aplicarFiltros() {
     const termo = filtroBusca.value.trim().toLowerCase();
+    const idFiltro = filtroId.value.trim();   // 🔹 Captura o ID
     const nota = filtroNota.value;
     const status = filtroStatus.value;
     const dataInicio = filtroDataInicio.value;
@@ -141,29 +154,32 @@ function aplicarFiltros() {
     linhas.forEach(tr => {
         const usuario = tr.dataset.usuario;
         const produto = tr.dataset.produto;
+        const idProduto = tr.dataset.id;
         const comentario = tr.dataset.comentario;
         const notaTr = tr.dataset.nota;
         const statusTr = tr.dataset.status;
         const dataTr = tr.dataset.data;
 
         const matchBusca = usuario.includes(termo) || produto.includes(termo) || comentario.includes(termo);
+        const matchId = !idFiltro || idProduto === idFiltro;   // 🔹 Filtro exato por ID
         const matchNota = !nota || notaTr === nota;
         const matchStatus = !status || statusTr === status;
         const matchDataInicio = !dataInicio || dataTr >= dataInicio;
         const matchDataFim = !dataFim || dataTr <= dataFim;
 
-        tr.style.display = (matchBusca && matchNota && matchStatus && matchDataInicio && matchDataFim) ? "" : "none";
+        tr.style.display = (matchBusca && matchId && matchNota && matchStatus && matchDataInicio && matchDataFim) ? "" : "none";
     });
 }
 
 // Filtros automáticos
-[filtroBusca, filtroNota, filtroStatus, filtroDataInicio, filtroDataFim].forEach(el => {
+[filtroBusca, filtroId, filtroNota, filtroStatus, filtroDataInicio, filtroDataFim].forEach(el => {
     el?.addEventListener("input", aplicarFiltros);
 });
 
 // Botão limpar
 btnLimpar.addEventListener("click", () => {
     filtroBusca.value = "";
+    filtroId.value = "";   // 🔹 Limpa também o campo ID
     filtroNota.value = "";
     filtroStatus.value = "";
     filtroDataInicio.value = "";
@@ -172,7 +188,7 @@ btnLimpar.addEventListener("click", () => {
 });
 
 // Selecionar todos
-selectAll.addEventListener("change", function(){
+selectAll?.addEventListener("change", function(){
     document.querySelectorAll('input[name="feedbacks"]').forEach(cb => cb.checked = this.checked);
 });
 </script>

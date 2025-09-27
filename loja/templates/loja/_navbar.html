@@ -1,128 +1,79 @@
 <!-- templates/loja/_navbar.html -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm sticky-top">
-  <div class="container">
-    <a class="navbar-brand" href="{% url 'home' %}">Minha Loja</a>
+  <div class="container d-flex align-items-center justify-content-between">
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+    <!-- 🔹 Logo à esquerda -->
+    <a class="navbar-brand d-flex align-items-center" href="{% url 'home' %}">
+      <img src="https://via.placeholder.com/40" alt="Logo" class="rounded me-2" style="width:40px; height:40px; object-fit:cover;">
+    </a>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
+    <!-- 🔹 Nome no centro -->
+    <div class="mx-auto text-center">
+      <span class="navbar-text fw-bold text-white fs-5">ODROSTORE</span>
+    </div>
 
-      <!-- 🔹 Barra de pesquisa → só na Home -->
-      {% if request.resolver_match.url_name == "home" %}
-      <div class="mx-auto position-relative w-50 d-flex align-items-center gap-2">
-        <form class="flex-grow-1 d-flex" role="search" onsubmit="return false;">
-          <input id="filtro-busca" class="form-control form-control-sm"
-                 type="search" placeholder="Buscar produtos..." value="{{ filtros.q }}" autocomplete="off">
-        </form>
+    <!-- 🔹 Direita (Carrinho + Perfil) -->
+    <div class="d-flex align-items-center gap-3">
 
-        <!-- 🔹 Dropdown filtros -->
-        <div class="dropdown">
-          <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="filtrosDropdown"
-                  data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="bi bi-funnel"></i>
-          </button>
+      <!-- Carrinho -->
+      <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
+        <i class="bi bi-cart3 text-white cart-icon"></i>
+        <span id="carrinho-contador" class="cart-badge">
+          {{ request.session.carrinho_itens|default:0 }}
+        </span>
+      </a>
 
-          <div class="dropdown-menu p-3 shadow-lg" style="min-width: 500px;" aria-labelledby="filtrosDropdown">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label for="preco_min" class="form-label small fw-semibold">Preço mín.</label>
-                <input type="number" class="form-control form-control-sm" id="preco_min" placeholder="Ex: 100" value="{{ filtros.preco_min }}">
-              </div>
-              <div class="col-md-4">
-                <label for="preco_max" class="form-label small fw-semibold">Preço máx.</label>
-                <input type="number" class="form-control form-control-sm" id="preco_max" placeholder="Ex: 1000" value="{{ filtros.preco_max }}">
-              </div>
-              <div class="col-md-4">
-                <label for="nota_min" class="form-label small fw-semibold">Avaliação</label>
-                <select class="form-select form-select-sm" id="nota_min">
-                  <option value="">Todas</option>
-                  <option value="1" {% if filtros.nota_min == '1' %}selected{% endif %}>⭐ 1+</option>
-                  <option value="2" {% if filtros.nota_min == '2' %}selected{% endif %}>⭐ 2+</option>
-                  <option value="3" {% if filtros.nota_min == '3' %}selected{% endif %}>⭐ 3+</option>
-                  <option value="4" {% if filtros.nota_min == '4' %}selected{% endif %}>⭐ 4+</option>
-                  <option value="5" {% if filtros.nota_min == '5' %}selected{% endif %}>⭐ 5</option>
-                </select>
-              </div>
-            </div>
-            <div class="mt-3">
-              <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100">
-                <i class="bi bi-x-circle"></i> Limpar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 🔽 Dropdown autocomplete -->
-      <ul id="resultado-busca" class="list-group position-absolute w-50 shadow-sm mt-1 d-none"
-          style="z-index:1050; max-height:300px; overflow-y:auto;"></ul>
-      {% endif %}
-
-      <!-- 🔹 Direita -->
-      <div class="d-flex align-items-center gap-3 ms-auto">
-
-        <!-- Carrinho -->
-        <a href="{% url 'ver_carrinho' %}" class="cart-wrapper text-decoration-none position-relative">
-          <i class="bi bi-cart3 text-white cart-icon"></i>
-          <span id="carrinho-contador" class="cart-badge">
-            {{ request.session.carrinho_itens|default:0 }}
-          </span>
-        </a>
-
-        <!-- Perfil -->
-        <div class="dropdown navbar-profile">
-          <button class="btn p-0 border-0 bg-transparent d-flex align-items-center">
-            {% if request.user.is_authenticated %}
-              {% if request.user.get_full_name %}
-                <div class="perfil-avatar">{{ request.user.get_full_name|slice:":1"|upper }}</div>
-              {% elif request.user.username %}
-                <div class="perfil-avatar">{{ request.user.username|slice:":1"|upper }}</div>
-              {% else %}
-                <div class="perfil-avatar"><i class="bi bi-person"></i></div>
-              {% endif %}
+      <!-- Perfil -->
+      <div class="dropdown navbar-profile">
+        <button class="btn p-0 border-0 bg-transparent d-flex align-items-center">
+          {% if request.user.is_authenticated %}
+            {% if request.user.get_full_name %}
+              <div class="perfil-avatar">{{ request.user.get_full_name|slice:":1"|upper }}</div>
+            {% elif request.user.username %}
+              <div class="perfil-avatar">{{ request.user.username|slice:":1"|upper }}</div>
             {% else %}
               <div class="perfil-avatar"><i class="bi bi-person"></i></div>
             {% endif %}
-            <i class="bi bi-caret-down-fill ms-2 small text-muted"></i>
-          </button>
+          {% else %}
+            <div class="perfil-avatar"><i class="bi bi-person"></i></div>
+          {% endif %}
+          <i class="bi bi-caret-down-fill ms-2 small text-muted"></i>
+        </button>
 
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2">
-            {% if request.user.is_authenticated %}
-              <li class="px-3 py-2 text-muted small">Olá, <strong>{{ request.user.username }}</strong></li>
-              <li><hr class="dropdown-divider"></li>
+        <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2">
+          {% if request.user.is_authenticated %}
+            <li class="px-3 py-2 text-muted small">Olá, <strong>{{ request.user.username }}</strong></li>
+            <li><hr class="dropdown-divider"></li>
 
-              <li>
-                <a class="dropdown-item" href="{% url 'meus_pedidos' %}">
-                  <i class="bi bi-box-seam me-2"></i>Meus Pedidos
-                </a>
-              </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'meus_pedidos' %}">
+                <i class="bi bi-box-seam me-2"></i>Meus Pedidos
+              </a>
+            </li>
 
-              {% if request.user.is_staff or request.user.is_superuser %}
-              <li>
-                <a class="dropdown-item" href="{% url 'dashboard' %}">
-                  <i class="bi bi-speedometer2 me-2"></i>Painel
-                </a>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              {% endif %}
-
-              <li>
-                <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#confirmLogout">
-                  <i class="bi bi-box-arrow-right me-2"></i>Sair
-                </a>
-              </li>
-            {% else %}
-              <li><a class="dropdown-item" href="{% url 'login' %}">
-                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
-              </a></li>
-              <li><a class="dropdown-item" href="{% url 'registrar' %}">
-                <i class="bi bi-person-plus me-2"></i>Registrar
-              </a></li>
+            {% if request.user.is_staff or request.user.is_superuser %}
+            <li>
+              <a class="dropdown-item" href="{% url 'dashboard' %}">
+                <i class="bi bi-speedometer2 me-2"></i>Painel
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
             {% endif %}
-          </ul>
-        </div>
+
+            <li>
+              <a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#confirmLogout">
+                <i class="bi bi-box-arrow-right me-2"></i>Sair
+              </a>
+            </li>
+          {% else %}
+            <li><a class="dropdown-item" href="{% url 'login' %}">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+            </a></li>
+            <li><a class="dropdown-item" href="{% url 'registrar' %}">
+              <i class="bi bi-person-plus me-2"></i>Registrar
+            </a></li>
+          {% endif %}
+        </ul>
       </div>
     </div>
   </div>
@@ -186,45 +137,6 @@ document.addEventListener("DOMContentLoaded", function() {
       fixedOpen = false;
       dropdownMenu.classList.remove("show");
     }
-  });
-
-  // 🔹 Filtros em tempo real
-  const inputBusca = document.getElementById("filtro-busca");
-  const precoMin = document.getElementById("preco_min");
-  const precoMax = document.getElementById("preco_max");
-  const notaMin = document.getElementById("nota_min");
-  const btnLimpar = document.getElementById("btn-limpar-filtros");
-
-  function aplicarFiltros() {
-    const termo = inputBusca?.value.trim().toLowerCase();
-    const min = parseFloat(precoMin?.value) || 0;
-    const max = parseFloat(precoMax?.value) || Infinity;
-    const nota = parseInt(notaMin?.value) || 0;
-
-    document.querySelectorAll(".produto-card").forEach(card => {
-      const nome = card.dataset.nome;
-      const preco = parseFloat(card.dataset.preco);
-      const media = parseFloat(card.dataset.nota);
-
-      const matchNome = !termo || nome.includes(termo);
-      const matchPreco = preco >= min && preco <= max;
-      const matchNota = media >= nota;
-
-      card.style.display = (matchNome && matchPreco && matchNota) ? "" : "none";
-    });
-  }
-
-  [inputBusca, precoMin, precoMax, notaMin].forEach(el => {
-    el?.addEventListener("input", aplicarFiltros);
-    el?.addEventListener("change", aplicarFiltros);
-  });
-
-  btnLimpar?.addEventListener("click", () => {
-    precoMin.value = "";
-    precoMax.value = "";
-    notaMin.value = "";
-    if (inputBusca) inputBusca.value = "";
-    aplicarFiltros();
   });
 });
 </script>
