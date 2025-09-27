@@ -911,65 +911,155 @@ def relatorio_estoque_pdf(request):
 @user_passes_test(admin_required)
 def relatorio_financeiro(request):
     """
-    Relatório Financeiro – lista com filtros por categoria, tipo, valor e data.
+    Relatório Financeiro – exibe valores DIÁRIOS (receita, custo, despesas fixas/variáveis e lucro líquido).
+    Permite ordenar por data (padrão), receita, custo, fixa, variável ou lucro.
     """
-    lancamentos = LancamentoFinanceiro.objects.all()
 
-    # Filtros
-    categoria = request.GET.get("categoria")
-    tipo_lancamento = request.GET.get("tipo_lancamento")
-    valor_min = request.GET.get("valor_min")
-    valor_max = request.GET.get("valor_max")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    # 📌 Filtros de data (agora opcionais, se não passar mostra tudo)
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
 
-    if categoria:
-        lancamentos = lancamentos.filter(categoria__icontains=categoria)
-    if tipo_lancamento:
-        lancamentos = lancamentos.filter(tipo=tipo_lancamento)
-    if valor_min:
-        lancamentos = lancamentos.filter(valor__gte=valor_min)
-    if valor_max:
-        lancamentos = lancamentos.filter(valor__lte=valor_max)
+    data_inicio = parse_date(data_inicio_raw) if data_inicio_raw else None
+    data_fim = parse_date(data_fim_raw) if data_fim_raw else None
+
+    # Busca bruta
+    pedidos = Pedido.objects.filter(status="Pago")
+    despesas = Despesa.objects.all()
+
     if data_inicio:
-        lancamentos = lancamentos.filter(data__gte=data_inicio)
-    if data_fim:
-        lancamentos = lancamentos.filter(data__lte=data_fim)
+        dt_inicio = datetime.combine(data_inicio, time.min)
+        pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
+        despesas = despesas.filter(data__gte=data_inicio)
 
-    context = {"lancamentos": lancamentos}
+    if data_fim:
+        dt_fim = datetime.combine(data_fim, time.max)
+        pedidos = pedidos.filter(data_criacao__lte=dt_fim)
+        despesas = despesas.filter(data__lte=data_fim)
+
+    # 📅 Monta estrutura por dia
+    from collections import defaultdict
+    dados_diarios = defaultdict(lambda: {"receita": 0, "custo": 0, "fixa": 0, "variavel": 0})
+
+    for p in pedidos:
+        dia = p.data_criacao.date()
+        dados_diarios[dia]["receita"] += float(p.total or 0)
+        for item in p.itens.all():
+            dados_diarios[dia]["custo"] += float(item.custo_unitario) * item.quantidade
+
+    for d in despesas:
+        if d.tipo == "Fixo":
+            dados_diarios[d.data]["fixa"] += float(d.valor or 0)
+        elif d.tipo == "Variável":
+            dados_diarios[d.data]["variavel"] += float(d.valor or 0)
+
+    # Monta lista final
+    tabela = []
+    for dia, valores in dados_diarios.items():
+        receita = valores["receita"]
+        custo = valores["custo"]
+        fixa = valores["fixa"]
+        variavel = valores["variavel"]
+        lucro = receita - custo - fixa - variavel
+
+        tabela.append({
+            "data": dia,
+            "receita": receita,
+            "custo": custo,
+            "fixa": fixa,
+            "variavel": variavel,
+            "lucro": lucro,
+        })
+
+    # 🔽 Ordenação
+    ordenar_por = request.GET.get("ordenar_por")
+    if ordenar_por in ["receita", "custo", "fixa", "variavel", "lucro"]:
+        tabela = sorted(tabela, key=lambda x: x[ordenar_por], reverse=True)
+    else:
+        tabela = sorted(tabela, key=lambda x: x["data"], reverse=True)  # padrão: mais recente → mais antigo
+
+    context = {
+        "tabela": tabela,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "ordenar_por": ordenar_por or "data",
+    }
     return render(request, "loja/gestao/relatorio_financeiro.html", context)
 
 @login_required
 @user_passes_test(admin_required)
 def relatorio_financeiro_pdf(request):
     """
-    Exporta o Relatório Financeiro para PDF, aplicando os filtros da tela.
+    Exporta o Relatório Financeiro Diário para PDF, aplicando os filtros da tela.
     """
-    lancamentos = LancamentoFinanceiro.objects.all()
 
-    # 🔹 Filtros (mesmos da view normal)
-    categoria = request.GET.get("categoria")
-    tipo_lancamento = request.GET.get("tipo_lancamento")
-    valor_min = request.GET.get("valor_min")
-    valor_max = request.GET.get("valor_max")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    # 📌 Filtros de data (iguais ao HTML)
+    data_inicio_raw = request.GET.get("data_inicio")
+    data_fim_raw = request.GET.get("data_fim")
 
-    if categoria:
-        lancamentos = lancamentos.filter(categoria__icontains=categoria)
-    if tipo_lancamento:
-        lancamentos = lancamentos.filter(tipo=tipo_lancamento)
-    if valor_min:
-        lancamentos = lancamentos.filter(valor__gte=valor_min)
-    if valor_max:
-        lancamentos = lancamentos.filter(valor__lte=valor_max)
+    data_inicio = parse_date(data_inicio_raw) if data_inicio_raw else None
+    data_fim = parse_date(data_fim_raw) if data_fim_raw else None
+
+    pedidos = Pedido.objects.filter(status="Pago")
+    despesas = Despesa.objects.all()
+
     if data_inicio:
-        lancamentos = lancamentos.filter(data__gte=data_inicio)
+        dt_inicio = datetime.combine(data_inicio, time.min)
+        pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
+        despesas = despesas.filter(data__gte=data_inicio)
+
     if data_fim:
-        lancamentos = lancamentos.filter(data__lte=data_fim)
+        dt_fim = datetime.combine(data_fim, time.max)
+        pedidos = pedidos.filter(data_criacao__lte=dt_fim)
+        despesas = despesas.filter(data__lte=data_fim)
+
+    # 📅 Monta estrutura por dia
+    from collections import defaultdict
+    dados_diarios = defaultdict(lambda: {"receita": 0, "custo": 0, "fixa": 0, "variavel": 0})
+
+    for p in pedidos:
+        dia = p.data_criacao.date()
+        dados_diarios[dia]["receita"] += float(p.total or 0)
+        for item in p.itens.all():
+            dados_diarios[dia]["custo"] += float(item.custo_unitario) * item.quantidade
+
+    for d in despesas:
+        if d.tipo == "Fixo":
+            dados_diarios[d.data]["fixa"] += float(d.valor or 0)
+        elif d.tipo == "Variável":
+            dados_diarios[d.data]["variavel"] += float(d.valor or 0)
+
+    # Monta lista final
+    tabela = []
+    for dia, valores in dados_diarios.items():
+        receita = valores["receita"]
+        custo = valores["custo"]
+        fixa = valores["fixa"]
+        variavel = valores["variavel"]
+        lucro = receita - custo - fixa - variavel
+
+        tabela.append({
+            "data": dia,
+            "receita": receita,
+            "custo": custo,
+            "fixa": fixa,
+            "variavel": variavel,
+            "lucro": lucro,
+        })
+
+    # 🔽 Ordenação
+    ordenar_por = request.GET.get("ordenar_por")
+    if ordenar_por in ["receita", "custo", "fixa", "variavel", "lucro"]:
+        tabela = sorted(tabela, key=lambda x: x[ordenar_por], reverse=True)
+    else:
+        tabela = sorted(tabela, key=lambda x: x["data"], reverse=True)
 
     # 🔹 Renderiza template PDF
-    html_string = render_to_string("loja/gestao/pdf/relatorio_financeiro_pdf.html", {"lancamentos": lancamentos})
+    html_string = render_to_string("loja/gestao/pdf/relatorio_financeiro_pdf.html", {
+        "tabela": tabela,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "ordenar_por": ordenar_por or "data",
+    })
     html = weasyprint.HTML(string=html_string)
 
     response = HttpResponse(content_type="application/pdf")

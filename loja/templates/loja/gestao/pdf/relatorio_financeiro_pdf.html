@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Relatório Financeiro</title>
+  <title>Relatório Financeiro Diário</title>
   <style>
     body { font-family: Arial, sans-serif; font-size: 12px; }
     h2 { text-align: center; margin-bottom: 20px; }
@@ -12,26 +12,40 @@
   </style>
 </head>
 <body>
-  <h2>Relatório Financeiro</h2>
+  <h2>Relatório Financeiro Diário</h2>
+
+  <p>
+    {% if data_inicio %} De: {{ data_inicio|date:"d/m/Y" }} {% endif %}
+    {% if data_fim %} até {{ data_fim|date:"d/m/Y" }} {% endif %}
+  </p>
+
   <table>
     <thead>
       <tr>
-        <th>Categoria</th>
-        <th>Tipo</th>
-        <th>Valor</th>
         <th>Data</th>
+        <th>Receita</th>
+        <th>Custos</th>
+        <th>Despesa Fixa</th>
+        <th>Despesa Variável</th>
+        <th>Lucro</th>
       </tr>
     </thead>
     <tbody>
-      {% for l in lancamentos %}
+      {% for d in tabela %}
       <tr>
-        <td>{{ l.categoria }}</td>
-        <td>{{ l.get_tipo_display }}</td>
-        <td>R$ {{ l.valor }}</td>
-        <td>{{ l.data|date:"d/m/Y" }}</td>
+        <td>{{ d.data|date:"d/m/Y" }}</td>
+        <td>R$ {{ d.receita|floatformat:2 }}</td>
+        <td>R$ {{ d.custo|floatformat:2 }}</td>
+        <td>R$ {{ d.fixa|floatformat:2 }}</td>
+        <td>R$ {{ d.variavel|floatformat:2 }}</td>
+        <td class="{% if d.lucro < 0 %}negativo{% else %}positivo{% endif %}">
+          R$ {{ d.lucro|floatformat:2 }}
+        </td>
       </tr>
       {% empty %}
-      <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
+      <tr>
+        <td colspan="6">Nenhum dado encontrado no período.</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
