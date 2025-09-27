@@ -29,8 +29,9 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h5 class="card-title">Margens de Produtos</h5>
       <div id="btnArea" class="d-flex gap-2">
-        <a href="{% url 'historico_custo' %}" class="btn btn-outline-primary">
-          <i class="bi bi-clock-history"></i> Ver Histórico
+        <a class="btn btn-outline-secondary btn-sm"
+          href="{% url 'historico_custo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+          <i class="bi bi-clock-history"></i> Histórico de Custo
         </a>
         <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
           <i class="bi bi-sliders"></i> Definir Custos

@@ -25,17 +25,26 @@
   </form>
 
   <!-- Abas -->
-  <ul class="nav nav-tabs mb-4">
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}" href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}" href="{% url 'financeiro_produtos' %}">Produtos</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}" href="{% url 'financeiro_pedidos' %}">Pedidos</a>
-    </li>
-  </ul>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+       href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+       Resumo Geral
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+       href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+       Produtos
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+       href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+       Pedidos
+    </a>
+  </li>
+</ul>
   <!-- Cards Resumo -->
   <div class="row g-4 mb-4">
 
