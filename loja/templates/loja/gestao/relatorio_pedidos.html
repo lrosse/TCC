@@ -93,8 +93,8 @@
         <tr>
           <td>{{ p.numero_pedido }}</td>
           <td>{{ p.cliente.username }}</td>
-          <td>R$ {{ p.total }}</td>
-          <td>R$ {{ p.custo_total|default:"0.00" }}</td>
+          <td><span class="text-nowrap">R$ {{ p.total }}</span></td>
+          <td><span class="text-nowrap">R$ {{ p.custo_total|default:"0.00" }}</span></td>
           <td>
             <span class="badge 
               {% if p.status == 'Pendente' %}bg-warning text-dark

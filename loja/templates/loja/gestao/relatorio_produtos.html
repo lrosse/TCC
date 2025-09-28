@@ -106,8 +106,8 @@
         {% for p in produtos %}
         <tr>
           <td>{{ p.nome }}</td>
-          <td>R$ {{ p.custo_info.custo|default:"0.00" }}</td>
-          <td>R$ {{ p.preco }}</td>
+          <td><span class="text-nowrap">R$ {{ p.custo_info.custo|default:"0.00" }}</span></td>
+          <td><span class="text-nowrap">R$ {{ p.preco }}</span></td>
           <td>{{ p.quantidade }}</td>
           <td>
             {% if p.quantidade < p.minimo_estoque %}

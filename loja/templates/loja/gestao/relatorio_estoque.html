@@ -84,7 +84,7 @@
           <td>{{ m.quantidade }}</td>
           <td>{{ m.estoque_final }}</td>
           <td>{{ m.observacao|default:"-" }}</td>
-          <td>{{ m.data|date:"d/m/Y H:i" }}</td>
+          <td><span class="text-nowrap">{{ m.data|date:"d/m/Y H:i" }}</span></td>
         </tr>
         {% empty %}
         <tr>
