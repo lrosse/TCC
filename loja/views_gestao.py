@@ -428,7 +428,33 @@ def financeiro_resumo(request):
 @login_required
 @user_passes_test(admin_required)
 def gestao_despesas(request):
-    despesas = Despesa.objects.all().order_by("-data")  # mais recentes primeiro
+    despesas = Despesa.objects.all().order_by("-data")
+
+    # 🔹 Filtros GET
+    data_inicio = request.GET.get("data_inicio")
+    data_fim = request.GET.get("data_fim")
+    tipo = request.GET.get("tipo")
+    q = request.GET.get("q")
+
+    # 🔹 Filtro por data início
+    if data_inicio:
+        despesas = despesas.filter(data__gte=data_inicio)
+
+    # 🔹 Filtro por data fim
+    if data_fim:
+        despesas = despesas.filter(data__lte=data_fim)
+
+    # 🔹 Filtro por tipo
+    if tipo:
+        despesas = despesas.filter(tipo=tipo)
+
+    # 🔹 Busca em categoria (título) OU descrição
+    if q:
+        from django.db.models import Q
+        despesas = despesas.filter(
+            Q(categoria__icontains=q) | Q(descricao__icontains=q)
+        )
+
     context = {
         "despesas": despesas,
     }
@@ -468,16 +494,19 @@ def criar_despesa(request):
 @user_passes_test(admin_required)
 def editar_despesa(request, pk):
     despesa = get_object_or_404(Despesa, pk=pk)
-    if request.method == "POST":
-        form = DespesaForm(request.POST, instance=despesa)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Despesa atualizada com sucesso!")
-            return redirect("gestao_despesas")
-    else:
-        form = DespesaForm(instance=despesa)
 
-    return render(request, "loja/gestao/editar_despesa.html", {"form": form, "despesa": despesa})
+    if request.method == "POST":
+        despesa.categoria = request.POST.get("categoria")
+        despesa.tipo = request.POST.get("tipo")
+        despesa.valor = request.POST.get("valor")
+        despesa.data = request.POST.get("data")
+        despesa.descricao = request.POST.get("descricao")
+        despesa.save()
+
+        messages.success(request, "Despesa atualizada com sucesso!")
+        return redirect("gestao_despesas")
+
+    return render(request, "loja/gestao/editar_despesa.html", {"despesa": despesa})
 
 @login_required
 @user_passes_test(admin_required)
@@ -489,6 +518,12 @@ def excluir_despesa(request, pk):
         return redirect("gestao_despesas")
 
     return render(request, "loja/gestao/excluir_despesa.html", {"despesa": despesa})
+
+@login_required
+@user_passes_test(admin_required)
+def detalhes_despesa(request, pk):
+    despesa = get_object_or_404(Despesa, pk=pk)
+    return render(request, "loja/gestao/detalhes_despesa.html", {"despesa": despesa})
 
 def relatorio_avancado(request):
     tipo = request.GET.get("tipo")  # produtos, pedidos, estoque, financeiro, feedbacks

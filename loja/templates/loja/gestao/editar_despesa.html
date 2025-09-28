@@ -1,14 +1,19 @@
 {% extends "loja/barra_lateral.html" %}
 {% block title %}Editar Despesa{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-  <h3>Editar Despesa</h3>
+  <h3 class="mb-3">Editar Despesa</h3>
+
   <form method="POST">
     {% csrf_token %}
+    
     <div class="mb-3">
       <label class="form-label">Categoria</label>
-      <input type="text" name="categoria" class="form-control" value="{{ despesa.categoria }}" required>
+      <input type="text" name="categoria" class="form-control" 
+             value="{{ despesa.categoria }}" required>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Tipo</label>
       <select name="tipo" class="form-select" required>
@@ -16,20 +21,26 @@
         <option value="Variável" {% if despesa.tipo == "Variável" %}selected{% endif %}>Variável</option>
       </select>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Valor (R$)</label>
-      <input type="number" step="0.01" name="valor" class="form-control" value="{{ despesa.valor }}" required>
+      <input type="number" step="0.01" name="valor" class="form-control" 
+             value="{{ despesa.valor }}" required>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Data</label>
-      <input type="date" name="data" class="form-control" value="{{ despesa.data|date:'Y-m-d' }}" required>
+      <input type="date" name="data" class="form-control"
+             value="{{ despesa.data|date:'Y-m-d' }}" required>
     </div>
+
     <div class="mb-3">
       <label class="form-label">Descrição</label>
-      <textarea name="descricao" class="form-control">{{ despesa.descricao }}</textarea>
+      <textarea name="descricao" class="form-control" rows="3">{{ despesa.descricao }}</textarea>
     </div>
+
     <button type="submit" class="btn btn-primary">Salvar</button>
     <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary">Cancelar</a>
   </form>
 </div>
-{% endblock %}  
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "loja/barra_lateral.html" %}
+{% block title %}Detalhes da Despesa #{{ despesa.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h2 class="mb-4">Despesa #{{ despesa.id }}</h2>
+
+  <!-- Card com informações gerais da despesa -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title"><i class="bi bi-receipt me-2"></i>Informações da Despesa</h5>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item"><strong>Categoria:</strong> {{ despesa.categoria }}</li>
+        <li class="list-group-item"><strong>Tipo:</strong> {{ despesa.tipo }}</li>
+        <li class="list-group-item"><strong>Valor:</strong> 
+          <span class="text-nowrap">R$ {{ despesa.valor|floatformat:2 }}</span>
+        </li>
+        <li class="list-group-item"><strong>Data:</strong> {{ despesa.data|date:"d/m/Y" }}</li>
+        {% if despesa.descricao %}
+          <li class="list-group-item"><strong>Descrição:</strong><br>{{ despesa.descricao }}</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Botões de ação -->
+  <div class="d-flex justify-content-between">
+    <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <div>
+      <a href="{% url 'editar_despesa' despesa.id %}" class="btn btn-outline-primary">
+        <i class="bi bi-pencil"></i> Editar
+      </a>
+      <a href="{% url 'excluir_despesa' despesa.id %}" class="btn btn-outline-danger">
+        <i class="bi bi-trash"></i> Excluir
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -7,6 +7,8 @@
 
   <div class="card shadow-sm border-0">
     <div class="card-body">
+
+      <!-- 🔹 Cabeçalho -->
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="card-title">Lista de Despesas</h5>
         <a href="{% url 'criar_despesa' %}" class="btn btn-outline-success btn-sm">
@@ -14,16 +16,50 @@
         </a>
       </div>
 
+      <!-- 🔹 Filtros -->
+      <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label class="form-label">Data início</label>
+          <input type="date" name="data_inicio" class="form-control"
+                 value="{{ request.GET.data_inicio }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Data fim</label>
+          <input type="date" name="data_fim" class="form-control"
+                 value="{{ request.GET.data_fim }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Tipo</label>
+          <select name="tipo" class="form-select">
+            <option value="">Todos</option>
+            <option value="Fixo" {% if request.GET.tipo == "Fixo" %}selected{% endif %}>Fixo</option>
+            <option value="Variável" {% if request.GET.tipo == "Variável" %}selected{% endif %}>Variável</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Buscar</label>
+          <input type="text" name="q" class="form-control"
+                 placeholder="Buscar por título ou descrição..." value="{{ request.GET.q }}">
+        </div>
+        <div class="col-md-1 align-self-end d-flex gap-1">
+          <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+          {% if request.GET %}
+          <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary w-100">Limpar</a>
+          {% endif %}
+        </div>
+      </form>
+
+      <!-- 🔹 Tabela -->
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead>
+        <table class="table table-striped table-sm align-middle">
+          <thead class="table-light">
             <tr>
               <th>Categoria</th>
               <th>Tipo</th>
               <th>Valor</th>
               <th>Data</th>
               <th>Descrição</th>
-              <th>Ações</th>
+              <th class="text-center">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -31,16 +67,25 @@
             <tr>
               <td>{{ d.categoria }}</td>
               <td>{{ d.tipo }}</td>
-              <td>R$ {{ d.valor|floatformat:2 }}</td>
-              <td>{{ d.data|date:"d/m/Y" }}</td>
-              <td>{{ d.descricao|default:"-" }}</td>
-              <td>
-                <a href="{% url 'editar_despesa' d.id %}" class="btn btn-sm btn-outline-primary">
-                  <i class="bi bi-pencil"></i>
-                </a>
-                <a href="{% url 'excluir_despesa' d.id %}" class="btn btn-sm btn-outline-danger">
-                  <i class="bi bi-trash"></i>
-                </a>
+              <td><span class="text-nowrap">R$ {{ d.valor|floatformat:2 }}</span></td>
+              <td class="text-nowrap">{{ d.data|date:"d/m/Y" }}</td>
+              <td style="max-width: 250px;">
+                <div class="descricao-truncada">
+                  {{ d.descricao|default:"-" }}
+                </div>
+              </td>
+              <td class="text-center">
+                <div class="btn-group" role="group">
+                  <a href="{% url 'detalhes_despesa' d.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-search"></i> Ver detalhes
+                  </a>
+                  <a href="{% url 'editar_despesa' d.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a href="{% url 'excluir_despesa' d.id %}" class="btn btn-outline-danger btn-sm" title="Excluir">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
               </td>
             </tr>
             {% empty %}
@@ -54,4 +99,19 @@
     </div>
   </div>
 </div>
+
+<!-- CSS -->
+<style>
+.descricao-truncada {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+</style>
 {% endblock %}

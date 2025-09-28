@@ -68,6 +68,7 @@ urlpatterns = [
     path("gestao/despesas/nova/", views_gestao.criar_despesa, name="criar_despesa"),
     path("gestao/despesas/editar/<int:pk>/", views_gestao.editar_despesa, name="editar_despesa"),
     path("gestao/despesas/excluir/<int:pk>/", views_gestao.excluir_despesa, name="excluir_despesa"),
+    path("gestao/despesas/<int:pk>/detalhes/", views_gestao.detalhes_despesa, name="detalhes_despesa"),
 
     #relatorio
     path("gestao/relatorio_avancado/", views_gestao.relatorio_avancado, name="relatorio_avancado"),
