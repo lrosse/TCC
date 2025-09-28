@@ -1,7 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
-{% block title %}
-  Gestão Financeira - Resumo
-{% endblock %}
+{% block title %}Gestão Financeira - Resumo{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
@@ -25,26 +23,27 @@
   </form>
 
   <!-- Abas -->
-<ul class="nav nav-tabs mb-3">
-  <li class="nav-item">
-    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-       href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-       Resumo Geral
-    </a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-       href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-       Produtos
-    </a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-       href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-       Pedidos
-    </a>
-  </li>
-</ul>
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+         href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+         Resumo Geral
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+         href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+         Produtos
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+         href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+         Pedidos
+      </a>
+    </li>
+  </ul>
+
   <!-- Cards Resumo -->
   <div class="row g-4 mb-4">
 
@@ -54,7 +53,7 @@
         <div class="card-body">
           <i class="bi bi-cash-coin display-5 text-success mb-2"></i>
           <h6 class="fw-semibold">Receita Total</h6>
-          <p class="fs-5 fw-bold">R$ {{ receita_total|floatformat:2 }}</p>
+          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ receita_total|floatformat:2 }}</span></p>
         </div>
       </div>
     </div>
@@ -65,7 +64,7 @@
         <div class="card-body">
           <i class="bi bi-box-seam display-5 text-primary mb-2"></i>
           <h6 class="fw-semibold">Custos Totais</h6>
-          <p class="fs-5 fw-bold">R$ {{ custo_total|floatformat:2 }}</p>
+          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ custo_total|floatformat:2 }}</span></p>
         </div>
       </div>
     </div>
@@ -76,7 +75,7 @@
         <div class="card-body">
           <i class="bi bi-house-check display-5 text-warning mb-2"></i>
           <h6 class="fw-semibold">Despesas Fixas</h6>
-          <p class="fs-5 fw-bold">R$ {{ despesas_fixas|floatformat:2 }}</p>
+          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ despesas_fixas|floatformat:2 }}</span></p>
         </div>
       </div>
     </div>
@@ -87,7 +86,7 @@
         <div class="card-body">
           <i class="bi bi-receipt display-5 text-danger mb-2"></i>
           <h6 class="fw-semibold">Despesas Variáveis</h6>
-          <p class="fs-5 fw-bold">R$ {{ despesas_variaveis|floatformat:2 }}</p>
+          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ despesas_variaveis|floatformat:2 }}</span></p>
         </div>
       </div>
     </div>
@@ -98,7 +97,7 @@
         <div class="card-body">
           <i class="bi bi-graph-up display-5 text-success mb-2"></i>
           <h6 class="fw-semibold">Lucro Líquido</h6>
-          <p class="fs-5 fw-bold">R$ {{ lucro_liquido|floatformat:2 }}</p>
+          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ lucro_liquido|floatformat:2 }}</span></p>
         </div>
       </div>
     </div>
@@ -199,8 +198,8 @@
   // Gráfico Pizza Despesas Fixas vs Variáveis
   const despesasPizzaLabels = ['Fixas', 'Variáveis'];
   const despesasPizzaData = [
-    Number({{ despesas_fixas_valor|default:0|floatformat:2 }}),
-    Number({{ despesas_variaveis_valor|default:0|floatformat:2 }})
+    Number({{ despesas_fixas|default:0|floatformat:2 }}),
+    Number({{ despesas_variaveis|default:0|floatformat:2 }})
   ];
 
   if (despesasPizzaData[0] > 0 || despesasPizzaData[1] > 0) {

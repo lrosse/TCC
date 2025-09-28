@@ -5,65 +5,24 @@
 <div class="container-fluid px-4">
   <h2 class="fw-semibold mb-3">Histórico de Custo</h2>
 
-  <!-- Abas com preservação de querystring -->
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-         href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Resumo Geral
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-         href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Produtos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-         href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Pedidos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link active"
-         href="{% url 'historico_custo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Histórico de Custo
-      </a>
-    </li>
-  </ul>
-
-  <!-- Form de filtro por datas (GET) já preenchido -->
-  <form method="get" class="row g-2 align-items-end mb-3">
+  <!-- 🔹 Form de filtro por datas (GET) -->
+  <form method="get" class="row g-3 mb-4">
     <div class="col-auto">
-      <label for="data_inicio" class="form-label mb-0">Início</label>
-      <input type="date" id="data_inicio" name="data_inicio" class="form-control form-control-sm"
+      <label for="data_inicio" class="form-label">Data início</label>
+      <input type="date" id="data_inicio" name="data_inicio" class="form-control"
              value="{{ data_inicio }}">
     </div>
     <div class="col-auto">
-      <label for="data_fim" class="form-label mb-0">Fim</label>
-      <input type="date" id="data_fim" name="data_fim" class="form-control form-control-sm"
+      <label for="data_fim" class="form-label">Data fim</label>
+      <input type="date" id="data_fim" name="data_fim" class="form-control"
              value="{{ data_fim }}">
     </div>
-    <div class="col-auto">
-      <button class="btn btn-sm btn-primary"><i class="bi bi-funnel"></i> Aplicar</button>
+    <div class="col-auto align-self-end">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
     </div>
-    {% if data_inicio or data_fim %}
-    <div class="col-auto">
-      <a class="btn btn-sm btn-outline-secondary" href="{% url 'historico_custo' %}">Limpar</a>
-    </div>
-    {% endif %}
   </form>
 
-  {% if data_inicio or data_fim %}
-    <div class="alert alert-light border py-2">
-      <i class="bi bi-funnel me-2"></i>
-      Filtro:
-      {% if data_inicio %}de <strong>{{ data_inicio }}</strong>{% endif %}
-      {% if data_fim %} até <strong>{{ data_fim }}</strong>{% endif %}
-    </div>
-  {% endif %}
-
+  <!-- 🔹 Tabela de histórico -->
   <div class="card shadow-sm border-0">
     <div class="card-body">
       <div class="table-responsive">
@@ -83,8 +42,8 @@
             <tr>
               <td>{{ h.data|date:"d/m/Y H:i" }}</td>
               <td>{{ h.produto.nome }}</td>
-              <td>R$ {{ h.custo_antigo|floatformat:2 }}</td>
-              <td>R$ {{ h.custo_novo|floatformat:2 }}</td>
+              <td><span class="text-nowrap">R$ {{ h.custo_antigo|floatformat:2 }}</span></td>
+              <td><span class="text-nowrap">R$ {{ h.custo_novo|floatformat:2 }}</span></td>
               <td>{{ h.usuario.username }}</td>
               <td class="text-muted">{{ h.descricao|default:"-" }}</td>
             </tr>
@@ -97,11 +56,11 @@
         </table>
       </div>
 
-      <!-- Atalho de volta para Pedidos mantendo filtros -->
+      <!-- 🔹 Botão de voltar para Produtos (mantendo filtros) -->
       <div class="mt-3">
         <a class="btn btn-outline-secondary btn-sm"
-           href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-           Voltar para Pedidos
+           href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-arrow-left"></i> Voltar para Produtos
         </a>
       </div>
     </div>

@@ -193,31 +193,81 @@ def financeiro_produtos(request):
     context = {"produtos_data": produtos_data}
     return render(request, "loja/gestao/financeiro_produtos.html", context)
 
+
+@login_required
+@user_passes_test(admin_required)
+def historico_custo(request):
+    from datetime import datetime, timedelta, time
+    from django.utils.dateparse import parse_date
+
+    today = datetime.today()
+    data_inicio_str = request.GET.get("data_inicio") or request.session.get("data_inicio")
+    data_fim_str = request.GET.get("data_fim") or request.session.get("data_fim")
+
+    if not data_inicio_str or not data_fim_str:
+        primeiro_dia = today.replace(day=1).date()
+        if today.month == 12:
+            proximo_mes = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            proximo_mes = today.replace(month=today.month + 1, day=1)
+        ultimo_dia = (proximo_mes - timedelta(days=1)).date()
+        data_inicio_str = data_inicio_str or primeiro_dia.isoformat()
+        data_fim_str = data_fim_str or ultimo_dia.isoformat()
+
+    request.session["data_inicio"] = data_inicio_str
+    request.session["data_fim"] = data_fim_str
+
+    di = parse_date(data_inicio_str)
+    df = parse_date(data_fim_str)
+    dt_inicio = datetime.combine(di, time.min) if di else None
+    dt_fim = datetime.combine(df, time.max) if df else None
+
+    historicos = HistoricoCusto.objects.select_related("produto", "usuario").order_by("-data")
+    if dt_inicio:
+        historicos = historicos.filter(data__gte=dt_inicio)
+    if dt_fim:
+        historicos = historicos.filter(data__lte=dt_fim)
+
+    context = {
+        "historicos": historicos,
+        "data_inicio": di.isoformat() if di else "",
+        "data_fim": df.isoformat() if df else "",
+    }
+    return render(request, "loja/gestao/historico_custo.html", context)
+
 @login_required
 @user_passes_test(admin_required)
 def financeiro_pedidos(request):
-    """
-    Lista pedidos pagos, aplica filtro por data via rota (?data_inicio&data_fim)
-    e repassa os parâmetros pro template.
-    """
-    data_inicio_raw = request.GET.get("data_inicio")
-    data_fim_raw = request.GET.get("data_fim")
+    from datetime import datetime, timedelta, time
+    from django.utils.dateparse import parse_date
 
-    pedidos = (
-        Pedido.objects
-        .filter(status="Pago")
-        .select_related("cliente")
-        .order_by("-data_criacao")
-    )
+    today = datetime.today()
+    data_inicio_str = request.GET.get("data_inicio") or request.session.get("data_inicio")
+    data_fim_str = request.GET.get("data_fim") or request.session.get("data_fim")
 
-    if data_inicio_raw:
-        di = parse_date(data_inicio_raw)
-        if di:
-            pedidos = pedidos.filter(data_criacao__gte=datetime.combine(di, time.min))
-    if data_fim_raw:
-        df = parse_date(data_fim_raw)
-        if df:
-            pedidos = pedidos.filter(data_criacao__lte=datetime.combine(df, time.max))
+    if not data_inicio_str or not data_fim_str:
+        primeiro_dia = today.replace(day=1).date()
+        if today.month == 12:
+            proximo_mes = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            proximo_mes = today.replace(month=today.month + 1, day=1)
+        ultimo_dia = (proximo_mes - timedelta(days=1)).date()
+        data_inicio_str = data_inicio_str or primeiro_dia.isoformat()
+        data_fim_str = data_fim_str or ultimo_dia.isoformat()
+
+    request.session["data_inicio"] = data_inicio_str
+    request.session["data_fim"] = data_fim_str
+
+    di = parse_date(data_inicio_str)
+    df = parse_date(data_fim_str)
+    dt_inicio = datetime.combine(di, time.min) if di else None
+    dt_fim = datetime.combine(df, time.max) if df else None
+
+    pedidos = Pedido.objects.filter(status="Pago").select_related("cliente").order_by("-data_criacao")
+    if dt_inicio:
+        pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
+    if dt_fim:
+        pedidos = pedidos.filter(data_criacao__lte=dt_fim)
 
     pedidos_data = []
     for p in pedidos:
@@ -234,26 +284,54 @@ def financeiro_pedidos(request):
             "lucro": float(lucro),
         })
 
-    return render(request, "loja/gestao/financeiro_pedidos.html", {
+    context = {
         "pedidos_data": pedidos_data,
-        "data_inicio": data_inicio_raw or "",
-        "data_fim": data_fim_raw or "",
-    })
+        "data_inicio": di.isoformat() if di else "",
+        "data_fim": df.isoformat() if df else "",
+    }
+    return render(request, "loja/gestao/financeiro_pedidos.html", context)
 
 @login_required
 @user_passes_test(admin_required)
 def financeiro_resumo(request):
-    # 🔹 Captura filtros da URL ou aplica padrão (setembro/2025 como exemplo)
-    data_inicio_str = request.GET.get("data_inicio") or "2025-09-01"
-    data_fim_str = request.GET.get("data_fim") or "2025-09-30"
+    from datetime import datetime, timedelta, time
+    from django.utils.dateparse import parse_date
+    from collections import defaultdict
+    from calendar import monthrange
+
+    today = datetime.today()
+
+    # 🔹 Tenta pegar da URL
+    data_inicio_str = request.GET.get("data_inicio")
+    data_fim_str = request.GET.get("data_fim")
+
+    # 🔹 Se não vier, usa da sessão
+    if not data_inicio_str:
+        data_inicio_str = request.session.get("data_inicio")
+    if not data_fim_str:
+        data_fim_str = request.session.get("data_fim")
+
+    # 🔹 Se ainda não tiver nada, aplica padrão = mês atual
+    if not data_inicio_str or not data_fim_str:
+        primeiro_dia = today.replace(day=1).date()
+        if today.month == 12:
+            proximo_mes = today.replace(year=today.year + 1, month=1, day=1)
+        else:
+            proximo_mes = today.replace(month=today.month + 1, day=1)
+        ultimo_dia = (proximo_mes - timedelta(days=1)).date()
+        data_inicio_str = data_inicio_str or primeiro_dia.isoformat()
+        data_fim_str = data_fim_str or ultimo_dia.isoformat()
+
+    # 🔹 Salva na sessão
+    request.session["data_inicio"] = data_inicio_str
+    request.session["data_fim"] = data_fim_str
 
     di = parse_date(data_inicio_str)
     df = parse_date(data_fim_str)
-
     dt_inicio = datetime.combine(di, time.min) if di else None
     dt_fim = datetime.combine(df, time.max) if df else None
 
-    # 🔹 QuerySets filtrados
+    # 🔹 QuerySets
     pedidos = Pedido.objects.filter(status="Pago")
     if dt_inicio:
         pedidos = pedidos.filter(data_criacao__gte=dt_inicio)
@@ -266,103 +344,70 @@ def financeiro_resumo(request):
     if df:
         despesas = despesas.filter(data__lte=df)
 
-    # Receita total
+    # 🔹 Indicadores
     receita_total = float(pedidos.aggregate(total=Sum("total"))["total"] or 0)
 
-    # Custo total dos produtos vendidos (congelado no PedidoItem)
-    custo_total = 0.0
-    itens = PedidoItem.objects.filter(pedido__in=pedidos)
-    for item in itens:
-        custo_total += float(item.custo_unitario) * item.quantidade
+    custo_total = sum(
+        float(item.custo_unitario) * item.quantidade
+        for item in PedidoItem.objects.filter(pedido__in=pedidos)
+    )
 
-    # Despesas fixas e variáveis
     despesas_fixas_valor = float(despesas.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0)
     despesas_variaveis_valor = float(despesas.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0)
-
-    # Lucro líquido final
     lucro_liquido = receita_total - custo_total - despesas_fixas_valor - despesas_variaveis_valor
 
-    # Gráfico 1: receita e despesas por mês
-    from collections import defaultdict
-    receitas_por_mes = defaultdict(float)
-    despesas_por_mes = defaultdict(float)
-    custos_por_mes = defaultdict(float)
-
+    # 🔹 Gráficos (resumido do que você já tinha)
+    receitas_por_mes, despesas_por_mes, custos_por_mes = defaultdict(float), defaultdict(float), defaultdict(float)
     for p in pedidos:
         if p.data_criacao:
             mes_label = p.data_criacao.strftime("%b/%y").capitalize()
             receitas_por_mes[mes_label] += float(p.total or 0)
-            for item in p.itens.all():
-                custos_por_mes[mes_label] += float(item.custo_unitario) * item.quantidade
-
+            for it in p.itens.all():
+                custos_por_mes[mes_label] += float(it.custo_unitario) * it.quantidade
     for d in despesas:
         if d.data:
             mes_label = d.data.strftime("%b/%y").capitalize()
             despesas_por_mes[mes_label] += float(d.valor or 0)
 
-    meses = sorted(set(receitas_por_mes.keys()) |
-                   set(despesas_por_mes.keys()) |
-                   set(custos_por_mes.keys()))
-    receitas = [receitas_por_mes[mes] for mes in meses]
-    despesas_grafico = [custos_por_mes[mes] + despesas_por_mes[mes] for mes in meses]
+    meses = sorted(set(receitas_por_mes.keys()) | set(despesas_por_mes.keys()) | set(custos_por_mes.keys()))
+    receitas_grafico = [receitas_por_mes[m] for m in meses]
+    despesas_grafico = [despesas_por_mes[m] + custos_por_mes[m] for m in meses]
 
-    # Gráfico 2: lucro líquido por mês ou por dia
     if len(meses) == 1:
-        from collections import defaultdict
-        from calendar import monthrange
-
         lucro_por_dia = defaultdict(float)
-        dias = set()
-        mes_ano = None
-
+        dias, mes_ano = set(), None
         for p in pedidos:
             dia = p.data_criacao.strftime("%d")
-            custo_pedido = sum(float(item.custo_unitario) * item.quantidade for item in p.itens.all())
-            despesa_dia = float(
-                despesas.filter(data=p.data_criacao.date()).aggregate(total=Sum("valor"))["total"] or 0
-            )
-            lucro_por_dia[dia] += float(p.total or 0) - custo_pedido - despesa_dia
+            custo_p = sum(float(it.custo_unitario) * it.quantidade for it in p.itens.all())
+            despesa_dia = float(despesas.filter(data=p.data_criacao.date()).aggregate(total=Sum("valor"))["total"] or 0)
+            lucro_por_dia[dia] += float(p.total or 0) - custo_p - despesa_dia
             dias.add(dia)
             if not mes_ano:
                 mes_ano = p.data_criacao.strftime("%Y-%m")
-
         if not mes_ano:
-            mes_ano = di.strftime("%Y-%m") if di else datetime.today().strftime("%Y-%m")
-        ano, mes = map(int, mes_ano.split('-'))
+            mes_ano = di.strftime("%Y-%m") if di else today.strftime("%Y-%m")
+        ano, mes = map(int, mes_ano.split("-"))
         num_dias = monthrange(ano, mes)[1]
-
         labels_lucro = [f"{str(d).zfill(2)}" for d in range(1, num_dias + 1)]
-        dados_lucro = [lucro_por_dia[label] if label in lucro_por_dia else 0 for label in labels_lucro]
+        dados_lucro = [lucro_por_dia[l] if l in lucro_por_dia else 0 for l in labels_lucro]
     else:
-        from collections import defaultdict
         lucro_por_mes = defaultdict(float)
         pedidos_por_mes = defaultdict(list)
         for p in pedidos:
             chave = p.data_criacao.strftime("%Y-%m")
             pedidos_por_mes[chave].append(p)
-
         despesas_por_mes_calc = defaultdict(float)
         for d in despesas:
             chave = d.data.strftime("%Y-%m")
             despesas_por_mes_calc[chave] += float(d.valor or 0)
-
         todos_meses = sorted(set(pedidos_por_mes.keys()) | set(despesas_por_mes_calc.keys()))
-
         for chave in todos_meses:
             receita = sum(float(p.total or 0) for p in pedidos_por_mes.get(chave, []))
-            custo_mes = sum(
-                float(item.custo_unitario) * item.quantidade
-                for p in pedidos_por_mes.get(chave, [])
-                for item in p.itens.all()
-            )
+            custo_mes = sum(float(it.custo_unitario) * it.quantidade for p in pedidos_por_mes.get(chave, []) for it in p.itens.all())
             despesas_mes_valor = despesas_por_mes_calc.get(chave, 0.0)
             lucro_por_mes[chave] = receita - custo_mes - despesas_mes_valor
-
-        labels_lucro = [
-            datetime.strptime(chave, "%Y-%m").strftime("%b/%y").capitalize()
-            for chave in todos_meses
-        ]
-        dados_lucro = [lucro_por_mes[chave] for chave in todos_meses]
+        labels_lucro = [datetime.strptime(ch, "%Y-%m").strftime("%b/%y").capitalize() for ch in todos_meses]
+        dados_lucro = [lucro_por_mes[ch] for ch in todos_meses]
 
     context = {
         "receita_total": receita_total,
@@ -373,12 +418,10 @@ def financeiro_resumo(request):
         "data_inicio": di.isoformat() if di else "",
         "data_fim": df.isoformat() if df else "",
         "meses_grafico": meses,
-        "receitas_grafico": receitas,
+        "receitas_grafico": receitas_grafico,
         "despesas_grafico": despesas_grafico,
         "labels_lucro": labels_lucro,
         "dados_lucro": dados_lucro,
-        "despesas_fixas_valor": despesas_fixas_valor,
-        "despesas_variaveis_valor": despesas_variaveis_valor,
     }
     return render(request, "loja/gestao/financeiro_resumo.html", context)
 
@@ -390,39 +433,6 @@ def gestao_despesas(request):
         "despesas": despesas,
     }
     return render(request, "loja/gestao/gestao_despesas.html", context)
-
-@login_required
-@user_passes_test(admin_required)
-def historico_custo(request):
-    """
-    Lista histórico de custo (mais recentes primeiro) com filtro por data via rota
-    (?data_inicio&data_fim), e repassa os parâmetros ao template.
-    """
-    from .models import HistoricoCusto
-
-    data_inicio_raw = request.GET.get("data_inicio")
-    data_fim_raw = request.GET.get("data_fim")
-
-    historicos = (
-        HistoricoCusto.objects
-        .select_related("produto", "usuario")
-        .order_by("-data")
-    )
-
-    if data_inicio_raw:
-        di = parse_date(data_inicio_raw)
-        if di:
-            historicos = historicos.filter(data__gte=datetime.combine(di, time.min))
-    if data_fim_raw:
-        df = parse_date(data_fim_raw)
-        if df:
-            historicos = historicos.filter(data__lte=datetime.combine(df, time.max))
-
-    return render(request, "loja/gestao/historico_custo.html", {
-        "historicos": historicos,
-        "data_inicio": data_inicio_raw or "",
-        "data_fim": data_fim_raw or "",
-    })
 
 @login_required
 @user_passes_test(admin_required)
