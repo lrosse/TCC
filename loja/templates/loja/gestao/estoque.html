@@ -11,7 +11,7 @@
 
   <!-- Row de Cards -->
   <div class="row g-4 mb-4">
-    <div class="col-md-4">
+    <div class="col-12 col-sm-6 col-lg-4">
       <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
           <i class="bi bi-box-seam display-5 text-primary mb-2"></i>
@@ -20,7 +20,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-12 col-sm-6 col-lg-4">
       <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
           <i class="bi bi-exclamation-triangle display-5 text-warning mb-2"></i>
@@ -29,7 +29,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-12 col-sm-6 col-lg-4">
       <div class="card shadow-sm border-0 text-center h-100">
         <div class="card-body">
           <i class="bi bi-clock-history display-5 text-success mb-2"></i>
@@ -45,8 +45,8 @@
     <div class="card-body">
 
       <!-- Cabeçalho da tabela com botões -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title">Produtos em Estoque</h5>
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h5 class="card-title mb-0">Produtos em Estoque</h5>
         <div id="btnArea">
           <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
             <i class="bi bi-sliders"></i> Definir Limites
@@ -56,13 +56,13 @@
 
       <!-- 🔹 Busca e Filtros -->
       <form id="formBusca" class="row g-2 align-items-center mb-3" method="GET">
-        <div class="col-md-5">
+        <div class="col-12 col-md-6 col-lg-5">
           <div class="input-group">
             <input type="text" class="form-control" name="q" placeholder="Buscar produto..." value="{{ request.GET.q }}">
           </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-12 col-md-6 col-lg-4">
           <select name="filtro" class="form-select">
             <option value="">-- Todos --</option>
             <option value="baixo" {% if request.GET.filtro == "baixo" %}selected{% endif %}>Abaixo do mínimo</option>
@@ -73,11 +73,11 @@
       </form>
 
       <!-- Legenda -->
-      <div class="d-flex justify-content-end mb-2">
-        <span class="me-3">
+      <div class="d-flex justify-content-end flex-wrap gap-3 mb-2">
+        <span>
           <span class="badge bg-danger">&nbsp;&nbsp;</span> Abaixo do mínimo
         </span>
-        <span class="me-3">
+        <span>
           <span class="badge bg-success">&nbsp;&nbsp;</span> Bom (entre mínimo e ideal)
         </span>
         <span>
@@ -94,26 +94,28 @@
               <tr id="tabelaHead">
                 <th>Produto</th>
                 <th>Quantidade Atual</th>
-                <th>Estoque (%)</th>
+                <th style="min-width: 180px;">Estoque (%)</th>
                 <th>Última atualização</th>
               </tr>
             </thead>
-            <tbody>
-              {% for p in tabela_produtos %}
-              <tr data-produto="{{ p.id }}" data-minimo="{{ p.minimo }}" data-ideal="{{ p.ideal }}">
-                <td>{{ p.nome }}</td>
-                <td>{{ p.quantidade }}</td>
-                <td style="width: 300px;">
-                  <div class="progress" style="height: 20px;">
-                    <div class="progress-bar {{ p.cor }}" role="progressbar" style="width: {{ p.percentual }}%;">
-                      {{ p.percentual }}%
+              <tbody>
+                {% for p in tabela_produtos %}
+                <tr data-produto="{{ p.id }}" data-minimo="{{ p.minimo }}" data-ideal="{{ p.ideal }}">
+                  <td>{{ p.nome }}</td>
+                  <td>{{ p.quantidade }}</td>
+                  <td style="width: 300px;">
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar {{ p.cor }}" role="progressbar" style="width: {{ p.percentual }}%;">
+                        {{ p.percentual }}%
+                      </div>
                     </div>
-                  </div>
-                </td>
-                <td class="ultima-atualizacao">{{ p.ultima_atualizacao }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
+                  </td>
+                  <td class="ultima-atualizacao text-nowrap">
+                    {{ p.ultima_atualizacao|date:"d/m/Y H:i" }}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
           </table>
         </form>
       </div>
@@ -234,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
               </div>
             </td>
-            <td class="ultima-atualizacao">${p.ultima_atualizacao}</td>
+            <td class="ultima-atualizacao text-nowrap">${p.ultima_atualizacao}</td>
           </tr>
         `;
         tabelaBody.insertAdjacentHTML("beforeend", row);
