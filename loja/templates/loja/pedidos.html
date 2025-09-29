@@ -95,16 +95,16 @@
                                 <td>{{ pedido.numero_pedido }}</td>
                                 <td>{{ pedido.cliente.username }}</td>
                                 <td>
-                                    <span class="badge 
-                                        {% if pedido.status == 'Pendente' %}bg-warning text-dark
-                                        {% elif pedido.status == 'Pago' %}bg-success
-                                        {% elif pedido.status == 'Cancelado' %}bg-danger
-                                        {% endif %}">
-                                        {{ pedido.status }}
-                                    </span>
+                                <span class="badge 
+                                    {% if pedido.status == 'Pendente' %}bg-warning text-dark
+                                    {% elif pedido.status == 'Pago' %}bg-success
+                                    {% elif pedido.status == 'Cancelado' %}bg-danger
+                                    {% endif %}">
+                                    {{ pedido.status }}
+                                </span>
                                 </td>
-                                <td>R$ {{ pedido.total }}</td>
-                                <td>{{ pedido.data_criacao|date:"d/m/Y H:i" }}</td>
+                                <td><span class="text-nowrap">R$ {{ pedido.total }}</span></td>
+                                <td><span class="text-nowrap">{{ pedido.data_criacao|date:"d/m/Y H:i" }}</span></td>
                                 <td>
                                     <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-outline-primary btn-sm">   
                                         <i class="bi bi-search"></i> Detalhes

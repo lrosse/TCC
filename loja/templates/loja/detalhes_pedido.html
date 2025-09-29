@@ -71,8 +71,8 @@
                                 <tr>
                                     <td>{{ item.produto.nome }}</td>
                                     <td>{{ item.quantidade }}</td>
-                                    <td>R$ {{ item.preco_unitario }}</td>
-                                    <td>R$ {{ item.subtotal }}</td>
+                                    <td><span class="text-nowrap">R$ {{ item.preco_unitario }}</span></td>
+                                    <td><span class="text-nowrap">R$ {{ item.subtotal }}</span></td>
                                 </tr>
                             {% endfor %}
                         </tbody>

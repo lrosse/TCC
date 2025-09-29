@@ -31,7 +31,6 @@
   </div>
 
   <!-- Tabela de produtos -->
-    <!-- Tabela de produtos -->
   <div class="card shadow-sm">
     <div class="card-body">
       <div class="table-responsive">
@@ -42,7 +41,7 @@
               <th>Produto</th>
               <th>Estoque Atual</th>
               <th>Quantidade</th>
-              <th>Observação (opcional)</th>
+              <th style="min-width: 200px;">Observação (opcional)</th>
             </tr>
           </thead>
           <tbody id="tabela-produtos">
@@ -65,7 +64,8 @@
                   type="text"
                   class="form-control obs"
                   name="obs_{{ p.id }}"
-                  placeholder="Motivo/observação (opcional)">
+                  placeholder="Motivo/observação"
+                  style="min-width: 180px;">
               </td>
             </tr>
             {% empty %}
@@ -113,6 +113,11 @@
   /* Destaque visual conforme o modo */
   .modo-entrada .qtd:focus { box-shadow: 0 0 0 .25rem rgba(25,135,84,.25); }
   .modo-saida   .qtd:focus { box-shadow: 0 0 0 .25rem rgba(220,53,69,.25); }
+
+  /* Corrigir corte do placeholder apenas nesta página */
+  input::placeholder {
+    white-space: nowrap !important;
+  }
 </style>
 {% endblock %}
 
@@ -211,8 +216,6 @@
     allowSubmit = true;
     bsModal?.hide();
 
-    // requestSubmit aciona validações nativas e o listener acima,
-    // mas agora allowSubmit=true deixa passar.
     if (form.requestSubmit) {
       form.requestSubmit();
     } else {
