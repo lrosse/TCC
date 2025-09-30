@@ -87,7 +87,7 @@
                                 <th>Produto</th>
                                 <th>Nota</th>
                                 <th>Comentário</th>
-                                <th>Data</th>
+                                <th>Data e Hora</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -98,8 +98,8 @@
                                 data-id="{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}"
                                 data-nota="{{ f.nota }}"
                                 data-status="{% if f.visivel %}visivel{% else %}oculto{% endif %}"
-                                data-data="{{ f.data_criacao|date:'Y-m-d' }}"
-                                data-comentario="{{ f.comentario|lower }}"
+                                data-data="{{ f.data_criacao|date:'Y-m-d H:i' }}"
+                                data-comentario="{{ f.comentario|default:''|escapejs }}"
                                 onclick="if(!event.target.closest('input[type=checkbox]')) { window.location='{% url 'detalhes_feedback' f.id %}'; }"
                                 style="cursor:pointer;">
                                 <td><input type="checkbox" name="feedbacks" value="{{ f.id }}"></td>
@@ -108,7 +108,7 @@
                                 <td>{% if f.produto %}{{ f.produto.nome }}{% else %}—{% endif %}</td>
                                 <td>{{ f.nota }}</td>
                                 <td>{{ f.comentario|default:"(Sem comentário)" }}</td>
-                                <td>{{ f.data_criacao|date:"d/m/Y" }}</td>
+                                <td>{{ f.data_criacao|date:"d/m/Y H:i" }}</td>
                                 <td>
                                     {% if f.visivel %}
                                         <span class="badge bg-success">Visível</span>
@@ -133,7 +133,7 @@
 {% block extra_js %}
 <script>
 const filtroBusca = document.getElementById("filtro-busca");
-const filtroId = document.getElementById("filtro-id");   // 🔹 Novo campo de ID
+const filtroId = document.getElementById("filtro-id");
 const filtroNota = document.getElementById("filtro-nota");
 const filtroStatus = document.getElementById("filtro-status");
 const filtroDataInicio = document.getElementById("filtro-data-inicio");
@@ -145,7 +145,7 @@ const linhas = document.querySelectorAll("#tabela-feedbacks tr[data-usuario]");
 
 function aplicarFiltros() {
     const termo = filtroBusca.value.trim().toLowerCase();
-    const idFiltro = filtroId.value.trim();   // 🔹 Captura o ID
+    const idFiltro = filtroId.value.trim();
     const nota = filtroNota.value;
     const status = filtroStatus.value;
     const dataInicio = filtroDataInicio.value;
@@ -161,7 +161,7 @@ function aplicarFiltros() {
         const dataTr = tr.dataset.data;
 
         const matchBusca = usuario.includes(termo) || produto.includes(termo) || comentario.includes(termo);
-        const matchId = !idFiltro || idProduto === idFiltro;   // 🔹 Filtro exato por ID
+        const matchId = !idFiltro || idProduto === idFiltro;
         const matchNota = !nota || notaTr === nota;
         const matchStatus = !status || statusTr === status;
         const matchDataInicio = !dataInicio || dataTr >= dataInicio;
@@ -171,7 +171,7 @@ function aplicarFiltros() {
     });
 }
 
-// Filtros automáticos
+// Eventos
 [filtroBusca, filtroId, filtroNota, filtroStatus, filtroDataInicio, filtroDataFim].forEach(el => {
     el?.addEventListener("input", aplicarFiltros);
 });
@@ -179,7 +179,7 @@ function aplicarFiltros() {
 // Botão limpar
 btnLimpar.addEventListener("click", () => {
     filtroBusca.value = "";
-    filtroId.value = "";   // 🔹 Limpa também o campo ID
+    filtroId.value = "";
     filtroNota.value = "";
     filtroStatus.value = "";
     filtroDataInicio.value = "";
