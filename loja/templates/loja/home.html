@@ -55,18 +55,14 @@
 
     .pagination .page-item .page-link {
       border-radius: 8px;
-      /* cantos arredondados */
       margin: 0 3px;
-      /* espaçamento entre botões */
       color: #0d6efd;
-      /* azul Bootstrap */
       font-weight: 500;
       transition: all 0.2s ease-in-out;
     }
 
     .pagination .page-item.active .page-link {
       background-color: #0d6efd;
-      /* fundo azul ativo */
       border-color: #0d6efd;
       color: #fff;
       font-weight: 600;
@@ -75,15 +71,12 @@
 
     .pagination .page-item .page-link:hover {
       background-color: #e9f2ff;
-      /* azul clarinho no hover */
       color: #0a58ca;
       transform: translateY(-2px);
-      /* sobe levemente no hover */
     }
 
     .pagination .page-item.disabled .page-link {
       color: #adb5bd;
-      /* cinza */
       background-color: #f8f9fa;
     }
   </style>
@@ -96,92 +89,101 @@
 
   <!-- 🔹 Vitrine -->
   <div class="container my-5">
-    <!-- 🔹 Filtros -->
-<form method="get" class="d-flex justify-content-center mb-4 align-items-center gap-2">
-  <!-- Barra de pesquisa -->
-  <input type="text" name="q" class="form-control w-50"
-         placeholder="Buscar produto..." value="{{ request.GET.q }}">
 
-  <!-- Botão Buscar sempre visível -->
-  <button type="submit" class="btn btn-primary">
-    <i class="bi bi-search"></i> Buscar
-  </button>
+    <!-- 🔹 Barra de Pesquisa + Botão + Filtro -->
+    <form method="get" class="row g-2 mb-4 justify-content-center align-items-center">
+      <!-- Barra de pesquisa -->
+      <div class="col-md-6 position-relative">
+        <input type="text" name="q" id="campo-busca" class="form-control"
+          placeholder="Buscar produto..." value="{{ request.GET.q }}" autocomplete="off">
 
-  <!-- Botão de filtros -->
-  <div class="dropdown">
-    <button class="btn btn-outline-primary" type="button" id="filtrosDropdown"
-            data-bs-toggle="dropdown" aria-expanded="false">
-      <i class="bi bi-funnel-fill"></i> Filtros
-    </button>
-
-    <!-- Opções de filtros -->
-    <div class="dropdown-menu p-3 shadow-lg" style="min-width: 400px;" aria-labelledby="filtrosDropdown">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Preço mín.</label>
-          <input type="number" step="0.01" name="preco_min" class="form-control"
-                 value="{{ request.GET.preco_min }}">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Preço máx.</label>
-          <input type="number" step="0.01" name="preco_max" class="form-control"
-                 value="{{ request.GET.preco_max }}">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">Avaliação</label>
-          <select name="nota_min" class="form-select">
-            <option value="">Todas</option>
-            <option value="1" {% if request.GET.nota_min == "1" %}selected{% endif %}>⭐ 1+</option>
-            <option value="2" {% if request.GET.nota_min == "2" %}selected{% endif %}>⭐ 2+</option>
-            <option value="3" {% if request.GET.nota_min == "3" %}selected{% endif %}>⭐ 3+</option>
-            <option value="4" {% if request.GET.nota_min == "4" %}selected{% endif %}>⭐ 4+</option>
-            <option value="5" {% if request.GET.nota_min == "5" %}selected{% endif %}>⭐ 5</option>
-          </select>
-        </div>
+        <!-- Resultados do autocomplete -->
+        <ul id="resultados-busca"
+          class="list-group position-absolute w-100 shadow-sm mt-1 d-none"
+          style="z-index:1050; max-height:300px; overflow-y:auto;"></ul>
       </div>
-      <div class="mt-3 d-flex justify-content-between">
-        <!-- Botão limpar volta para a home sem parâmetros -->
-        <a href="{% url 'home' %}" class="btn btn-outline-danger">
-          <i class="bi bi-x-circle"></i> Limpar
-        </a>
-        <!-- Submete o form -->
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-search"></i> Aplicar
+
+      <!-- Botão buscar -->
+      <div class="col-md-auto">
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-search"></i> Buscar
         </button>
       </div>
-    </div>
-  </div>
-</form>
 
-
-<div class="row" id="vitrine-produtos">
-  {% for produto in page_obj %}
-  <div class="col-md-3 col-sm-6 mb-4 produto-card" data-nome="{{ produto.nome|lower }}"
-    data-preco="{{ produto.preco }}" data-nota="{{ produto.media_nota|default:0 }}">
-    <div class="card h-100 shadow-sm product-card">
-      <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
-        {% if produto.imagem %}
-        <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="{{ produto.nome }}">
-        {% endif %}
-        <div class="card-body text-center">
-          <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
-          <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
-        </div>
-      </a>
-      <div class="card-footer bg-white border-0 p-3">
-        <form method="post" action="{% url 'adicionar_carrinho' produto.id %}" class="add-carrinho-form">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-primary btn-sm w-100">
-            <i class="bi bi-cart-plus me-1"></i> Adicionar ao Carrinho
+      <!-- Botão filtro -->
+      <div class="col-md-auto">
+        <div class="dropdown">
+          <button class="btn btn-outline-secondary px-4" type="button" id="filtroDropdown"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-funnel"></i> Filtros
           </button>
-        </form>
+
+          <!-- Opções do filtro -->
+          <div class="dropdown-menu p-3 shadow-lg" style="min-width: 400px;" aria-labelledby="filtroDropdown">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Preço mín.</label>
+                <input type="number" step="0.01" name="preco_min" class="form-control"
+                  placeholder="Ex: 100" value="{{ request.GET.preco_min }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Preço máx.</label>
+                <input type="number" step="0.01" name="preco_max" class="form-control"
+                  placeholder="Ex: 1000" value="{{ request.GET.preco_max }}">
+              </div>
+              <div class="col-md-12">
+                <label class="form-label small fw-semibold">Avaliação</label>
+                <select name="nota_min" class="form-select">
+                  <option value="">Todas</option>
+                  <option value="1" {% if request.GET.nota_min == "1" %}selected{% endif %}>⭐ 1+</option>
+                  <option value="2" {% if request.GET.nota_min == "2" %}selected{% endif %}>⭐ 2+</option>
+                  <option value="3" {% if request.GET.nota_min == "3" %}selected{% endif %}>⭐ 3+</option>
+                  <option value="4" {% if request.GET.nota_min == "4" %}selected{% endif %}>⭐ 4+</option>
+                  <option value="5" {% if request.GET.nota_min == "5" %}selected{% endif %}>⭐ 5</option>
+                </select>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i> Aplicar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+    </form>
+
+    <!-- 🔹 Lista de Produtos -->
+    <div class="row" id="vitrine-produtos">
+      {% for produto in page_obj %}
+      <div class="col-md-3 col-sm-6 mb-4 produto-card"
+        data-nome="{{ produto.nome|lower }}"
+        data-preco="{{ produto.preco }}"
+        data-nota="{{ produto.media_nota|default:0 }}">
+        <div class="card h-100 shadow-sm product-card">
+          <a href="{% url 'produto_detalhe' produto.id %}" class="text-decoration-none text-dark">
+            {% if produto.imagem %}
+            <img src="{{ produto.imagem.url }}" class="card-img-top product-img" alt="{{ produto.nome }}">
+            {% endif %}
+            <div class="card-body text-center">
+              <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
+              <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
+            </div>
+          </a>
+          <div class="card-footer bg-white border-0 p-3">
+            <form method="post" action="{% url 'adicionar_carrinho' produto.id %}" class="add-carrinho-form">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-primary btn-sm w-100">
+                <i class="bi bi-cart-plus me-1"></i> Adicionar ao Carrinho
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-center text-muted">Nenhum produto disponível.</p>
+      {% endfor %}
     </div>
-  </div>
-  {% empty %}
-  <p class="text-center text-muted">Nenhum produto disponível.</p>
-  {% endfor %}
-</div>
 
     <!-- 🔹 Paginação -->
     {% with request.GET.urlencode as querystring %}
@@ -234,9 +236,10 @@
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Script AJAX -->
+  <!-- Script AJAX Carrinho + Autocomplete -->
   <script>
     document.addEventListener("DOMContentLoaded", function () {
+      // 🔹 Atualização carrinho AJAX
       document.querySelectorAll(".add-carrinho-form").forEach(form => {
         form.addEventListener("submit", async function (e) {
           e.preventDefault();
@@ -254,8 +257,6 @@
             });
 
             const data = await response.json();
-            console.log("Resposta do backend:", data);
-
             if (data.success) {
               const badge = document.querySelector("#carrinho-contador");
               if (badge) {
@@ -274,6 +275,53 @@
             alert("❌ Erro ao adicionar produto.");
           }
         });
+      });
+
+      // 🔹 Autocomplete pesquisa
+      const campoBusca = document.getElementById("campo-busca");
+      const resultados = document.getElementById("resultados-busca");
+
+      campoBusca.addEventListener("input", async function () {
+        const termo = this.value.trim();
+        if (termo.length < 2) {
+          resultados.classList.add("d-none");
+          return;
+        }
+
+        try {
+          const response = await fetch(`/buscar-produtos/?q=${encodeURIComponent(termo)}`);
+          const data = await response.json();
+
+          resultados.innerHTML = "";
+
+          if (data.length > 0) {
+            data.forEach(prod => {
+              const item = document.createElement("li");
+              item.classList.add("list-group-item", "d-flex", "align-items-center", "gap-2");
+
+              item.innerHTML = `
+                <img src="${prod.imagem}" alt="${prod.nome}" 
+                     style="width:40px; height:40px; object-fit:cover; border-radius:6px;">
+                <a href="${prod.url}" class="text-decoration-none flex-grow-1">${prod.nome}</a>
+              `;
+
+              resultados.appendChild(item);
+            });
+            resultados.classList.remove("d-none");
+          } else {
+            resultados.classList.add("d-none");
+          }
+
+        } catch (error) {
+          console.error("Erro ao buscar produtos:", error);
+        }
+      });
+
+      // Esconde resultados ao clicar fora
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#campo-busca") && !e.target.closest("#resultados-busca")) {
+          resultados.classList.add("d-none");
+        }
       });
     });
   </script>
