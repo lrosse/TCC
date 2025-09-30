@@ -23,7 +23,7 @@
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h5 class="card-title mb-0">📊 Vendas (mês atual)</h5>
-          <a href="{% url 'relatorios' %}" class="text-decoration-none small">
+          <a href="{% url 'financeiro_resumo' %}" class="text-decoration-none small">
             Ver detalhes <i class="bi bi-arrow-right-short"></i>
           </a>
         </div>
@@ -72,8 +72,7 @@
               {% if p.status == 'Pendente' %} bg-warning text-dark
               {% elif p.status == 'Pago' %} bg-success
               {% elif p.status == 'Cancelado' %} bg-danger
-              {% else %} bg-secondary{% endif %}
-            ">
+              {% else %} bg-secondary{% endif %}">
               {{ p.status }}
             </span>
           </li>
@@ -86,7 +85,7 @@
   </div>
 </div>
 
-<!-- 💰 Vendas no mês (card no meio, abaixo da row 1 e acima do Top 5 Produtos) -->
+<!-- 💰 Vendas no mês -->
 <div class="row g-4 mt-1">
   <div class="col-12">
     <div class="card border-0 shadow-sm rounded-4">
@@ -106,32 +105,34 @@
         <h5 class="mb-0"><i class="bi bi-bar-chart-line"></i> Top 5 Produtos Mais Vendidos</h5>
       </div>
       <div class="card-body p-0">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="w-60">Produto</th>
-              <th class="w-25 text-center">Última Venda</th>
-              <th class="w-15 text-end">Unidades</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in top_produtos %}
-            <tr>
-              <td><span class="fw-semibold product-name">{{ item.produto__nome }}</span></td>
-              <td class="text-center text-muted small">{{ item.ultima_venda|date:"d/m/Y H:i" }}</td>
-              <td class="text-end">
-                <span class="badge bg-gradient-success fs-6 px-3 py-2 shadow-sm">
-                  <i class="bi bi-box-seam"></i> {{ item.total_vendido }} unidades
-                </span>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="3" class="text-center text-muted">Nenhuma venda registrada ainda.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="w-50">Produto</th>
+                <th class="w-25 text-center">Última Venda</th>
+                <th class="w-25 text-end">Unidades</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in top_produtos %}
+              <tr>
+                <td><span class="fw-semibold product-name">{{ item.produto__nome }}</span></td>
+                <td class="text-center text-muted small">{{ item.ultima_venda|date:"d/m/Y H:i" }}</td>
+                <td class="text-end">
+                  <span class="badge bg-gradient-success fs-6 px-3 py-2 shadow-sm">
+                    <i class="bi bi-box-seam"></i> {{ item.total_vendido }} unidades
+                  </span>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="3" class="text-center text-muted">Nenhuma venda registrada ainda.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -145,96 +146,54 @@
         <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Últimos Feedbacks</h5>
       </div>
       <div class="card-body p-0">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="w-20">Produto</th>
-              <th class="w-15 text-center">Cliente</th>
-              <th class="w-25">Comentário</th>
-              <th class="w-20 text-center">Avaliação</th>
-              <th class="w-20 text-end">Data</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for f in feedbacks %}
-            <tr>
-              <!-- Produto -->
-              <td>
-                <span class="product-name">{{ f.produto.nome }}</span>
-              </td>
-
-              <!-- Cliente -->
-              <td class="text-center fw-semibold">
-                {{ f.usuario.username }}
-              </td>
-
-              <!-- Comentário -->
-              <td>
-                <span class="feedback-text">{{ f.comentario }}</span>
-              </td>
-
-              <!-- Avaliação (estrelas) -->
-              <td class="text-center">
-                {% for i in "12345" %}
-                  {% if forloop.counter <= f.nota %}
-                    <i class="bi bi-star-fill text-warning"></i>
-                  {% else %}
-                    <i class="bi bi-star text-muted"></i>
-                  {% endif %}
-                {% endfor %}
-              </td>
-
-              <!-- Data -->
-              <td class="text-end text-muted small">
-                {{ f.data_criacao|date:"d/m/Y H:i" }}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="text-center text-muted">Nenhum feedback encontrado.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="w-25">Produto</th>
+                <th class="w-15 text-center">Cliente</th>
+                <th class="w-25">Comentário</th>
+                <th class="w-20 text-center">Avaliação</th>
+                <th class="w-15 text-end">Data</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in feedbacks %}
+              <tr>
+                <td><span class="product-name">{{ f.produto.nome }}</span></td>
+                <td class="text-center fw-semibold">{{ f.usuario.username }}</td>
+                <td><span class="feedback-text">{{ f.comentario }}</span></td>
+                <td class="text-center">
+                  <span class="star-rating">
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= f.nota %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                      {% else %}
+                        <i class="bi bi-star text-muted"></i>
+                      {% endif %}
+                    {% endfor %}
+                  </span>
+                </td>
+                <td class="text-end text-muted small">{{ f.data_criacao|date:"d/m/Y H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">Nenhum feedback encontrado.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- CSS extra -->
+<!-- CSS unificado -->
 <style>
 .product-name, .feedback-text {
   display: -webkit-box;
-  -webkit-line-clamp: 3;  /* máximo 3 linhas */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-}
-</style>
-
-</div>
-
-<!-- CSS extra -->
-<style>
-/* Comentário limitado em até 3 linhas */
-.feedback-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;  /* máximo 3 linhas */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: break-word;
-  max-width: 100%; /* garante que respeite a coluna */
-}
-</style>
-
-
-<!-- CSS extra -->
-<style>
-.product-name, .feedback-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 3; /* máximo 3 linhas */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -246,8 +205,15 @@
   color: #fff;
   border-radius: 30px;
 }
-</style>
 
+/* 🔹 Evita quebra das estrelas */
+.star-rating {
+  white-space: nowrap;  /* mantém tudo na mesma linha */
+  display: inline-flex; /* alinha horizontalmente */
+  gap: 2px;             /* espaço entre estrelas */
+  font-size: 1rem;      /* tamanho fixo das estrelas */
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
