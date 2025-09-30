@@ -29,8 +29,12 @@
     <div class="collapse mb-4" id="filtrosExtras">
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">Data</label>
-                <input type="date" id="filtro-data" class="form-control shadow-sm">
+                <label class="form-label">Data Inicial</label>
+                <input type="date" id="filtro-data-inicio" class="form-control shadow-sm">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data Final</label>
+                <input type="date" id="filtro-data-fim" class="form-control shadow-sm">
             </div>
             <div class="col-md-3">
                 <label class="form-label">Tipo</label>
@@ -39,10 +43,6 @@
                     <option value="entrada">Entrada</option>
                     <option value="saida">Saída</option>
                 </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">ID do Produto</label>
-                <input type="text" id="filtro-id" class="form-control shadow-sm" placeholder="Ex.: 12">
             </div>
             <div class="col-md-2">
                 <label class="form-label d-block">&nbsp;</label>
@@ -109,39 +109,45 @@
 {% block extra_js %}
 <script>
 function filtrarTabela() {
-  const idVal   = (document.getElementById('filtro-id').value || '').trim().toLowerCase();
-  const nomeVal = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
-  const dataVal = (document.getElementById('filtro-data').value || '').trim();
-  const tipoVal = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase();
+  const idVal     = (document.getElementById('filtro-id')?.value || '').trim().toLowerCase();
+  const nomeVal   = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
+  const dataInicio = (document.getElementById('filtro-data-inicio').value || '').trim();
+  const dataFim    = (document.getElementById('filtro-data-fim').value || '').trim();
+  const tipoVal   = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase();
 
   const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
 
   linhas.forEach(linha => {
     const liId   = (linha.dataset.id || '').toLowerCase();
     const liNome = (linha.dataset.nome || '').toLowerCase();
-    const liDate = (linha.dataset.date || '').slice(0,10); // só compara a parte da data (AAAA-MM-DD)
+    const liDate = linha.dataset.date ? linha.dataset.date.slice(0,10) : ''; // formato AAAA-MM-DD
     const liTipo = (linha.dataset.tipo || '').toLowerCase();
 
+    // Condições
     const condId   = !idVal   || liId.includes(idVal);
     const condNome = !nomeVal || liNome.includes(nomeVal);
-    const condData = !dataVal || liDate === dataVal;
     const condTipo = !tipoVal || liTipo === tipoVal;
+
+    let condData = true;
+    if (dataInicio && liDate < dataInicio) condData = false;
+    if (dataFim && liDate > dataFim) condData = false;
 
     linha.style.display = (condId && condNome && condData && condTipo) ? '' : 'none';
   });
 }
 
 // Eventos
-['filtro-id','filtro-nome','filtro-data','filtro-tipo'].forEach(id => {
+['filtro-id','filtro-nome','filtro-data-inicio','filtro-data-fim','filtro-tipo'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
-  el.addEventListener(id === 'filtro-tipo' ? 'change' : 'input', filtrarTabela);
+  el.addEventListener(id.includes('tipo') ? 'change' : 'input', filtrarTabela);
 });
 
 // Botão limpar filtros
 document.getElementById('btn-limpar').addEventListener('click', () => {
-  ['filtro-id','filtro-nome','filtro-data','filtro-tipo'].forEach(id => {
-    document.getElementById(id).value = '';
+  ['filtro-id','filtro-nome','filtro-data-inicio','filtro-data-fim','filtro-tipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   filtrarTabela();
 });
