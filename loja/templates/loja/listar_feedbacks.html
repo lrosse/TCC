@@ -89,19 +89,12 @@
                                 <th>Comentário</th>
                                 <th>Data e Hora</th>
                                 <th>Status</th>
+                                <th class="text-center" style="width: 120px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabela-feedbacks">
                             {% for f in feedbacks %}
-                            <tr data-usuario="{{ f.usuario.username|lower }}" 
-                                data-produto="{% if f.produto %}{{ f.produto.nome|lower }}{% else %}—{% endif %}"
-                                data-id="{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}"
-                                data-nota="{{ f.nota }}"
-                                data-status="{% if f.visivel %}visivel{% else %}oculto{% endif %}"
-                                data-data="{{ f.data_criacao|date:'Y-m-d H:i' }}"
-                                data-comentario="{{ f.comentario|default:''|escapejs }}"
-                                onclick="if(!event.target.closest('input[type=checkbox]')) { window.location='{% url 'detalhes_feedback' f.id %}'; }"
-                                style="cursor:pointer;">
+                            <tr>
                                 <td><input type="checkbox" name="feedbacks" value="{{ f.id }}"></td>
                                 <td>{{ f.usuario.username }}</td>
                                 <td>{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}</td>
@@ -116,13 +109,20 @@
                                         <span class="badge bg-secondary">Oculto</span>
                                     {% endif %}
                                 </td>
+                                <td class="text-center">
+                                    <a href="{% url 'detalhes_feedback' f.id %}" 
+                                    class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                        <i class="bi bi-search"></i> Detalhes
+                                    </a>
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" class="text-muted text-center">Nenhum feedback encontrado.</td>
+                                <td colspan="9" class="text-muted text-center">Nenhum feedback encontrado.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
+
                     </table>
                 </div>
             </div>
