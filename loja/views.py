@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem, Feedback
+from .models import Produto, Carrinho, ItemCarrinho, Pedido, PedidoItem, Feedback, Despesa
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegistroForm, FeedbackForm
@@ -247,17 +247,10 @@ def dashboard(request):
     )
 
     # Filtra apenas pedidos pagos do mês atual
-    pedidos_pagos = Pedido.objects.filter(status='Pago')
+    pedidos_pagos_qs = Pedido.objects.filter(status='Pago', data_criacao__gte=inicio_mes)
 
     # Gera os dados para o mini gráfico
-    mini_labels, mini_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
-
-    # DEBUG
-    print(f"🔍 Dashboard DEBUG:")
-    print(f"   Pedidos pagos total: {pedidos_pagos.count()}")
-    print(f"   Mini labels: {mini_labels[:5]}...")
-    print(f"   Mini values: {mini_values[:5]}...")
-    print(f"   Vendas mês: {vendas_mes}")
+    mini_labels, mini_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos_qs)
 
     # Resumo dos pedidos
     pedidos_pendentes = Pedido.objects.filter(status="Pendente").count()
@@ -267,23 +260,41 @@ def dashboard(request):
     # Últimos 3 pedidos
     ultimos_pedidos = Pedido.objects.select_related("cliente").order_by("-data_criacao")[:3]
 
-    # Top 5 produtos mais vendidos (somando quantidades em PedidoItem)
+    # Top 5 produtos mais vendidos
     top_produtos = (
         PedidoItem.objects
         .values("produto__nome")
         .annotate(
-        total_vendido=Sum("quantidade"),
-        ultima_venda=Max("pedido__data_criacao")  # 👈 pega a última vez vendido
-    )
+            total_vendido=Sum("quantidade"),
+            ultima_venda=Max("pedido__data_criacao")
+        )
         .order_by("-total_vendido")[:5]
     )
 
-    # 🔹 Últimos feedbacks (exibir 5 últimos)
+    # Últimos feedbacks
     feedbacks = (
         Feedback.objects
         .select_related("usuario", "produto")
         .order_by("-data_criacao")[:5]
     )
+
+    # ================== 🔹 RESUMO FINANCEIRO DO MÊS ==================
+    pedidos_mes = Pedido.objects.filter(status="Pago", data_criacao__gte=inicio_mes)
+
+    receita_total = float(pedidos_mes.aggregate(total=Sum("total"))["total"] or 0)
+
+    custo_total = sum(
+        float(item.custo_unitario) * item.quantidade
+        for item in PedidoItem.objects.filter(pedido__in=pedidos_mes)
+    )
+
+    despesas = Despesa.objects.filter(data__gte=inicio_mes, data__lte=agora)
+
+    despesas_fixas_valor = float(despesas.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0)
+    despesas_variaveis_valor = float(despesas.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0)
+
+    lucro_liquido = receita_total - custo_total - despesas_fixas_valor - despesas_variaveis_valor
+
     # Contexto enviado para o template
     ctx = {
         'form': form,
@@ -294,11 +305,20 @@ def dashboard(request):
         "pedidos_pagos": pedidos_pagos,
         "pedidos_cancelados": pedidos_cancelados,
         "ultimos_pedidos": ultimos_pedidos,
-        "top_produtos": top_produtos,  # 👈 adicionado
-        "feedbacks": feedbacks,  # 👈 agora vai para o template
+        "top_produtos": top_produtos,
+        "feedbacks": feedbacks,
+
+        # 👇 adicionados para os cards financeiros
+        "receita_total": receita_total,
+        "custo_total": custo_total,
+        "despesas_fixas": despesas_fixas_valor,
+        "despesas_variaveis": despesas_variaveis_valor,
+        "lucro_liquido": lucro_liquido,
     }
 
     return render(request, 'loja/dashboard.html', ctx)
+
+
 
 def criar_produto(request):
     if request.method == 'POST':

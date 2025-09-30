@@ -85,17 +85,66 @@
   </div>
 </div>
 
-<!-- 💰 Vendas no mês -->
+<!-- 📊 Resumo Financeiro do Mês Atual -->
 <div class="row g-4 mt-1">
-  <div class="col-12">
-    <div class="card border-0 shadow-sm rounded-4">
-      <div class="card-body text-center">
-        <h5 class="card-title fw-bold">💰 Vendas no mês</h5>
-        <p class="fs-4 text-success mb-0">R$ {{ vendas_mes|floatformat:2 }}</p>
+
+  <!-- Receita -->
+  <div class="col-md-2 col-6">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-cash-coin display-6 text-success mb-2"></i>
+        <h6 class="fw-semibold">Receita</h6>
+        <p class="fs-6 fw-bold">R$ {{ receita_total|floatformat:2 }}</p>
       </div>
     </div>
   </div>
+
+  <!-- Custos -->
+  <div class="col-md-2 col-6">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-box-seam display-6 text-primary mb-2"></i>
+        <h6 class="fw-semibold">Custos</h6>
+        <p class="fs-6 fw-bold">R$ {{ custo_total|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Despesas Fixas -->
+  <div class="col-md-2 col-6">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-house-check display-6 text-warning mb-2"></i>
+        <h6 class="fw-semibold">Fixas</h6>
+        <p class="fs-6 fw-bold">R$ {{ despesas_fixas|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Despesas Variáveis -->
+  <div class="col-md-2 col-6">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-receipt display-6 text-danger mb-2"></i>
+        <h6 class="fw-semibold">Variáveis</h6>
+        <p class="fs-6 fw-bold">R$ {{ despesas_variaveis|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lucro Líquido -->
+  <div class="col-md-4 col-12">
+    <div class="card shadow-sm border-0 text-center h-100">
+      <div class="card-body">
+        <i class="bi bi-graph-up display-6 text-success mb-2"></i>
+        <h6 class="fw-semibold">Lucro Líquido</h6>
+        <p class="fs-5 fw-bold text-success">R$ {{ lucro_liquido|floatformat:2 }}</p>
+      </div>
+    </div>
+  </div>
+
 </div>
+
 
 <!-- ROW 2: Top 5 Produtos -->
 <div class="row g-4 mt-1">
