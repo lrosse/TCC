@@ -77,7 +77,7 @@
                           data-tipo="{% if mov.tipo == 'ajuste' %}saida{% else %}{{ mov.tipo }}{% endif %}"
                           data-date="{{ mov.data|date:'Y-m-d H:i' }}"
                         >
-                            <td>{{ mov.data|date:"d/m/Y H:i" }}</td>
+                            <td class="text-nowrap">{{ mov.data|date:"d/m/Y H:i" }}</td>
                             <td>{{ mov.produto.id }}</td>
                             <td>{{ mov.produto.nome }}</td>
                             <td>
