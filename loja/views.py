@@ -739,12 +739,27 @@ def alterar_quantidade(request, item_id):
         # 🔒 Usuário logado → altera no banco
         item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
         if request.method == "POST":
-            qtd = int(request.POST.get('quantidade', 1))
+            try:
+                qtd = int(request.POST.get('quantidade', 1))
+            except ValueError:
+                qtd = 1
+
+            estoque_disp = item.produto.quantidade  # quantidade disponível em estoque
+
+            # Se tentar passar do estoque, ajusta para o máximo
+            if qtd > estoque_disp:
+                qtd = estoque_disp
+                messages.warning(
+                    request,
+                    f"O produto '{item.produto.nome}' só possui {estoque_disp} unidade(s) em estoque. Sua quantidade foi ajustada."
+                )
+
             if qtd > 0:
                 item.quantidade = qtd
                 item.save()
             else:
                 item.delete()
+
             item.carrinho.calcular_total()
 
             # 🔹 Atualiza contador na navbar
@@ -759,15 +774,24 @@ def alterar_quantidade(request, item_id):
             except ValueError:
                 qtd = 1
 
+            produto = get_object_or_404(Produto, id=item_id)
+            estoque_disp = produto.quantidade  # quantidade disponível em estoque
+
+            # Se tentar passar do estoque, ajusta para o máximo
+            if qtd > estoque_disp:
+                qtd = estoque_disp
+                messages.warning(
+                    request,
+                    f"O produto '{produto.nome}' só possui {estoque_disp} unidade(s) em estoque. Sua quantidade foi ajustada."
+                )
+
             if qtd > 0:
                 carrinho_sessao[str(item_id)]["quantidade"] = qtd
             else:
                 del carrinho_sessao[str(item_id)]
 
             request.session["carrinho"] = carrinho_sessao
-
-        # 🔹 Atualiza contador na navbar
-        request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
+            request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
 
     request.session.modified = True
     return redirect('ver_carrinho')
