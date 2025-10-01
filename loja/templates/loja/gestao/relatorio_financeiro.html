@@ -4,106 +4,209 @@
 {% block title %}Relatório Financeiro{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-
-  <h2 class="fw-semibold mb-4">
-    <i class="bi bi-cash-coin text-danger"></i> Relatório Financeiro Diário
-  </h2>
-
-  <!-- Filtros -->
-  <form method="get" class="row g-3 mb-3">
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-calendar-date"></i> Data início
-      </label>
-      <input type="date" name="data_inicio" class="form-control" value="{{ data_inicio|date:'Y-m-d' }}">
-    </div>
-
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-calendar-date-fill"></i> Data fim
-      </label>
-      <input type="date" name="data_fim" class="form-control" value="{{ data_fim|date:'Y-m-d' }}">
-    </div>
-
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-sort-alpha-down"></i> Ordenar por
-      </label>
-      <select name="ordenar_por" class="form-select">
-        <option value="data" {% if ordenar_por == "data" %}selected{% endif %}>Padrão</option>
-        <option value="receita" {% if ordenar_por == "receita" %}selected{% endif %}>Receita</option>
-        <option value="custo" {% if ordenar_por == "custo" %}selected{% endif %}>Custo</option>
-        <option value="fixa" {% if ordenar_por == "fixa" %}selected{% endif %}>Despesa Fixa</option>
-        <option value="variavel" {% if ordenar_por == "variavel" %}selected{% endif %}>Despesa Variável</option>
-        <option value="lucro" {% if ordenar_por == "lucro" %}selected{% endif %}>Lucro</option>
-      </select>
-    </div>
-
-    <div class="col-12 d-flex justify-content-end">
-      <a href="{% url 'relatorio_financeiro' %}" class="btn btn-secondary me-2">
-        <i class="bi bi-x-circle"></i> Resetar
-      </a>
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-arrow-repeat"></i> Atualizar
-      </button>
-      <a href="{% url 'relatorio_financeiro_pdf' %}?{{ request.GET.urlencode }}"
-         class="btn btn-danger ms-2" target="_blank">
-        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-      </a>
-    </div>
-  </form>
-
-  <!-- Tabela de resumo diário -->
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Data</th>
-          <th>Receita</th>
-          <th>Custos</th>
-          <th>Despesa Fixa</th>
-          <th>Despesa Variável</th>
-          <th>Lucro</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in tabela %}
-        <tr>
-          <td>{{ d.data|date:"d/m/Y" }}</td>
-          <td class="text-nowrap">R$ {{ d.receita|floatformat:2 }}</td>
-          <td class="text-nowrap">R$ {{ d.custo|floatformat:2 }}</td>
-          <td class="text-nowrap">R$ {{ d.fixa|floatformat:2 }}</td>
-          <td class="text-nowrap">R$ {{ d.variavel|floatformat:2 }}</td>
-          <td class="text-nowrap {% if d.lucro < 0 %}text-danger{% else %}text-success{% endif %}">
-            R$ {{ d.lucro|floatformat:2 }}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6" class="text-center text-muted">Nenhum dado encontrado no período.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Ajustes de responsividade -->
 <style>
-  /* Evita quebra no "R$" */
-  .text-nowrap {
+  thead th {
+    vertical-align: middle;
+  }
+
+  .valor-cell {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  .data-cell {
     white-space: nowrap;
   }
 
-  /* Ajusta tabela em telas menores */
-  @media (max-width: 768px) {
-    table.table {
-      font-size: 0.85rem;
+  .valor-positivo {
+    color: #059669;
+  }
+
+  .valor-negativo {
+    color: #dc2626;
+  }
+
+  .valor-neutro {
+    color: #64748b;
+  }
+
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
     }
-    table.table th, table.table td {
-      padding: 0.4rem;
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-group-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .btn-group-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .valor-cell, .data-cell {
+      font-size: 0.65rem;
     }
   }
 </style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">
+      <i class="bi bi-cash-coin me-2" style="color: #dc2626;"></i>Relatório Financeiro Diário
+    </h2>
+    <a href="{% url 'relatorio_financeiro_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger" target="_blank" style="border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <div class="mb-3 p-4 bg-white rounded shadow-sm">
+    <h5 class="fw-semibold mb-3" style="color: #1e293b; font-size: 1rem;">
+      <i class="bi bi-funnel me-2" style="color: #64748b;"></i>Filtros de Pesquisa
+    </h5>
+
+    <form method="get">
+      <div class="row g-3">
+        <!-- Data Início -->
+        <div class="col-md-3">
+          <label for="filtro-data-inicio" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-calendar-date me-1"></i>Data Início
+          </label>
+          <input type="date" id="filtro-data-inicio" name="data_inicio" class="form-control form-control-sm" value="{{ data_inicio|date:'Y-m-d' }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Data Fim -->
+        <div class="col-md-3">
+          <label for="filtro-data-fim" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-calendar-date-fill me-1"></i>Data Fim
+          </label>
+          <input type="date" id="filtro-data-fim" name="data_fim" class="form-control form-control-sm" value="{{ data_fim|date:'Y-m-d' }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Ordenar por -->
+        <div class="col-md-3">
+          <label for="filtro-ordenar" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-sort-alpha-down me-1"></i>Ordenar por
+          </label>
+          <select id="filtro-ordenar" name="ordenar_por" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+            <option value="data" {% if ordenar_por == "data" %}selected{% endif %}>Padrão (Data)</option>
+            <option value="receita" {% if ordenar_por == "receita" %}selected{% endif %}>Receita</option>
+            <option value="custo" {% if ordenar_por == "custo" %}selected{% endif %}>Custo</option>
+            <option value="fixa" {% if ordenar_por == "fixa" %}selected{% endif %}>Despesa Fixa</option>
+            <option value="variavel" {% if ordenar_por == "variavel" %}selected{% endif %}>Despesa Variável</option>
+            <option value="lucro" {% if ordenar_por == "lucro" %}selected{% endif %}>Lucro</option>
+          </select>
+        </div>
+
+        <!-- Botões -->
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="d-flex gap-2 w-100 btn-group-actions">
+            <a href="{% url 'relatorio_financeiro' %}" class="btn btn-outline-secondary flex-fill" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 8px 12px;">
+              <i class="bi bi-x-circle me-1"></i>Resetar
+            </a>
+            <button type="submit" class="btn btn-primary flex-fill" style="background: #3b82f6; border: none; border-radius: 8px; font-weight: 600; padding: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <i class="bi bi-arrow-repeat me-1"></i>Atualizar
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Data</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Receita</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custos</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Despesa Fixa</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Despesa Variável</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Lucro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in tabela %}
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <!-- Data -->
+              <td class="data-cell" style="padding: 1rem 1.25rem;">
+                <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ d.data|date:"d/m/Y" }}</span>
+              </td>
+
+              <!-- Receita -->
+              <td class="valor-cell valor-positivo">
+                R$ {{ d.receita|floatformat:2 }}
+              </td>
+
+              <!-- Custos -->
+              <td class="valor-cell valor-neutro">
+                R$ {{ d.custo|floatformat:2 }}
+              </td>
+
+              <!-- Despesa Fixa -->
+              <td class="valor-cell valor-neutro">
+                R$ {{ d.fixa|floatformat:2 }}
+              </td>
+
+              <!-- Despesa Variável -->
+              <td class="valor-cell valor-neutro">
+                R$ {{ d.variavel|floatformat:2 }}
+              </td>
+
+              <!-- Lucro -->
+              <td class="valor-cell {% if d.lucro < 0 %}valor-negativo{% else %}valor-positivo{% endif %}">
+                <div class="d-flex align-items-center gap-2">
+                  {% if d.lucro < 0 %}
+                    <i class="bi bi-arrow-down-circle-fill" style="color: #dc2626;"></i>
+                  {% else %}
+                    <i class="bi bi-arrow-up-circle-fill" style="color: #059669;"></i>
+                  {% endif %}
+                  <span>R$ {{ d.lucro|floatformat:2 }}</span>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhum dado encontrado no período.</p>
+                <small>Ajuste os filtros para visualizar os dados financeiros.</small>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

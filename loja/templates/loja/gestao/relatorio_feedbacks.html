@@ -4,93 +4,234 @@
 {% block title %}Relatório de Feedbacks{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+  thead th {
+    vertical-align: middle;
+  }
 
-  <h2 class="fw-semibold mb-4">
-    <i class="bi bi-chat-dots text-info"></i> Relatório de Feedbacks
-  </h2>
+  .badge-visibilidade {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
 
-  <!-- Formulário de filtros com ícones -->
-  <form method="get" class="row g-3 mb-3">
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-box"></i> Produto
-      </label>
-      <input type="text" name="produto" class="form-control" value="{{ request.GET.produto }}">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-person"></i> Usuário
-      </label>
-      <input type="text" name="usuario" class="form-control" value="{{ request.GET.usuario }}">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-star"></i> Nota
-      </label>
-      <select name="nota" class="form-select">
-        <option value="">Todas</option>
-        <option value="1" {% if request.GET.nota == "1" %}selected{% endif %}>1</option>
-        <option value="2" {% if request.GET.nota == "2" %}selected{% endif %}>2</option>
-        <option value="3" {% if request.GET.nota == "3" %}selected{% endif %}>3</option>
-        <option value="4" {% if request.GET.nota == "4" %}selected{% endif %}>4</option>
-        <option value="5" {% if request.GET.nota == "5" %}selected{% endif %}>5</option>
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-eye"></i> Visível
-      </label>
-      <select name="visivel" class="form-select">
-        <option value="">Todos</option>
-        <option value="True" {% if request.GET.visivel == "True" %}selected{% endif %}>Sim</option>
-        <option value="False" {% if request.GET.visivel == "False" %}selected{% endif %}>Não</option>
-      </select>
-    </div>
+  .badge-visibilidade.visivel {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
 
-    <!-- Botões -->
-    <div class="col-12 d-flex justify-content-end">
-      <a href="{% url 'relatorio_feedbacks' %}" class="btn btn-secondary me-2">
-        <i class="bi bi-x-circle"></i> Resetar
-      </a>
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-arrow-repeat"></i> Atualizar
-      </button>
-      <a href="{% url 'relatorio_feedbacks_pdf' %}?{{ request.GET.urlencode }}" 
-        class="btn btn-danger ms-2" target="_blank">
-        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-      </a>
-    </div>
-  </form>
+  .badge-visibilidade.oculto {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
 
-  <!-- Tabela Feedbacks -->
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Usuário</th>
-          <th>Produto</th>
-          <th>Nota</th>
-          <th>Comentário</th>
-          <th>Visível</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for f in feedbacks %}
-        <tr>
-          <td>{{ f.usuario.username }}</td>
-          <td>{{ f.produto.nome }}</td>
-          <td>{{ f.nota }} ⭐</td>
-          <td>{{ f.comentario|default:"-" }}</td>
-          <td>{% if f.visivel %}Sim{% else %}Não{% endif %}</td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center text-muted">Nenhum feedback encontrado.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  .comentario-cell {
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+
+    .comentario-cell {
+      max-width: 200px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-group-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .btn-group-actions .btn {
+      width: 100%;
+    }
+
+    .comentario-cell {
+      max-width: 150px;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .comentario-cell {
+      max-width: 100px;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">
+      <i class="bi bi-chat-dots me-2" style="color: #06b6d4;"></i>Relatório de Feedbacks
+    </h2>
+    <a href="{% url 'relatorio_feedbacks_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger" target="_blank" style="border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <div class="mb-3 p-4 bg-white rounded shadow-sm">
+    <h5 class="fw-semibold mb-3" style="color: #1e293b; font-size: 1rem;">
+      <i class="bi bi-funnel me-2" style="color: #64748b;"></i>Filtros de Pesquisa
+    </h5>
+
+    <form method="get">
+      <div class="row g-3">
+        <!-- Produto -->
+        <div class="col-md-3">
+          <label for="filtro-produto" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-box me-1"></i>Nome do Produto
+          </label>
+          <input type="text" id="filtro-produto" name="produto" class="form-control form-control-sm" placeholder="Digite o nome..." value="{{ request.GET.produto }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Usuário -->
+        <div class="col-md-3">
+          <label for="filtro-usuario" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-person me-1"></i>Nome do Usuário
+          </label>
+          <input type="text" id="filtro-usuario" name="usuario" class="form-control form-control-sm" placeholder="Digite o nome..." value="{{ request.GET.usuario }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Nota -->
+        <div class="col-md-3">
+          <label for="filtro-nota" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-star me-1"></i>Nota (Estrelas)
+          </label>
+          <select id="filtro-nota" name="nota" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+            <option value="">Todas as notas</option>
+            <option value="1" {% if request.GET.nota == "1" %}selected{% endif %}>1 estrela</option>
+            <option value="2" {% if request.GET.nota == "2" %}selected{% endif %}>2 estrelas</option>
+            <option value="3" {% if request.GET.nota == "3" %}selected{% endif %}>3 estrelas</option>
+            <option value="4" {% if request.GET.nota == "4" %}selected{% endif %}>4 estrelas</option>
+            <option value="5" {% if request.GET.nota == "5" %}selected{% endif %}>5 estrelas</option>
+          </select>
+        </div>
+
+        <!-- Visibilidade -->
+        <div class="col-md-3">
+          <label for="filtro-visivel" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-eye me-1"></i>Visibilidade
+          </label>
+          <select id="filtro-visivel" name="visivel" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+            <option value="">Todos</option>
+            <option value="True" {% if request.GET.visivel == "True" %}selected{% endif %}>Visível</option>
+            <option value="False" {% if request.GET.visivel == "False" %}selected{% endif %}>Oculto</option>
+          </select>
+        </div>
+
+        <!-- Botões -->
+        <div class="col-12 d-flex justify-content-end gap-2 btn-group-actions">
+          <a href="{% url 'relatorio_feedbacks' %}" class="btn btn-outline-secondary" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 8px 20px;">
+            <i class="bi bi-x-circle me-1"></i>Resetar
+          </a>
+          <button type="submit" class="btn btn-primary" style="background: #3b82f6; border: none; border-radius: 8px; font-weight: 600; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <i class="bi bi-arrow-repeat me-1"></i>Atualizar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Usuário</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Produto</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Nota</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Comentário</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Visibilidade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in feedbacks %}
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <!-- Usuário -->
+              <td style="padding: 1rem 1.25rem;">
+                <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ f.usuario.username }}</span>
+              </td>
+
+              <!-- Produto -->
+              <td>
+                <span style="color: #64748b;">{{ f.produto.nome }}</span>
+              </td>
+
+              <!-- Nota -->
+              <td>
+                <div class="d-flex align-items-center gap-1">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= f.nota %}
+                      <i class="bi bi-star-fill text-warning"></i>
+                    {% else %}
+                      <i class="bi bi-star text-muted"></i>
+                    {% endif %}
+                  {% endfor %}
+                  <span style="color: #64748b; font-weight: 600; font-size: 0.8125rem; margin-left: 4px;">{{ f.nota }}</span>
+                </div>
+              </td>
+
+              <!-- Comentário -->
+              <td class="comentario-cell" title="{{ f.comentario }}">
+                {{ f.comentario|default:"—" }}
+              </td>
+
+              <!-- Visibilidade -->
+              <td>
+                {% if f.visivel %}
+                  <span class="badge-visibilidade visivel">Visível</span>
+                {% else %}
+                  <span class="badge-visibilidade oculto">Oculto</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhum feedback encontrado.</p>
+                <small>Ajuste os filtros para visualizar os feedbacks.</small>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
