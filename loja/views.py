@@ -82,6 +82,36 @@ def buscar_produtos(request):
 
     return JsonResponse(resultados, safe=False)
 
+@staff_required
+@require_POST
+def alterar_status_produtos(request):
+    """
+    Atualiza o status (ativo/inativo) de múltiplos produtos selecionados na listagem.
+    """
+    from .models import Produto
+
+    produto_ids = request.POST.getlist("produtos")
+    acao = request.POST.get("acao")
+
+    if not produto_ids:
+        messages.warning(request, "Nenhum produto selecionado.")
+        return redirect("listar_produtos")
+
+    if acao not in ["ativar", "inativar"]:
+        messages.error(request, "Ação inválida.")
+        return redirect("listar_produtos")
+
+    produtos = Produto.objects.filter(id__in=produto_ids)
+
+    if acao == "ativar":
+        alterados = produtos.update(ativo=True)
+        messages.success(request, f"{alterados} produto(s) ativado(s) com sucesso.")
+    elif acao == "inativar":
+        alterados = produtos.update(ativo=False)
+        messages.success(request, f"{alterados} produto(s) inativado(s) com sucesso.")
+
+    return redirect("listar_produtos")
+
 def registrar(request):
     next_url = request.GET.get("next") or request.POST.get("next")
 

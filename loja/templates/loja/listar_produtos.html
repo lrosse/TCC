@@ -1,219 +1,248 @@
 {% extends 'loja/barra_lateral.html' %}
 
-{% block title %}Lista de Produtos{% endblock %}
+{% block title %}
+  Lista de Produtos
+{% endblock %}
 
 {% block content %}
+  <style>
+    .action-btn {
+      text-decoration: none;
+      transition: transform 0.2s ease;
+    }
+    .action-btn:hover {
+      transform: scale(1.2); /* aumenta só o tamanho */
+    }
 
-<style>
-.action-btn {
-  text-decoration: none;
-  transition: transform 0.2s ease;
-}
-.action-btn:hover {
-  transform: scale(1.2); /* aumenta só o tamanho */
-}
-</style>
+    thead th {
+    vertical-align: middle;
+    }
 
-<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+    /* Estilo do botão "Selecionar todos" */
+    #btn-selecionar-todos {
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-weight: 500;
+      font-size: 0.75rem;
+      padding: 0;
+      transition: color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      cursor: pointer;
+      vertical-align: middle;
+      line-height: 1;
+    }
 
-  <!-- Cabeçalho -->
-  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm">
-    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de produtos</h2>
-    <a href="{% url 'criar_produto' %}" class="btn btn-success" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-      <i class="bi bi-plus-circle me-2"></i> Novo produto
-    </a>
-  </div>
+    #btn-selecionar-todos:hover {
+      color: #3b82f6;
+    }
 
-<!-- Barra de busca + botão de filtros -->
-<div class="mb-3 p-3 bg-white rounded shadow-sm">
-  <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar produtos</label>
-  
-  <div class="d-flex align-items-center gap-2">
-    <!-- Campo de busca -->
-    <input type="text" id="filtro-nome" 
-           class="form-control form-control-sm"
-           placeholder="Digite o nome ou ID do produto..."
-           style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;">
-    
-    <!-- Botão de filtro -->
-    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center"
-            type="button" data-bs-toggle="collapse" 
-            data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras"
-            style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;">
-      <i class="bi bi-sliders"></i>
-    </button>
-  </div>
-</div>
+    #btn-selecionar-todos.todos-selecionados {
+      color: #3b82f6;
+    }
 
-  <!-- Campos extras (colapsáveis) -->
-  <div class="collapse mb-3" id="filtrosExtras">
-    <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
-      <div class="col-md-2">
-        <label for="preco-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço mín.</label>
-        <input type="number" id="preco-min" class="form-control form-control-sm" placeholder="R$ 0,00">
-      </div>
-      <div class="col-md-2">
-        <label for="preco-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço máx.</label>
-        <input type="number" id="preco-max" class="form-control form-control-sm" placeholder="R$ 999,99">
-      </div>
-      <div class="col-md-2">
-        <label for="qtd-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd mín.</label>
-        <input type="number" id="qtd-min" class="form-control form-control-sm" placeholder="0">
-      </div>
-      <div class="col-md-2">
-        <label for="qtd-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd máx.</label>
-        <input type="number" id="qtd-max" class="form-control form-control-sm" placeholder="999">
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100">
-          <i class="bi bi-arrow-clockwise me-1"></i> Limpar
-        </button>
+    #btn-selecionar-todos i {
+      font-size: 0.875rem;
+    }
+  </style>
+
+  <div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm">
+      <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de produtos</h2>
+      <a href="{% url 'criar_produto' %}" class="btn btn-success" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><i class="bi bi-plus-circle me-2"></i> Novo produto</a>
+    </div>
+
+    <!-- Barra de busca + botão de filtros -->
+    <div class="mb-3 p-3 bg-white rounded shadow-sm">
+      <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar produtos</label>
+
+      <div class="d-flex align-items-center gap-2">
+        <!-- Campo de busca -->
+        <input type="text" id="filtro-nome" class="form-control form-control-sm" placeholder="Digite o nome ou ID do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+
+        <!-- Botão de filtro -->
+        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
+
+        <!-- Ações em massa -->
+        <form id="form-status" method="POST" action="{% url 'alterar_status_produtos' %}" class="d-flex gap-2 ms-2">
+          {% csrf_token %}
+          <input type="hidden" name="acao" id="acao-status" />
+          <button type="button" class="btn btn-outline-success btn-sm" onclick="submeterAcao('ativar')"><i class="bi bi-check-circle me-1"></i> Ativar selecionados</button>
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="submeterAcao('inativar')"><i class="bi bi-x-circle me-1"></i> Inativar selecionados</button>
+        </form>
       </div>
     </div>
-  </div>
 
-  <!-- Tabela -->
-  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead style="background: #f8fafc;">
-            <tr>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0; width: 150px;">Produto ID</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0;">Nome</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0; width: 120px;">Preço</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0; width: 200px;">Descrição</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0; width: 120px;">Quantidade</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 1.5rem; border-bottom: 2px solid #e2e8f0; width: 140px;">Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-produtos">
-            {% for produto in produtos %}
-            <tr data-id="{{ produto.id }}" 
-                data-nome="{{ produto.nome|lower }}" 
-                data-preco="{{ produto.preco }}" 
-                data-qtd="{{ produto.quantidade }}"
-                style="border-bottom: 1px solid #e2e8f0; transition: all 0.2s ease;"
-                onmouseover="this.style.backgroundColor='#f8fafc'"
-                onmouseout="this.style.backgroundColor='white'">
-              
-              <!-- Miniatura + ID -->
-              <td style="padding: 1rem 1.25rem; vertical-align: middle;">
-                <div class="d-flex align-items-center gap-2">
-                  {% if produto.imagem %}
-                    <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}"
-                         class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
-                  {% else %}
-                    <div class="d-flex align-items-center justify-content-center"
-                         style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 8px; color: #64748b;">
-                      <i class="bi bi-box"></i>
+    <!-- Campos extras (colapsáveis) -->
+    <div class="collapse mb-3" id="filtrosExtras">
+      <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
+        <div class="col-md-2">
+          <label for="preco-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço mín.</label>
+          <input type="number" id="preco-min" class="form-control form-control-sm" placeholder="R$ 0,00" />
+        </div>
+        <div class="col-md-2">
+          <label for="preco-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço máx.</label>
+          <input type="number" id="preco-max" class="form-control form-control-sm" placeholder="R$ 999,99" />
+        </div>
+        <div class="col-md-2">
+          <label for="qtd-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd mín.</label>
+          <input type="number" id="qtd-min" class="form-control form-control-sm" placeholder="0" />
+        </div>
+        <div class="col-md-2">
+          <label for="qtd-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd máx.</label>
+          <input type="number" id="qtd-max" class="form-control form-control-sm" placeholder="999" />
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-arrow-clockwise me-1"></i> Limpar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead style="background: #f8fafc;">
+              <tr>
+                <!-- Checkbox geral -->
+                <th style="padding: 1rem 1.25rem; text-align: left; width: 160px;">
+                  <button type="button" id="btn-selecionar-todos" class="btn">
+                    <i class="bi bi-check-square"></i>
+                    <span>Selecionar todos</span>
+                  </button>
+                </th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Produto ID</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Nome</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Preço</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Descrição</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Quantidade</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Status</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-produtos">
+              {% for produto in produtos %}
+                <tr data-id="{{ produto.id }}" data-nome="{{ produto.nome|lower }}" data-preco="{{ produto.preco }}" data-qtd="{{ produto.quantidade }}" style="border-bottom: 1px solid #e2e8f0;">
+                  <!-- Checkbox -->
+                  <td class="text-center">
+                    <input type="checkbox" name="produtos" value="{{ produto.id }}" form="form-status" />
+                  </td>
+
+                  <!-- Miniatura + ID -->
+                  <td style="padding: 1rem 1.25rem;">
+                    <div class="d-flex align-items-center gap-2">
+                      {% if produto.imagem %}
+                        <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;" />
+                      {% else %}
+                        <div class="d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 8px; color: #64748b;">
+                          <i class="bi bi-box"></i>
+                        </div>
+                      {% endif %}
+                      <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ produto.id }}</span>
                     </div>
-                  {% endif %}
-                  <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ produto.id }}</span>
-                </div>
-              </td>
+                  </td>
 
-              <!-- Nome -->
-              <td style="padding: 1rem 1.25rem; vertical-align: middle;">
-                <div style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ produto.nome }}</div>
-              </td>
+                  <!-- Nome -->
+                  <td>{{ produto.nome }}</td>
 
-              <!-- Preço -->
-              <td style="padding: 1rem 1.25rem; vertical-align: middle;">
-                <div class="text-nowrap" style="font-weight: 700; color: #1e293b; font-size: 0.875rem;">
-                  R$ {{ produto.preco }}
-                </div>
-              </td>
+                  <!-- Preço -->
+                  <td>R$ {{ produto.preco }}</td>
 
-              <!-- Descrição -->
-              <td style="padding: 1rem 1.25rem; vertical-align: middle;">
-                <div style="color: #64748b; font-size: 0.8125rem; line-height: 1.4;">{{ produto.descricao|truncatechars:50 }}</div>
-              </td>
+                  <!-- Descrição -->
+                  <td>{{ produto.descricao|truncatechars:50 }}</td>
 
-              <!-- Quantidade -->
-              <td style="padding: 1rem 1.25rem; vertical-align: middle;">
-                {{ produto.quantidade|default:"0" }}
-              </td>
+                  <!-- Quantidade -->
+                  <td>{{ produto.quantidade|default:'0' }}</td>
 
-              <!-- Ações -->
-              <!-- Ações -->
-            <td style="padding: 1rem 1.25rem; vertical-align: middle; text-align: center;">
-            <div class="d-flex justify-content-center gap-3">
-                <!-- Botão Editar -->
-                <a href="{% url 'editar_produto' produto.id %}" 
-                class="action-btn text-dark"
-                style="font-size: 1.1rem;">
-                <i class="bi bi-pencil-square"></i>
-                </a>
+                  <!-- Status -->
+                  <td>
+                    {% if produto.ativo %}
+                      <span class="badge bg-success">Ativado</span>
+                    {% else %}
+                      <span class="badge bg-danger">Inativado</span>
+                    {% endif %}
+                  </td>
 
-                <!-- Botão Excluir -->
-                <a href="{% url 'excluir_produto' produto.id %}" 
-                class="action-btn text-danger"
-                style="font-size: 1.1rem;">
-                <i class="bi bi-trash"></i>
-                </a>
-            </div>
-            </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center py-5" style="color: #64748b;">
-                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
-                <p class="mb-1">Nenhum produto cadastrado ainda.</p>
-                <small>Clique em "Novo produto" para começar.</small>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                  <!-- Ações -->
+                  <td>
+                    <div class="d-flex justify-content-center gap-3">
+                      <a href="{% url 'editar_produto' produto.id %}" class="action-btn text-dark"><i class="bi bi-pencil-square"></i></a>
+                      <a href="{% url 'excluir_produto' produto.id %}" class="action-btn text-danger"><i class="bi bi-trash"></i></a>
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center py-5" style="color: #64748b;">
+                    <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                    <p class="mb-1">Nenhum produto cadastrado ainda.</p>
+                    <small>Clique em "Novo produto" para começar.</small>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-{% block extra_js %}
-<script>
-const filtroNome = document.getElementById("filtro-nome");
-const precoMin = document.getElementById("preco-min");
-const precoMax = document.getElementById("preco-max");
-const qtdMin = document.getElementById("qtd-min");
-const qtdMax = document.getElementById("qtd-max");
-const btnLimpar = document.getElementById("btn-limpar");
-const linhas = document.querySelectorAll("#tabela-produtos tr[data-id]");
+  {% block extra_js %}
+    <script>
+      function submeterAcao(acao) {
+        document.getElementById('acao-status').value = acao;
+        document.getElementById('form-status').submit();
+      }
 
-function aplicarFiltros() {
-  const termo = filtroNome.value.trim().toLowerCase();
-  const pMin = parseFloat(precoMin?.value) || 0;
-  const pMax = parseFloat(precoMax?.value) || Infinity;
-  const qMin = parseInt(qtdMin?.value) || 0;
-  const qMax = parseInt(qtdMax?.value) || Infinity;
+      // Funcionalidade do botão "Selecionar todos"
+      let todosSelecionados = false;
+      const btn = document.getElementById("btn-selecionar-todos");
+      const icone = btn.querySelector("i");
+      const texto = btn.querySelector("span");
 
-  linhas.forEach(tr => {
-    const id = tr.dataset.id;
-    const nome = tr.dataset.nome;
-    const preco = parseFloat(tr.dataset.preco);
-    const qtd = parseInt(tr.dataset.qtd);
+      function atualizarEstadoBotao() {
+        const checkboxes = document.querySelectorAll("input[name='produtos']");
+        const selecionados = document.querySelectorAll("input[name='produtos']:checked").length;
+        
+        if (selecionados === checkboxes.length && checkboxes.length > 0) {
+          btn.classList.add("todos-selecionados");
+          icone.className = "bi bi-check-square-fill";
+          texto.textContent = "Desmarcar todos";
+          todosSelecionados = true;
+        } else {
+          btn.classList.remove("todos-selecionados");
+          icone.className = "bi bi-check-square";
+          texto.textContent = "Selecionar todos";
+          todosSelecionados = false;
+        }
+      }
 
-    const matchNome = nome.includes(termo) || id.includes(termo);
-    const matchPreco = preco >= pMin && preco <= pMax;
-    const matchQtd = qtd >= qMin && qtd <= qMax;
+      btn.addEventListener("click", function() {
+        const checkboxes = document.querySelectorAll("input[name='produtos']");
+        todosSelecionados = !todosSelecionados;
+        
+        checkboxes.forEach(cb => cb.checked = todosSelecionados);
+        
+        if (todosSelecionados) {
+          btn.classList.add("todos-selecionados");
+          icone.className = "bi bi-check-square-fill";
+          texto.textContent = "Desmarcar todos";
+        } else {
+          btn.classList.remove("todos-selecionados");
+          icone.className = "bi bi-check-square";
+          texto.textContent = "Selecionar todos";
+        }
+      });
 
-    tr.style.display = (matchNome && matchPreco && matchQtd) ? "" : "none";
-  });
-}
-
-[filtroNome, precoMin, precoMax, qtdMin, qtdMax].forEach(el => {
-  el?.addEventListener("input", aplicarFiltros);
-});
-
-btnLimpar.addEventListener("click", () => {
-  filtroNome.value = "";
-  precoMin.value = "";
-  precoMax.value = "";
-  qtdMin.value = "";
-  qtdMax.value = "";
-  aplicarFiltros();
-});
-</script>
-{% endblock %}
+      // Atualizar o estado do botão quando checkboxes individuais são clicados
+      document.querySelectorAll("input[name='produtos']").forEach(checkbox => {
+        checkbox.addEventListener("change", atualizarEstadoBotao);
+      });
+    </script>
+  {% endblock %}
 {% endblock %}

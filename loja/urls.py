@@ -22,6 +22,7 @@ urlpatterns = [
     path('produtos/entrada-estoque/', views.entrada_estoque, name='entrada_estoque'),
     path('produtos/ajuste-estoque/', views.ajuste_estoque, name='ajuste_estoque'),
     path('produtos/historico-estoque/', views.historico_estoque, name='historico_estoque'),
+    path("produtos/alterar-status/", views.alterar_status_produtos, name="alterar_status_produtos"),
 
     # Rotas para carrinho
     path('carrinho/', views.ver_carrinho, name='ver_carrinho'),
