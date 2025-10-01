@@ -47,6 +47,26 @@
     #btn-selecionar-todos i {
       font-size: 0.875rem;
     }
+
+    .status {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+  }
+
+  .status.ativo {
+    background-color: #dcfce7;  /* verde bem claro */
+    color: #15803d;            /* verde escuro */
+    border: 1px solid #bbf7d0; /* borda verde clara */
+  }
+
+  .status.inativo {
+    background-color: #fee2e2; /* vermelho bem claro */
+    color: #b91c1c;           /* vermelho escuro */
+    border: 1px solid #fecaca;/* borda vermelha clara */
+  }
   </style>
 
   <div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
@@ -162,9 +182,9 @@
                   <!-- Status -->
                   <td>
                     {% if produto.ativo %}
-                      <span class="badge bg-success">Ativado</span>
+                      <span class="status ativo">Ativado</span>
                     {% else %}
-                      <span class="badge bg-danger">Inativado</span>
+                      <span class="status inativo">Inativado</span>
                     {% endif %}
                   </td>
 
