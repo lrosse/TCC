@@ -4,128 +4,248 @@
 {% block title %}Relatório de Produtos{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+  thead th {
+    vertical-align: middle;
+  }
 
-  <h2 class="fw-semibold mb-4">
-    <i class="bi bi-box-seam text-primary"></i> Relatório de Produtos
-  </h2>
+  .preco-cell, .custo-cell {
+    white-space: nowrap;
+  }
 
-  <!-- Formulário de filtros -->
-  <form method="get" class="row g-3 mb-3">
-    <!-- Nome -->
-    <div class="col-md-4">
-      <label class="form-label">
-        <i class="bi bi-tag"></i> Nome
-      </label>
-      <input type="text" name="nome" class="form-control" value="{{ request.GET.nome }}">
-    </div>
+  .badge-estoque {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
 
-    <!-- Preço -->
-    <div class="col-md-2">
-      <label class="form-label">
-        <i class="bi bi-currency-dollar"></i> Preço Mínimo
-      </label>
-      <input type="number" step="0.01" name="preco_min" class="form-control" value="{{ request.GET.preco_min }}">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">
-        <i class="bi bi-currency-dollar"></i> Preço Máximo
-      </label>
-      <input type="number" step="0.01" name="preco_max" class="form-control" value="{{ request.GET.preco_max }}">
-    </div>
+  .badge-estoque.baixo {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
 
-    <!-- Quantidade -->
-    <div class="col-md-2">
-      <label class="form-label">
-        <i class="bi bi-123"></i> Qtd. Mínima
-      </label>
-      <input type="number" name="qtd_min" class="form-control" value="{{ request.GET.qtd_min }}">
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">
-        <i class="bi bi-123"></i> Qtd. Máxima
-      </label>
-      <input type="number" name="qtd_max" class="form-control" value="{{ request.GET.qtd_max }}">
-    </div>
+  .badge-estoque.ideal {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
 
-    <!-- Status de Estoque -->
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-box"></i> Status de Estoque
-      </label>
-      <select name="status_estoque" class="form-select">
-        <option value="">Todos</option>
-        <option value="minimo" {% if request.GET.status_estoque == "minimo" %}selected{% endif %}>Abaixo do mínimo</option>
-        <option value="ideal" {% if request.GET.status_estoque == "ideal" %}selected{% endif %}>Entre mínimo e ideal</option>
-        <option value="bom" {% if request.GET.status_estoque == "bom" %}selected{% endif %}>Acima do ideal</option>
-      </select>
-    </div>
+  .badge-estoque.alto {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
 
-    <!-- Ordenação -->
-    <div class="col-md-3">
-      <label class="form-label">
-        <i class="bi bi-sort-alpha-down"></i> Ordenar por
-      </label>
-      <select name="ordenar_por" class="form-select">
-        <option value="">Padrão</option>
-        <option value="nome" {% if request.GET.ordenar_por == "nome" %}selected{% endif %}>Nome</option>
-        <option value="preco" {% if request.GET.ordenar_por == "preco" %}selected{% endif %}>Preço</option>
-        <option value="quantidade" {% if request.GET.ordenar_por == "quantidade" %}selected{% endif %}>Quantidade</option>
-        <option value="recente" {% if request.GET.ordenar_por == "recente" %}selected{% endif %}>Mais recente</option>
-      </select>
-    </div>
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
 
-    <!-- Botões -->
-    <div class="col-12 d-flex justify-content-end">
-      <a href="{% url 'relatorio_produtos' %}" class="btn btn-secondary me-2">
-        <i class="bi bi-x-circle"></i> Limpar
-      </a>
-      <button type="submit" class="btn btn-primary">
-        <i class="bi bi-arrow-repeat"></i> Filtrar
-      </button>
-      <a href="{% url 'relatorio_produtos_pdf' %}?{{ request.GET.urlencode }}" 
-        class="btn btn-danger ms-2" target="_blank">
-        <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
-      </a>
-    </div>
-  </form>
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
 
-  <!-- Tabela Produtos -->
-  <div class="table-responsive">
-    <table class="table table-striped align-middle">
-      <thead class="table-dark">
-        <tr>
-          <th>Nome</th>
-          <th>Custo</th>
-          <th>Preço</th>
-          <th>Quantidade</th>
-          <th>Estoque</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in produtos %}
-        <tr>
-          <td>{{ p.nome }}</td>
-          <td><span class="text-nowrap">R$ {{ p.custo_info.custo|default:"0.00" }}</span></td>
-          <td><span class="text-nowrap">R$ {{ p.preco }}</span></td>
-          <td>{{ p.quantidade }}</td>
-          <td>
-            {% if p.quantidade < p.minimo_estoque %}
-              <span class="badge bg-danger">Abaixo do mínimo</span>
-            {% elif p.quantidade <= p.ideal_estoque %}
-              <span class="badge bg-success">Entre mínimo e ideal</span>
-            {% else %}
-              <span class="badge bg-warning text-dark">Acima do ideal</span>
-            {% endif %}
-          </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-group-actions {
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .btn-group-actions .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .preco-cell, .custo-cell {
+      font-size: 0.65rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">
+      <i class="bi bi-box-seam me-2" style="color: #3b82f6;"></i>Relatório de Produtos
+    </h2>
+    <a href="{% url 'relatorio_produtos_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger" target="_blank" style="border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF
+    </a>
+  </div>
+
+  <!-- Filtros -->
+  <div class="mb-3 p-4 bg-white rounded shadow-sm">
+    <h5 class="fw-semibold mb-3" style="color: #1e293b; font-size: 1rem;">
+      <i class="bi bi-funnel me-2" style="color: #64748b;"></i>Filtros de Pesquisa
+    </h5>
+
+    <form method="get">
+      <div class="row g-3">
+        <!-- Nome -->
+        <div class="col-md-6">
+          <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-tag me-1"></i>Nome do Produto
+          </label>
+          <input type="text" id="filtro-nome" name="nome" class="form-control form-control-sm" placeholder="Digite o nome do produto..." value="{{ request.GET.nome }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Status de Estoque -->
+        <div class="col-md-3">
+          <label for="filtro-status" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-box me-1"></i>Status de Estoque
+          </label>
+          <select id="filtro-status" name="status_estoque" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+            <option value="">Todos</option>
+            <option value="minimo" {% if request.GET.status_estoque == "minimo" %}selected{% endif %}>Abaixo do mínimo</option>
+            <option value="ideal" {% if request.GET.status_estoque == "ideal" %}selected{% endif %}>Entre mínimo e ideal</option>
+            <option value="bom" {% if request.GET.status_estoque == "bom" %}selected{% endif %}>Acima do ideal</option>
+          </select>
+        </div>
+
+        <!-- Ordenação -->
+        <div class="col-md-3">
+          <label for="filtro-ordenar" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-sort-alpha-down me-1"></i>Ordenar por
+          </label>
+          <select id="filtro-ordenar" name="ordenar_por" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+            <option value="">Padrão</option>
+            <option value="nome" {% if request.GET.ordenar_por == "nome" %}selected{% endif %}>Nome</option>
+            <option value="preco" {% if request.GET.ordenar_por == "preco" %}selected{% endif %}>Preço</option>
+            <option value="quantidade" {% if request.GET.ordenar_por == "quantidade" %}selected{% endif %}>Quantidade</option>
+            <option value="recente" {% if request.GET.ordenar_por == "recente" %}selected{% endif %}>Mais recente</option>
+          </select>
+        </div>
+
+        <!-- Preço Mínimo -->
+        <div class="col-md-3">
+          <label for="preco-min" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-currency-dollar me-1"></i>Preço Mínimo
+          </label>
+          <input type="number" id="preco-min" name="preco_min" step="0.01" class="form-control form-control-sm" placeholder="R$ 0,00" value="{{ request.GET.preco_min }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Preço Máximo -->
+        <div class="col-md-3">
+          <label for="preco-max" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-currency-dollar me-1"></i>Preço Máximo
+          </label>
+          <input type="number" id="preco-max" name="preco_max" step="0.01" class="form-control form-control-sm" placeholder="R$ 999,99" value="{{ request.GET.preco_max }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Quantidade Mínima -->
+        <div class="col-md-3">
+          <label for="qtd-min" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-123 me-1"></i>Qtd. Mínima
+          </label>
+          <input type="number" id="qtd-min" name="qtd_min" class="form-control form-control-sm" placeholder="0" value="{{ request.GET.qtd_min }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Quantidade Máxima -->
+        <div class="col-md-3">
+          <label for="qtd-max" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+            <i class="bi bi-123 me-1"></i>Qtd. Máxima
+          </label>
+          <input type="number" id="qtd-max" name="qtd_max" class="form-control form-control-sm" placeholder="999" value="{{ request.GET.qtd_max }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+        </div>
+
+        <!-- Botões -->
+        <div class="col-12 d-flex justify-content-end gap-2 btn-group-actions">
+          <a href="{% url 'relatorio_produtos' %}" class="btn btn-outline-secondary" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 8px 20px;">
+            <i class="bi bi-x-circle me-1"></i>Limpar
+          </a>
+          <button type="submit" class="btn btn-primary" style="background: #3b82f6; border: none; border-radius: 8px; font-weight: 600; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <i class="bi bi-arrow-repeat me-1"></i>Filtrar
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Nome</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Preço</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Quantidade</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Status Estoque</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in produtos %}
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <!-- Nome -->
+              <td style="padding: 1rem 1.25rem;">
+                <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ p.nome }}</span>
+              </td>
+
+              <!-- Custo -->
+              <td class="custo-cell">
+                <span style="font-weight: 600; color: #64748b;">R$ {{ p.custo_info.custo|default:"0.00" }}</span>
+              </td>
+
+              <!-- Preço -->
+              <td class="preco-cell">
+                <span style="font-weight: 600; color: #059669;">R$ {{ p.preco }}</span>
+              </td>
+
+              <!-- Quantidade -->
+              <td>
+                <span class="badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                  {{ p.quantidade }}
+                </span>
+              </td>
+
+              <!-- Status Estoque -->
+              <td>
+                {% if p.quantidade < p.minimo_estoque %}
+                  <span class="badge-estoque baixo">Abaixo do mínimo</span>
+                {% elif p.quantidade <= p.ideal_estoque %}
+                  <span class="badge-estoque ideal">Entre mínimo e ideal</span>
+                {% else %}
+                  <span class="badge-estoque alto">Acima do ideal</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhum produto encontrado.</p>
+                <small>Ajuste os filtros para visualizar os produtos.</small>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
