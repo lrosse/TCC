@@ -1,208 +1,413 @@
 {% extends 'loja/barra_lateral.html' %}
 
-{% block title %}Pedidos - Sistema de Gestão{% endblock %}
+{% block title %}Lista de Pedidos{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Pedidos Realizados</h2>
+<style>
+  .action-btn {
+    text-decoration: none;
+    transition: transform 0.2s ease;
+  }
+  .action-btn:hover {
+    transform: scale(1.2);
+  }
 
-    <!-- Barra de busca + botão de filtros -->
-    <div class="row g-2 mb-3">
-        <div class="col-md-4">
-            <input type="text" class="form-control" id="nome" placeholder="Pesquisar por cliente...">
-        </div>
-        <div class="col-auto">
-            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosAvancados" aria-expanded="false" aria-controls="filtrosAvancados">
-                <i class="bi bi-funnel-fill"></i> Filtros
-            </button>
-        </div>
-    </div>
+  thead th {
+    vertical-align: middle;
+  }
 
-    <!-- Filtros avançados (colapsável) -->
-    <div class="collapse mb-3" id="filtrosAvancados">
-        <div class="row g-2">
-            <div class="col-md-3">
-                <select class="form-select" id="status">
-                    <option value="">Todos os status</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Pago">Pago</option>
-                    <option value="Cancelado">Cancelado</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <input type="text" class="form-control" id="valor" placeholder="Valor Total (Ex: 99.90)">
-            </div>
-            <div class="col-md-3">
-                <input type="date" class="form-control" id="data">
-            </div>
-            <div class="col-md-2 d-flex">
-                <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger w-100">
-                    <i class="bi bi-x-circle"></i> Limpar
-                </button>
-            </div>
-        </div>
-    </div>
+  #btn-selecionar-todos {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 0;
+    transition: color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+    cursor: pointer;
+    vertical-align: middle;
+    line-height: 1;
+  }
 
-    <!-- Formulário de alteração em lote -->
-    <form method="post" action="{% url 'atualizar_status_pedidos_lote' %}" id="formLote">
+  #btn-selecionar-todos:hover {
+    color: #3b82f6;
+  }
+
+  #btn-selecionar-todos.todos-selecionados {
+    color: #3b82f6;
+  }
+
+  #btn-selecionar-todos i {
+    font-size: 0.875rem;
+  }
+
+  .status {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .status.Pendente {
+    background-color: #fef9c3;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  .status.Pago {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+
+  .status.Cancelado {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+
+  /* Responsividade */
+  .valor-cell {
+    white-space: nowrap;
+  }
+
+  .data-cell {
+    white-space: nowrap;
+  }
+
+  /* Botões de ação responsivos */
+  @media (max-width: 1200px) {
+    .btn-acoes-wrapper {
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: 992px) {
+    .btn-acoes-wrapper .btn {
+      font-size: 0.7rem;
+      padding: 4px 8px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .btn-acoes-wrapper .btn span {
+      display: none;
+    }
+    .btn-acoes-wrapper .btn i {
+      margin: 0 !important;
+    }
+  }
+
+  @media (max-width: 992px) {
+    #btn-selecionar-todos span {
+      display: none;
+    }
+    
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    .btn-acoes-wrapper {
+      width: 100%;
+      margin-top: 0.5rem;
+      justify-content: stretch !important;
+    }
+
+    .btn-acoes-wrapper .btn {
+      flex: 1;
+      font-size: 0.65rem;
+      padding: 6px 4px;
+    }
+
+    .action-btn {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .data-cell {
+      font-size: 0.65rem;
+    }
+
+    .valor-cell {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de pedidos</h2>
+  </div>
+
+  <!-- Barra de busca + botão de filtros -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar pedidos</label>
+
+    <div class="d-flex align-items-start flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 200px;">
+        <!-- Campo de busca -->
+        <input type="text" id="filtro-nome" class="form-control form-control-sm flex-grow-1" placeholder="Pesquisar por cliente..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+
+        <!-- Botão de filtro -->
+        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
+      </div>
+
+      <!-- Ações em massa -->
+      <form method="post" action="{% url 'atualizar_status_pedidos_lote' %}" id="formLote" class="d-flex gap-2 btn-acoes-wrapper">
         {% csrf_token %}
+        <input type="hidden" name="status" id="status-hidden">
+        <button type="button" class="btn btn-outline-success btn-sm" data-status="Pago" data-bs-toggle="modal" data-bs-target="#confirmarLote"><i class="bi bi-check-circle me-1"></i><span>Alterar para Pago</span></button>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-status="Cancelado" data-bs-toggle="modal" data-bs-target="#confirmarLote"><i class="bi bi-x-circle me-1"></i><span>Alterar para Cancelado</span></button>
+        <button type="button" class="btn btn-outline-warning btn-sm" data-status="Pendente" data-bs-toggle="modal" data-bs-target="#confirmarLote"><i class="bi bi-hourglass-split me-1"></i><span>Alterar para Pendente</span></button>
+      </form>
+    </div>
+  </div>
 
-        <!-- Seletor de status + botão aplicar -->
-        <div class="d-flex justify-content-start align-items-center mb-3 gap-2">
-            <div>
-                <select name="status" class="form-select" required>
-                    <option value="" disabled selected>Alterar status para...</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Pago">Pago</option>
-                    <option value="Cancelado">Cancelado</option>
-                </select>
-            </div>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#confirmarLote">
-                <i class="bi bi-check-circle"></i> Aplicar
-            </button>
-        </div>
+  <!-- Campos extras (colapsáveis) -->
+  <div class="collapse mb-3" id="filtrosExtras">
+    <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
+      <div class="col-md-2 col-sm-6">
+        <label for="status" class="form-label" style="font-size: 0.75rem; color: #475569;">Status</label>
+        <select id="status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Pago">Pago</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="valor" class="form-label" style="font-size: 0.75rem; color: #475569;">Valor</label>
+        <input type="text" id="valor" class="form-control form-control-sm" placeholder="Ex: 99.90" />
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Início</label>
+        <input type="date" id="data_inicio" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="data_fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Fim</label>
+        <input type="date" id="data_fim" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-2 col-sm-12 d-flex align-items-end">
+        <button type="button" id="btn-limpar-filtros" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-arrow-clockwise me-1"></i> Limpar</button>
+      </div>
+    </div>
+  </div>
 
-        <!-- Tabela de pedidos -->
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped align-middle text-center">
-                        <thead class="table-dark">
-                            <tr>
-                                <th class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-light" id="btnSelecionarTodos">
-                                        Selecionar Todos
-                                    </button>
-                                </th>
-                                <th>Código do Pedido</th>
-                                <th>Cliente</th>
-                                <th>Status</th>
-                                <th>Valor Total</th>
-                                <th>Data</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-pedidos">
-                            {% for pedido in pedidos %}
-                            <tr data-id="{{ pedido.id }}"
-                                data-cliente="{{ pedido.cliente.username|lower }}"
-                                data-status="{{ pedido.status }}"
-                                data-valor="{{ pedido.total }}"
-                                data-data="{{ pedido.data_criacao|date:'Y-m-d' }}">
-                                <td>
-                                    <input type="checkbox" name="pedidos" value="{{ pedido.id }}">
-                                </td>
-                                <td>{{ pedido.numero_pedido }}</td>
-                                <td>{{ pedido.cliente.username }}</td>
-                                <td>
-                                <span class="badge 
-                                    {% if pedido.status == 'Pendente' %}bg-warning text-dark
-                                    {% elif pedido.status == 'Pago' %}bg-success
-                                    {% elif pedido.status == 'Cancelado' %}bg-danger
-                                    {% endif %}">
-                                    {{ pedido.status }}
-                                </span>
-                                </td>
-                                <td><span class="text-nowrap">R$ {{ pedido.total }}</span></td>
-                                <td><span class="text-nowrap">{{ pedido.data_criacao|date:"d/m/Y H:i" }}</span></td>
-                                <td>
-                                    <a href="{% url 'detalhes_pedido' pedido.id %}" class="btn btn-outline-primary btn-sm">   
-                                        <i class="bi bi-search"></i> Detalhes
-                                    </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center">Nenhum pedido encontrado.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+  <!-- Tabela -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <!-- Checkbox geral -->
+              <th style="padding: 1rem 1.25rem; text-align: left; width: 160px;">
+                <button type="button" id="btn-selecionar-todos" class="btn">
+                  <i class="bi bi-check-square"></i>
+                  <span>Selecionar todos</span>
+                </button>
+              </th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Código</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Cliente</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Valor</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Data</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Status</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-pedidos">
+            {% for pedido in pedidos %}
+              <tr data-id="{{ pedido.id }}" data-cliente="{{ pedido.cliente.username|lower }}" data-status="{{ pedido.status }}" data-valor="{{ pedido.total }}" data-data="{{ pedido.data_criacao|date:'Y-m-d' }}" style="border-bottom: 1px solid #e2e8f0;">
+                <!-- Checkbox -->
+                <td class="text-center">
+                  <input type="checkbox" name="pedidos" value="{{ pedido.id }}" form="formLote" />
+                </td>
 
-        <!-- Modal de confirmação -->
-        <div class="modal fade" id="confirmarLote" tabindex="-1" aria-labelledby="confirmarLoteLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title" id="confirmarLoteLabel"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Alteração</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                    </div>
-                    <div class="modal-body">
-                        Tem certeza que deseja alterar o status dos pedidos selecionados?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Sim, confirmar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+                <!-- Código -->
+                <td style="padding: 1rem 1.25rem;">
+                  <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ pedido.numero_pedido }}</span>
+                </td>
+
+                <!-- Cliente -->
+                <td>{{ pedido.cliente.username }}</td>
+
+                <!-- Valor -->
+                <td class="valor-cell">R$&nbsp;{{ pedido.total }}</td>
+
+                <!-- Data -->
+                <td class="data-cell">{{ pedido.data_criacao|date:"d/m/Y H:i" }}</td>
+
+                <!-- Status -->
+                <td>
+                  <span class="status {{ pedido.status }}">{{ pedido.status }}</span>
+                </td>
+
+                <!-- Ações -->
+                <td>
+                  <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'detalhes_pedido' pedido.id %}" class="action-btn text-primary"><i class="bi bi-search"></i> Detalhes</a>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="text-center py-5" style="color: #64748b;">
+                  <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                  <p class="mb-1">Nenhum pedido encontrado.</p>
+                  <small>Aguardando novos pedidos.</small>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Script -->
+<!-- Modal confirmação -->
+<div class="modal fade" id="confirmarLote" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Alteração</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Tem certeza que deseja alterar o status dos pedidos selecionados?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" form="formLote" class="btn btn-primary">Sim, confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
 <script>
-const btnSelecionarTodos = document.getElementById('btnSelecionarTodos');
+  // Funcionalidade do botão "Selecionar todos"
+  let todosSelecionados = false;
+  const btn = document.getElementById("btn-selecionar-todos");
+  const icone = btn.querySelector("i");
+  const texto = btn.querySelector("span");
 
-// 🔹 Selecionar todos
-function getCheckboxes() {
-    return document.querySelectorAll('input[name="pedidos"]');
-}
-let todosSelecionados = false;
-btnSelecionarTodos.addEventListener('click', function() {
-    const checkboxes = getCheckboxes();
+  function atualizarEstadoBotao() {
+    const checkboxes = document.querySelectorAll("input[name='pedidos']");
+    const selecionados = document.querySelectorAll("input[name='pedidos']:checked").length;
+    
+    if (selecionados === checkboxes.length && checkboxes.length > 0) {
+      btn.classList.add("todos-selecionados");
+      icone.className = "bi bi-check-square-fill";
+      texto.textContent = "Desmarcar todos";
+      todosSelecionados = true;
+    } else {
+      btn.classList.remove("todos-selecionados");
+      icone.className = "bi bi-check-square";
+      texto.textContent = "Selecionar todos";
+      todosSelecionados = false;
+    }
+  }
+
+  btn.addEventListener("click", function() {
+    const checkboxes = document.querySelectorAll("input[name='pedidos']");
     todosSelecionados = !todosSelecionados;
+    
     checkboxes.forEach(cb => cb.checked = todosSelecionados);
-    btnSelecionarTodos.textContent = todosSelecionados ? "Desmarcar Todos" : "Selecionar Todos";
-});
+    
+    if (todosSelecionados) {
+      btn.classList.add("todos-selecionados");
+      icone.className = "bi bi-check-square-fill";
+      texto.textContent = "Desmarcar todos";
+    } else {
+      btn.classList.remove("todos-selecionados");
+      icone.className = "bi bi-check-square";
+      texto.textContent = "Selecionar todos";
+    }
+  });
 
-// ================================
-// 🔹 Filtros em tempo real (front-end)
-// ================================
-const filtroNome = document.getElementById("nome");
-const filtroStatus = document.getElementById("status");
-const filtroValor = document.getElementById("valor");
-const filtroData = document.getElementById("data");
-const btnLimpar = document.getElementById("btn-limpar-filtros");
-const linhas = document.querySelectorAll("#tabela-pedidos tr[data-id]");
+  // Atualizar o estado do botão quando checkboxes individuais são clicados
+  document.querySelectorAll("input[name='pedidos']").forEach(checkbox => {
+    checkbox.addEventListener("change", atualizarEstadoBotao);
+  });
 
-function aplicarFiltros() {
+  // Filtros
+  const filtroNome = document.getElementById("filtro-nome");
+  const filtroStatus = document.getElementById("status");
+  const filtroValor = document.getElementById("valor");
+  const filtroDataInicio = document.getElementById("data_inicio");
+  const filtroDataFim = document.getElementById("data_fim");
+  const btnLimpar = document.getElementById("btn-limpar-filtros");
+  const linhas = document.querySelectorAll("#tabela-pedidos tr[data-id]");
+
+  function aplicarFiltros() {
     const termo = filtroNome.value.trim().toLowerCase();
     const status = filtroStatus.value;
     const valor = filtroValor.value.trim();
-    const data = filtroData.value;
+    const inicio = filtroDataInicio.value;
+    const fim = filtroDataFim.value;
 
     linhas.forEach(tr => {
-        const cliente = tr.dataset.cliente;
-        const statusPedido = tr.dataset.status;
-        const valorPedido = tr.dataset.valor;
-        const dataPedido = tr.dataset.data;
+      const cliente = tr.dataset.cliente;
+      const st = tr.dataset.status;
+      const vl = tr.dataset.valor;
+      const dt = tr.dataset.data;
 
-        const matchNome = !termo || cliente.includes(termo);
-        const matchStatus = !status || statusPedido === status;
-        const matchValor = !valor || valorPedido.includes(valor);
-        const matchData = !data || dataPedido.startsWith(data);
+      const okNome = !termo || cliente.includes(termo);
+      const okStatus = !status || st === status;
+      const okValor = !valor || vl.includes(valor);
 
-        tr.style.display = (matchNome && matchStatus && matchValor && matchData) ? "" : "none";
+      let okData = true;
+      if (inicio && dt < inicio) okData = false;
+      if (fim && dt > fim) okData = false;
+
+      tr.style.display = (okNome && okStatus && okValor && okData) ? "" : "none";
     });
-}
+  }
 
-// Escuta alterações
-[filtroNome, filtroStatus, filtroValor, filtroData].forEach(el => {
+  [filtroNome, filtroStatus, filtroValor, filtroDataInicio, filtroDataFim].forEach(el => {
     el?.addEventListener("input", aplicarFiltros);
     el?.addEventListener("change", aplicarFiltros);
-});
+  });
 
-// Botão limpar
-btnLimpar.addEventListener("click", () => {
-    filtroNome.value = "";
-    filtroStatus.value = "";
-    filtroValor.value = "";
-    filtroData.value = "";
+  btnLimpar.addEventListener("click", () => {
+    filtroNome.value = filtroStatus.value = filtroValor.value = "";
+    filtroDataInicio.value = filtroDataFim.value = "";
     aplicarFiltros();
-});
+  });
+
+  // Passa status escolhido para input hidden ao abrir modal
+  const modal = document.getElementById("confirmarLote");
+  modal.addEventListener("show.bs.modal", event => {
+    const botao = event.relatedTarget;
+    const status = botao.getAttribute("data-status");
+    document.getElementById("status-hidden").value = status;
+  });
 </script>
+{% endblock %}
 {% endblock %}

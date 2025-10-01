@@ -11,11 +11,11 @@
       transition: transform 0.2s ease;
     }
     .action-btn:hover {
-      transform: scale(1.2); /* aumenta só o tamanho */
+      transform: scale(1.2);
     }
 
     thead th {
-    vertical-align: middle;
+      vertical-align: middle;
     }
 
     /* Estilo do botão "Selecionar todos" */
@@ -49,50 +49,135 @@
     }
 
     .status {
-    display: inline-block;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 6px;
-  }
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
 
-  .status.ativo {
-    background-color: #dcfce7;  /* verde bem claro */
-    color: #15803d;            /* verde escuro */
-    border: 1px solid #bbf7d0; /* borda verde clara */
-  }
+    .status.ativo {
+      background-color: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
 
-  .status.inativo {
-    background-color: #fee2e2; /* vermelho bem claro */
-    color: #b91c1c;           /* vermelho escuro */
-    border: 1px solid #fecaca;/* borda vermelha clara */
-  }
+    .status.inativo {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    /* Responsividade */
+    .preco-cell {
+      white-space: nowrap;
+    }
+
+    /* Botões de ação responsivos */
+    @media (max-width: 1200px) {
+      .btn-acoes-wrapper {
+        flex-wrap: wrap;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .btn-acoes-wrapper .btn {
+        font-size: 0.7rem;
+        padding: 4px 8px;
+      }
+
+      #btn-selecionar-todos span {
+        display: none;
+      }
+      
+      .table thead th {
+        font-size: 0.65rem;
+        padding: 0.75rem 0.5rem;
+      }
+      
+      .table tbody td {
+        font-size: 0.75rem;
+        padding: 0.75rem 0.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      .btn-acoes-wrapper .btn span {
+        display: none;
+      }
+      .btn-acoes-wrapper .btn i {
+        margin: 0 !important;
+      }
+
+      .btn-acoes-wrapper {
+        width: 100%;
+        margin-top: 0.5rem;
+        justify-content: stretch !important;
+      }
+
+      .btn-acoes-wrapper .btn {
+        flex: 1;
+        font-size: 0.65rem;
+        padding: 6px 4px;
+      }
+
+      .action-btn {
+        font-size: 0.75rem;
+      }
+
+      .btn-novo-produto {
+        font-size: 0.875rem !important;
+        padding: 8px 16px !important;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .table-responsive {
+        font-size: 0.7rem;
+      }
+
+      .preco-cell {
+        font-size: 0.75rem;
+      }
+
+      h2 {
+        font-size: 1.25rem !important;
+      }
+    }
   </style>
 
   <div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
     <!-- Cabeçalho -->
-    <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
       <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de produtos</h2>
-      <a href="{% url 'criar_produto' %}" class="btn btn-success" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><i class="bi bi-plus-circle me-2"></i> Novo produto</a>
+      <a href="{% url 'criar_produto' %}" class="btn btn-success btn-novo-produto" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><i class="bi bi-plus-circle me-2"></i> Novo produto</a>
     </div>
 
     <!-- Barra de busca + botão de filtros -->
     <div class="mb-3 p-3 bg-white rounded shadow-sm">
       <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar produtos</label>
 
-      <div class="d-flex align-items-center gap-2">
-        <!-- Campo de busca -->
-        <input type="text" id="filtro-nome" class="form-control form-control-sm" placeholder="Digite o nome ou ID do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+      <div class="d-flex align-items-start flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 200px;">
+          <!-- Campo de busca -->
+          <input type="text" id="filtro-nome" class="form-control form-control-sm flex-grow-1" placeholder="Digite o nome ou ID do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
 
-        <!-- Botão de filtro -->
-        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
+          <!-- Botão de filtro -->
+          <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
+        </div>
 
         <!-- Ações em massa -->
-        <form id="form-status" method="POST" action="{% url 'alterar_status_produtos' %}" class="d-flex gap-2 ms-2">
+        <form id="form-status" method="POST" action="{% url 'alterar_status_produtos' %}" class="d-flex gap-2 btn-acoes-wrapper">
           {% csrf_token %}
           <input type="hidden" name="acao" id="acao-status" />
-          <button type="button" class="btn btn-outline-success btn-sm" onclick="submeterAcao('ativar')"><i class="bi bi-check-circle me-1"></i> Ativar selecionados</button>
-          <button type="button" class="btn btn-outline-danger btn-sm" onclick="submeterAcao('inativar')"><i class="bi bi-x-circle me-1"></i> Inativar selecionados</button>
+          <button type="button" class="btn btn-outline-success btn-sm" onclick="submeterAcao('ativar')"><i class="bi bi-check-circle me-1"></i><span> Ativar selecionados</span></button>
+          <button type="button" class="btn btn-outline-danger btn-sm" onclick="submeterAcao('inativar')"><i class="bi bi-x-circle me-1"></i><span> Inativar selecionados</span></button>
         </form>
       </div>
     </div>
@@ -100,23 +185,23 @@
     <!-- Campos extras (colapsáveis) -->
     <div class="collapse mb-3" id="filtrosExtras">
       <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
-        <div class="col-md-2">
+        <div class="col-md-2 col-sm-6">
           <label for="preco-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço mín.</label>
           <input type="number" id="preco-min" class="form-control form-control-sm" placeholder="R$ 0,00" />
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 col-sm-6">
           <label for="preco-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Preço máx.</label>
           <input type="number" id="preco-max" class="form-control form-control-sm" placeholder="R$ 999,99" />
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 col-sm-6">
           <label for="qtd-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd mín.</label>
           <input type="number" id="qtd-min" class="form-control form-control-sm" placeholder="0" />
         </div>
-        <div class="col-md-2">
+        <div class="col-md-2 col-sm-6">
           <label for="qtd-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Qtd máx.</label>
           <input type="number" id="qtd-max" class="form-control form-control-sm" placeholder="999" />
         </div>
-        <div class="col-md-2 d-flex align-items-end">
+        <div class="col-md-2 col-sm-12 d-flex align-items-end">
           <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-arrow-clockwise me-1"></i> Limpar</button>
         </div>
       </div>
@@ -171,7 +256,7 @@
                   <td>{{ produto.nome }}</td>
 
                   <!-- Preço -->
-                  <td>R$ {{ produto.preco }}</td>
+                  <td class="preco-cell">R$&nbsp;{{ produto.preco }}</td>
 
                   <!-- Descrição -->
                   <td>{{ produto.descricao|truncatechars:50 }}</td>
