@@ -601,12 +601,19 @@ def adicionar_ao_carrinho(request, produto_id):
 
 def ver_carrinho(request):
     if request.user.is_authenticated:
-        # 🔒 Usuário logado → usa carrinho do banco
+        # 🔒 Usuário logado → usa carrinho no banco
         carrinho = get_or_create_carrinho(request.user)
 
-        # 🔹 recalcula total para garantir que está atualizado
+        # 🔄 Atualiza os preços unitários dos itens caso o produto tenha mudado de valor
+        for item in carrinho.itemcarrinho_set.all():
+            if item.produto and item.preco_unitario != item.produto.preco:
+                item.preco_unitario = item.produto.preco
+                item.save()
+
+        # 🔹 Recalcula o total do carrinho após atualização
         carrinho.calcular_total()
 
+        # 🔹 Monta a lista de itens para o template
         itens = []
         for item in ItemCarrinho.objects.filter(carrinho=carrinho):
             itens.append({
@@ -625,12 +632,24 @@ def ver_carrinho(request):
         })
 
     else:
-        # 👤 Usuário anônimo → usa carrinho da sessão
+        # 👤 Usuário anônimo → usa carrinho na sessão
         carrinho_sessao = request.session.get("carrinho", {})
         itens = []
         total = Decimal('0.00')
 
-        for produto_id, dados in carrinho_sessao.items():
+        # 🔄 Atualiza preços também para anônimos
+        for produto_id, dados in list(carrinho_sessao.items()):
+            try:
+                produto = Produto.objects.get(id=produto_id)
+                # Se preço mudou, atualiza
+                if str(produto.preco) != dados["preco_unitario"]:
+                    dados["preco_unitario"] = str(produto.preco)
+                    carrinho_sessao[str(produto_id)] = dados
+            except Produto.DoesNotExist:
+                # Se produto não existe mais, remove do carrinho
+                del carrinho_sessao[str(produto_id)]
+                continue
+
             subtotal = Decimal(dados["preco_unitario"]) * dados["quantidade"]
             total += subtotal
             itens.append({
@@ -641,6 +660,10 @@ def ver_carrinho(request):
                 "subtotal": subtotal,
                 "imagem": dados.get("imagem"),
             })
+
+        # 🔹 Salva carrinho corrigido na sessão
+        request.session["carrinho"] = carrinho_sessao
+        request.session.modified = True
 
         return render(request, 'loja/carrinho.html', {
             'itens': itens,
