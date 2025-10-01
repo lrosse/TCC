@@ -21,6 +21,21 @@
     </li>
   </ul>
 
+  <!-- 🔎 Filtros -->
+  <form method="get" class="row g-3 mb-3 align-items-end">
+  <div class="col-md-5">
+    <label class="form-label"><i class="bi bi-search"></i> Buscar Produto</label>
+    <div class="input-group">
+      <input type="text" name="nome" class="form-control shadow-sm"
+             placeholder="Digite o nome do produto..."
+             value="{{ request.GET.nome }}">
+      <button type="submit" class="btn btn-primary shadow-sm">
+        <i class="bi bi-search"></i> Pesquisar
+      </button>
+    </div>
+  </div>
+</form>
+
   <!-- Card da Tabela -->
   <div class="card shadow-sm border-0">
     <div class="card-body">
@@ -38,6 +53,7 @@
           </a>
         </div>
       </div>
+
 
       <!-- Tabela -->
       <form id="formCustos" method="POST">
@@ -73,6 +89,10 @@
                     —
                   {% endif %}
                 </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
               </tr>
               {% endfor %}
             </tbody>

@@ -143,7 +143,11 @@ def gestao_estoque(request):
 def financeiro_produtos(request):
     from .models import Produto, CustoProduto, HistoricoCusto
 
+    # 🔹 Filtro por nome
+    nome = request.GET.get("nome")
     produtos = Produto.objects.all().order_by("nome")
+    if nome:
+        produtos = produtos.filter(nome__icontains=nome)
 
     if request.method == "POST":
         for produto in produtos:
@@ -196,6 +200,7 @@ def financeiro_produtos(request):
 
     context = {"produtos_data": produtos_data}
     return render(request, "loja/gestao/financeiro_produtos.html", context)
+
 
 
 @login_required
