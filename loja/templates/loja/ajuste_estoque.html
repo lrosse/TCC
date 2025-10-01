@@ -2,93 +2,180 @@
 {% block title %}Ajuste Manual de Estoque{% endblock %}
 
 {% block content %}
-<h2 class="fw-semibold mt-4 mb-3">Ajuste Manual de Estoque</h2>
+<style>
+  /* Destaque visual conforme o modo */
+  .modo-entrada .qtd:focus { 
+    box-shadow: 0 0 0 .25rem rgba(25,135,84,.25);
+    border-color: #10b981 !important;
+  }
+  .modo-saida .qtd:focus { 
+    box-shadow: 0 0 0 .25rem rgba(220,53,69,.25);
+    border-color: #dc3545 !important;
+  }
 
-<form method="post" action="{% url 'ajuste_estoque' %}" id="form-lote">
-  {% csrf_token %}
+  /* Corrigir corte do placeholder */
+  input::placeholder {
+    white-space: nowrap !important;
+  }
 
-  <!-- Toolbar: filtro + modo global + botão salvar -->
-  <div class="row g-2 align-items-center mb-3">
-    <div class="col-md-4">
-      <input type="text" id="filtro" class="form-control" placeholder="Pesquisar por ID ou nome...">
-    </div>
+  thead th {
+    vertical-align: middle;
+  }
 
-    <div class="col-md-5 d-flex align-items-center gap-3">
-      <div class="btn-group" role="group" aria-label="Modo de operação">
-        <input type="radio" class="btn-check" name="acao_global" id="modoEntrada" value="entrada" autocomplete="off" checked>
-        <label class="btn btn-outline-success" for="modoEntrada">Entrada</label>
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
 
-        <input type="radio" class="btn-check" name="acao_global" id="modoSaida" value="saida" autocomplete="off">
-        <label class="btn btn-outline-danger" for="modoSaida">Saída</label>
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-group {
+      width: 100%;
+    }
+
+    .btn-group label {
+      flex: 1;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Ajuste Manual de Estoque</h2>
+  </div>
+
+  <form method="post" action="{% url 'ajuste_estoque' %}" id="form-lote">
+    {% csrf_token %}
+
+    <!-- Barra de controles -->
+    <div class="mb-3 p-3 bg-white rounded shadow-sm">
+      <label for="filtro" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar produtos</label>
+
+      <div class="row g-3 align-items-end">
+        <!-- Campo de busca -->
+        <div class="col-lg-4 col-md-6">
+          <input type="text" id="filtro" class="form-control form-control-sm" placeholder="Pesquisar por ID ou nome..." style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;">
+        </div>
+
+        <!-- Modo de operação -->
+        <div class="col-lg-4 col-md-6">
+          <label class="form-label fw-semibold mb-2" style="color: #475569; font-size: 0.875rem;">Modo de operação</label>
+          <div class="btn-group w-100" role="group" aria-label="Modo de operação">
+            <input type="radio" class="btn-check" name="acao_global" id="modoEntrada" value="entrada" autocomplete="off" checked>
+            <label class="btn btn-outline-success" for="modoEntrada" style="border-radius: 8px 0 0 8px;">
+              <i class="bi bi-arrow-up-circle me-1"></i> Entrada
+            </label>
+
+            <input type="radio" class="btn-check" name="acao_global" id="modoSaida" value="saida" autocomplete="off">
+            <label class="btn btn-outline-danger" for="modoSaida" style="border-radius: 0 8px 8px 0;">
+              <i class="bi bi-arrow-down-circle me-1"></i> Saída
+            </label>
+          </div>
+        </div>
+
+        <!-- Botão salvar -->
+        <div class="col-lg-4 col-md-12 text-lg-end">
+          <button type="submit" class="btn btn-primary w-100 w-lg-auto" id="btn-salvar" disabled style="border-radius: 8px; padding: 10px 24px; font-weight: 600;">
+            <i class="bi bi-save me-2"></i> Salvar movimentações
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="col-md-3 text-md-end">
-      <button type="submit" class="btn btn-primary" id="btn-salvar" disabled>
-        Salvar movimentações
-      </button>
-    </div>
-  </div>
-
-  <!-- Tabela de produtos -->
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table table-striped align-middle text-center">
-          <thead class="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Produto</th>
-              <th>Estoque Atual</th>
-              <th>Quantidade</th>
-              <th style="min-width: 200px;">Observação (opcional)</th>
-            </tr>
-          </thead>
-          <tbody id="tabela-produtos">
-            {% for p in produtos %}
-            <tr data-busca="{{ p.id }} {{ p.nome|lower }}">
-              <td>{{ p.id }}</td>
-              <td>{{ p.nome }}</td>
-              <td>{{ p.quantidade }}</td>
-              <td>
-                <input
-                  type="number"
-                  class="form-control qtd"
-                  name="qtd_{{ p.id }}"
-                  min="0" step="1"
-                  inputmode="numeric"
-                  placeholder="0">
-              </td>
-              <td>
-                <input
-                  type="text"
-                  class="form-control obs"
-                  name="obs_{{ p.id }}"
-                  placeholder="Motivo/observação"
-                  style="min-width: 180px;">
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <!-- Tabela de produtos -->
+    <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead style="background: #f8fafc;">
+              <tr>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">ID</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Produto</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Estoque Atual</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; min-width: 120px;">Quantidade</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; min-width: 200px;">Observação</th>
+              </tr>
+            </thead>
+            <tbody id="tabela-produtos">
+              {% for p in produtos %}
+              <tr data-busca="{{ p.id }} {{ p.nome|lower }}" style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 1rem 1.25rem;">
+                  <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ p.id }}</span>
+                </td>
+                <td>{{ p.nome }}</td>
+                <td>
+                  <span class="badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                    {{ p.quantidade }} unid.
+                  </span>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm qtd"
+                    name="qtd_{{ p.id }}"
+                    min="0" step="1"
+                    inputmode="numeric"
+                    placeholder="0"
+                    style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm obs"
+                    name="obs_{{ p.id }}"
+                    placeholder="Motivo/observação"
+                    style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; min-width: 180px;">
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center py-5" style="color: #64748b;">
+                  <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                  <p class="mb-1">Nenhum produto encontrado.</p>
+                  <small>Cadastre produtos para gerenciar o estoque.</small>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
-</form>
+  </form>
+</div>
 
-<!-- ===========================
-     MODAL DE CONFIRMAÇÃO
-     =========================== -->
+<!-- Modal de Confirmação -->
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content rounded-4">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Confirmar movimentações</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="confirmModalLabel">
+          <i class="bi bi-exclamation-triangle me-2"></i>Confirmar movimentações
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
       <div class="modal-body">
         <p>
@@ -100,7 +187,7 @@
         </p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-confirmar-modal">Confirmar</button>
       </div>
     </div>
@@ -108,38 +195,21 @@
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-  /* Destaque visual conforme o modo */
-  .modo-entrada .qtd:focus { box-shadow: 0 0 0 .25rem rgba(25,135,84,.25); }
-  .modo-saida   .qtd:focus { box-shadow: 0 0 0 .25rem rgba(220,53,69,.25); }
-
-  /* Corrigir corte do placeholder apenas nesta página */
-  input::placeholder {
-    white-space: nowrap !important;
-  }
-</style>
-{% endblock %}
-
 {% block extra_js %}
 <script>
-  // -----------------------------
   // Filtro por ID OU nome
-  // -----------------------------
   const filtro = document.getElementById('filtro');
   const linhas = document.querySelectorAll('#tabela-produtos tr[data-busca]');
 
   filtro?.addEventListener('input', () => {
     const q = filtro.value.trim().toLowerCase();
     linhas.forEach(tr => {
-      const termo = tr.dataset.busca; // Ex.: "12 teclado mecânico"
+      const termo = tr.dataset.busca;
       tr.style.display = termo.includes(q) ? '' : 'none';
     });
   });
 
-  // -----------------------------
   // Habilitar botão "Salvar"
-  // -----------------------------
   const form = document.getElementById('form-lote');
   const btnSalvar = document.getElementById('btn-salvar');
   const qtdInputs = form.querySelectorAll('input.qtd');
@@ -154,9 +224,7 @@
   qtdInputs.forEach(i => i.addEventListener('input', atualizarBotao));
   atualizarBotao();
 
-  // -----------------------------
   // Feedback visual do modo (Entrada/Saída)
-  // -----------------------------
   const bodyContent = document.querySelector('body');
   const radios = form.querySelectorAll('input[name="acao_global"]');
   const aplicarClasseModo = () => {
@@ -167,19 +235,16 @@
   radios.forEach(r => r.addEventListener('change', aplicarClasseModo));
   aplicarClasseModo();
 
-  // -----------------------------
-  // Confirmação antes de enviar (corrigido)
-  // -----------------------------
+  // Confirmação antes de enviar
   const modalEl = document.getElementById('confirmModal');
   const btnConfirmarModal = document.getElementById('btn-confirmar-modal');
   const spanQtd = document.getElementById('confirm-qtd-itens');
   const spanModo = document.getElementById('confirm-modo');
 
   let bsModal = null;
-  let allowSubmit = false; // guard: só permite enviar após confirmar
+  let allowSubmit = false;
 
   function getResumoMovimentacoes() {
-    // conta quantos itens têm quantidade > 0
     let count = 0;
     qtdInputs.forEach(i => { if (i.value && Number(i.value) > 0) count++; });
 
@@ -190,12 +255,10 @@
 
   form.addEventListener('submit', (e) => {
     if (allowSubmit) {
-      // já confirmado -> deixa enviar e reseta flag
       allowSubmit = false;
       return;
     }
 
-    // 1ª tentativa: bloqueia envio e abre modal
     e.preventDefault();
 
     const { count, modoTxt } = getResumoMovimentacoes();
@@ -212,14 +275,13 @@
   });
 
   btnConfirmarModal.addEventListener('click', () => {
-    // libera o envio e dispara um submit "de verdade"
     allowSubmit = true;
     bsModal?.hide();
 
     if (form.requestSubmit) {
       form.requestSubmit();
     } else {
-      form.submit(); // fallback
+      form.submit();
     }
   });
 </script>

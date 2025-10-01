@@ -2,128 +2,196 @@
 {% block title %}Histórico de Estoque{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h2 class="fw-semibold mb-0">Histórico de estoque</h2>
-        <a href="{% url 'ajuste_estoque' %}" class="btn btn-outline-success">
-            <i class="bi bi-box-arrow-in-down"></i> Nova Entrada
-        </a>
-    </div>
+<style>
+  thead th {
+    vertical-align: middle;
+  }
 
-    <!-- Barra de pesquisa principal e botão de filtro -->
-    <form class="row g-3 align-items-end mb-3" onsubmit="return false;">
-        <div class="col-md-4">
-            <input type="text" id="filtro-nome" class="form-control shadow-sm" placeholder="Digite o nome...">
-        </div>
-        <div class="col-auto">
-            <label class="form-label d-block">&nbsp;</label>
-            <button class="btn btn-outline-secondary shadow-sm" type="button" 
-                    data-bs-toggle="collapse" data-bs-target="#filtrosExtras" 
-                    aria-expanded="false" aria-controls="filtrosExtras">
-                <i class="bi bi-funnel-fill"></i> Filtros
-            </button>
-        </div>
-    </form>
+  .data-cell {
+    white-space: nowrap;
+  }
 
-    <!-- Filtros colapsáveis -->
-    <div class="collapse mb-4" id="filtrosExtras">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Data Inicial</label>
-                <input type="date" id="filtro-data-inicio" class="form-control shadow-sm">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Data Final</label>
-                <input type="date" id="filtro-data-fim" class="form-control shadow-sm">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Tipo</label>
-                <select id="filtro-tipo" class="form-select shadow-sm">
-                    <option value="">Todos</option>
-                    <option value="entrada">Entrada</option>
-                    <option value="saida">Saída</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label d-block">&nbsp;</label>
-                <button type="button" id="btn-limpar" class="btn btn-outline-danger form-control">
-                    <i class="bi bi-x-circle"></i> Limpar
-                </button>
-            </div>
-        </div>
-    </div>
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
 
-    <!-- Tabela com histórico -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped align-middle text-center" id="tabela-movimentacoes">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Data e Hora</th>
-                            <th>ID</th>
-                            <th>Produto</th>
-                            <th>Tipo</th>
-                            <th>Quantidade</th>
-                            <th>Estoque Final</th>
-                            <th>Observação</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for mov in movimentacoes %}
-                        <tr
-                          data-id="{{ mov.produto.id }}"
-                          data-nome="{{ mov.produto.nome|lower }}"
-                          data-tipo="{% if mov.tipo == 'ajuste' %}saida{% else %}{{ mov.tipo }}{% endif %}"
-                          data-date="{{ mov.data|date:'Y-m-d H:i' }}"
-                        >
-                            <td class="text-nowrap">{{ mov.data|date:"d/m/Y H:i" }}</td>
-                            <td>{{ mov.produto.id }}</td>
-                            <td>{{ mov.produto.nome }}</td>
-                            <td>
-                                {% if mov.tipo == 'entrada' %}
-                                  <span class="badge bg-success">Entrada</span>
-                                {% elif mov.tipo == 'saida' or mov.tipo == 'ajuste' %}
-                                  <span class="badge bg-danger">Saída</span>
-                                {% else %}
-                                  <span class="badge bg-secondary">{{ mov.tipo|capfirst }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ mov.quantidade }}</td>
-                            <td>{{ mov.estoque_final }}</td>
-                            <td>{{ mov.observacao }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-muted">Nenhuma movimentação registrada.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-nova-entrada {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .data-cell {
+      font-size: 0.65rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Histórico de estoque</h2>
+    <a href="{% url 'ajuste_estoque' %}" class="btn btn-success btn-nova-entrada" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+      <i class="bi bi-box-arrow-in-down me-2"></i> Nova Entrada
+    </a>
+  </div>
+
+  <!-- Barra de busca + botão de filtros -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar movimentações</label>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <!-- Campo de busca -->
+      <input type="text" id="filtro-nome" class="form-control form-control-sm" placeholder="Digite o nome do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem; flex-grow: 1; min-width: 200px;" />
+
+      <!-- Botão de filtro -->
+      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
     </div>
+  </div>
+
+  <!-- Campos extras (colapsáveis) -->
+  <div class="collapse mb-3" id="filtrosExtras">
+    <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
+      <div class="col-md-2 col-sm-6">
+        <label for="filtro-id" class="form-label" style="font-size: 0.75rem; color: #475569;">ID Produto</label>
+        <input type="text" id="filtro-id" class="form-control form-control-sm" placeholder="Ex: 15" />
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="filtro-data-inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Inicial</label>
+        <input type="date" id="filtro-data-inicio" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="filtro-data-fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Final</label>
+        <input type="date" id="filtro-data-fim" class="form-control form-control-sm" />
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <label for="filtro-tipo" class="form-label" style="font-size: 0.75rem; color: #475569;">Tipo</label>
+        <select id="filtro-tipo" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+        </select>
+      </div>
+      <div class="col-md-2 col-sm-12 d-flex align-items-end">
+        <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-arrow-clockwise me-1"></i> Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table align-middle mb-0" id="tabela-movimentacoes">
+          <thead style="background: #f8fafc;">
+            <tr>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Data e Hora</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">ID</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Produto</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Tipo</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Quantidade</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Estoque Final</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Observação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mov in movimentacoes %}
+            <tr data-id="{{ mov.produto.id }}" data-nome="{{ mov.produto.nome|lower }}" data-tipo="{% if mov.tipo == 'ajuste' %}saida{% else %}{{ mov.tipo }}{% endif %}" data-date="{{ mov.data|date:'Y-m-d H:i' }}" style="border-bottom: 1px solid #e2e8f0;">
+              <!-- Data e Hora -->
+              <td class="data-cell" style="padding: 1rem 1.25rem;">{{ mov.data|date:"d/m/Y H:i" }}</td>
+
+              <!-- ID -->
+              <td>
+                <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ mov.produto.id }}</span>
+              </td>
+
+              <!-- Produto -->
+              <td>{{ mov.produto.nome }}</td>
+
+              <!-- Tipo -->
+              <td>
+                {% if mov.tipo == 'entrada' %}
+                  <span class="badge" style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid #bbf7d0;">Entrada</span>
+                {% elif mov.tipo == 'saida' or mov.tipo == 'ajuste' %}
+                  <span class="badge" style="background-color: #fee2e2; color: #b91c1c; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid #fecaca;">Saída</span>
+                {% else %}
+                  <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px; border: 1px solid #e2e8f0;">{{ mov.tipo|capfirst }}</span>
+                {% endif %}
+              </td>
+
+              <!-- Quantidade -->
+              <td>
+                <span style="font-weight: 600; color: #64748b;">{{ mov.quantidade }}</span>
+              </td>
+
+              <!-- Estoque Final -->
+              <td>
+                <span class="badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                  {{ mov.estoque_final }}
+                </span>
+              </td>
+
+              <!-- Observação -->
+              <td>{{ mov.observacao|truncatechars:50|default:"—" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhuma movimentação registrada.</p>
+                <small>As movimentações de estoque aparecerão aqui.</small>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 function filtrarTabela() {
-  const idVal     = (document.getElementById('filtro-id')?.value || '').trim().toLowerCase();
-  const nomeVal   = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
+  const idVal      = (document.getElementById('filtro-id')?.value || '').trim().toLowerCase();
+  const nomeVal    = (document.getElementById('filtro-nome').value || '').trim().toLowerCase();
   const dataInicio = (document.getElementById('filtro-data-inicio').value || '').trim();
   const dataFim    = (document.getElementById('filtro-data-fim').value || '').trim();
-  const tipoVal   = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase();
+  const tipoVal    = (document.getElementById('filtro-tipo').value || '').trim().toLowerCase();
 
   const linhas = document.querySelectorAll('#tabela-movimentacoes tbody tr');
 
   linhas.forEach(linha => {
     const liId   = (linha.dataset.id || '').toLowerCase();
     const liNome = (linha.dataset.nome || '').toLowerCase();
-    const liDate = linha.dataset.date ? linha.dataset.date.slice(0,10) : ''; // formato AAAA-MM-DD
+    const liDate = linha.dataset.date ? linha.dataset.date.slice(0,10) : '';
     const liTipo = (linha.dataset.tipo || '').toLowerCase();
 
-    // Condições
     const condId   = !idVal   || liId.includes(idVal);
     const condNome = !nomeVal || liNome.includes(nomeVal);
     const condTipo = !tipoVal || liTipo === tipoVal;
