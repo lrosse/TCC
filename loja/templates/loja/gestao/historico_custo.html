@@ -2,66 +2,147 @@
 {% block title %}Gestão Financeira - Histórico de Custo{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-3">Histórico de Custo</h2>
+<style>
+  thead th {
+    vertical-align: middle;
+  }
 
-  <!-- 🔹 Form de filtro por datas (GET) -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-auto">
-      <label for="data_inicio" class="form-label">Data início</label>
-      <input type="date" id="data_inicio" name="data_inicio" class="form-control"
-             value="{{ data_inicio }}">
-    </div>
-    <div class="col-auto">
-      <label for="data_fim" class="form-label">Data fim</label>
-      <input type="date" id="data_fim" name="data_fim" class="form-control"
-             value="{{ data_fim }}">
-    </div>
-    <div class="col-auto align-self-end">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-    </div>
-  </form>
+  .data-cell {
+    white-space: nowrap;
+  }
 
-  <!-- 🔹 Tabela de histórico -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .data-cell {
+      font-size: 0.65rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Histórico de Custo</h2>
+    <a class="btn btn-outline-secondary btn-voltar" href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar para Produtos
+    </a>
+  </div>
+
+  <!-- Filtro de datas -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label class="form-label fw-semibold mb-3" style="color: #475569; font-size: 0.875rem;">Filtrar por período</label>
+    
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3 col-sm-6">
+        <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data início</label>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control form-control-sm" value="{{ data_inicio }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <label for="data_fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data fim</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control form-control-sm" value="{{ data_fim }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-3 col-sm-12">
+        <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px; padding: 8px 20px; font-weight: 600;">
+          <i class="bi bi-funnel me-2"></i> Filtrar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela de histórico -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead class="table-light">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
             <tr>
-              <th>Data</th>
-              <th>Produto</th>
-              <th>Custo Antigo</th>
-              <th>Custo Novo</th>
-              <th>Responsável</th>
-              <th>Descrição</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Data</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Produto</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo Antigo</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo Novo</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Variação</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Responsável</th>
             </tr>
           </thead>
           <tbody>
             {% for h in historicos %}
-            <tr>
-              <td>{{ h.data|date:"d/m/Y H:i" }}</td>
-              <td>{{ h.produto.nome }}</td>
-              <td><span class="text-nowrap">R$ {{ h.custo_antigo|floatformat:2 }}</span></td>
-              <td><span class="text-nowrap">R$ {{ h.custo_novo|floatformat:2 }}</span></td>
-              <td>{{ h.usuario.username }}</td>
-              <td class="text-muted">{{ h.descricao|default:"-" }}</td>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td class="data-cell" style="padding: 1rem 1.25rem;">{{ h.data|date:"d/m/Y H:i" }}</td>
+              <td>
+                <span style="font-weight: 600; color: #1e293b;">{{ h.produto.nome }}</span>
+              </td>
+              <td>
+                <span class="text-nowrap" style="color: #64748b;">R$ {{ h.custo_antigo|floatformat:2 }}</span>
+              </td>
+              <td>
+                <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">R$ {{ h.custo_novo|floatformat:2 }}</span>
+              </td>
+              <td>
+                {% with variacao=h.custo_novo|add:h.custo_antigo|floatformat:2|add:"-"|add:h.custo_antigo|floatformat:2 %}
+                {% if h.custo_novo > h.custo_antigo %}
+                  <span class="badge" style="background-color: #fee2e2; color: #b91c1c; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-arrow-up"></i> +R$ {{ h.custo_novo|add:"-"|add:h.custo_antigo|floatformat:2 }}
+                  </span>
+                {% elif h.custo_novo < h.custo_antigo %}
+                  <span class="badge" style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                    <i class="bi bi-arrow-down"></i> -R$ {{ h.custo_antigo|add:"-"|add:h.custo_novo|floatformat:2 }}
+                  </span>
+                {% else %}
+                  <span class="badge" style="background-color: #f1f5f9; color: #64748b; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                    Sem alteração
+                  </span>
+                {% endif %}
+                {% endwith %}
+              </td>
+              <td>
+                <span style="color: #64748b;">
+                  <i class=" me-1"></i>{{ h.usuario.username }}
+                </span>
+              </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="text-center text-muted">Nenhum histórico encontrado</td>
+              <td colspan="7" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhum histórico encontrado.</p>
+                <small>As alterações de custo aparecerão aqui.</small>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-      </div>
-
-      <!-- 🔹 Botão de voltar para Produtos (mantendo filtros) -->
-      <div class="mt-3">
-        <a class="btn btn-outline-secondary btn-sm"
-           href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-           <i class="bi bi-arrow-left"></i> Voltar para Produtos
-        </a>
       </div>
     </div>
   </div>

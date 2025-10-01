@@ -2,97 +2,194 @@
 {% block title %}Gestão Financeira - Produtos{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-4">Produtos</h2>
+<style>
+  /* Abas personalizadas */
+  .nav-tabs {
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .nav-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  .nav-tabs .nav-link.active {
+    color: #3b82f6;
+    background: transparent;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  thead th {
+    vertical-align: middle;
+  }
+
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .nav-tabs .nav-link {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .btn-toolbar-custom {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .btn-toolbar-custom .btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão Financeira - Produtos</h2>
+  </div>
 
   <!-- Abas -->
-  <ul class="nav nav-tabs mb-4">
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-         href="{% url 'financeiro_resumo' %}">Resumo Geral</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-         href="{% url 'financeiro_produtos' %}">Produtos</a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-         href="{% url 'financeiro_pedidos' %}">Pedidos</a>
-    </li>
-  </ul>
-
-  <!-- 🔎 Filtros -->
-  <form method="get" class="row g-3 mb-3 align-items-end">
-  <div class="col-md-5">
-    <label class="form-label"><i class="bi bi-search"></i> Buscar Produto</label>
-    <div class="input-group">
-      <input type="text" name="nome" class="form-control shadow-sm"
-             placeholder="Digite o nome do produto..."
-             value="{{ request.GET.nome }}">
-      <button type="submit" class="btn btn-primary shadow-sm">
-        <i class="bi bi-search"></i> Pesquisar
-      </button>
-    </div>
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+           href="{% url 'financeiro_resumo' %}">
+           <i class="bi bi-graph-up me-2"></i>Resumo Geral
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+           href="{% url 'financeiro_produtos' %}">
+           <i class="bi bi-box-seam me-2"></i>Produtos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+           href="{% url 'financeiro_pedidos' %}">
+           <i class="bi bi-receipt me-2"></i>Pedidos
+        </a>
+      </li>
+    </ul>
   </div>
-</form>
+
+  <!-- Filtro de busca -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+      <i class="bi bi-search me-2"></i>Buscar Produto
+    </label>
+
+    <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+      <input type="text" name="nome" class="form-control form-control-sm flex-grow-1" placeholder="Digite o nome do produto..." value="{{ request.GET.nome }}" style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;">
+      <button type="submit" class="btn btn-primary btn-sm" style="border-radius: 8px; padding: 6px 20px; font-weight: 600;">
+        <i class="bi bi-search me-1"></i> Pesquisar
+      </button>
+    </form>
+  </div>
 
   <!-- Card da Tabela -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-4">
       <!-- Cabeçalho da tabela com botões -->
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="card-title">Margens de Produtos</h5>
-        <div id="btnArea" class="d-flex gap-2">
-          <a class="btn btn-outline-secondary btn-sm"
-            href="{% url 'historico_custo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-            <i class="bi bi-clock-history"></i> Histórico de Custo
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <h5 class="fw-semibold mb-0" style="color: #475569;">Margens de Produtos</h5>
+        <div id="btnArea" class="d-flex gap-2 btn-toolbar-custom">
+          <a class="btn btn-outline-secondary btn-sm" href="{% url 'historico_custo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}" style="border-radius: 8px; font-weight: 500;">
+            <i class="bi bi-clock-history me-1"></i> Histórico de Custo
           </a>
-          <a href="#" id="btnDefinir" class="btn btn-outline-secondary">
-            <i class="bi bi-sliders"></i> Definir Custos
+          <a href="#" id="btnDefinir" class="btn btn-outline-primary btn-sm" style="border-radius: 8px; font-weight: 500;">
+            <i class="bi bi-sliders me-1"></i> Definir Custos
           </a>
         </div>
       </div>
-
 
       <!-- Tabela -->
       <form id="formCustos" method="POST">
         {% csrf_token %}
         <div class="table-responsive">
-          <table class="table table-striped align-middle" id="tabelaProdutos">
-            <thead>
+          <table class="table align-middle mb-0" id="tabelaProdutos">
+            <thead style="background: #f8fafc;">
               <tr id="tabelaHead">
-                <th>Produto</th>
-                <th>Custo</th>
-                <th>Preço Venda</th>
-                <th>Lucro Unitário</th>
-                <th>Margem (%)</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Produto</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Preço Venda</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Lucro Unitário</th>
+                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Margem (%)</th>
               </tr>
             </thead>
             <tbody>
               {% for p in produtos_data %}
-              <tr data-produto="{{ p.produto.id }}">
-                <td>{{ p.produto.nome }}</td>
-                <td class="custo-cell"><span class="text-nowrap">R$ {{ p.custo|floatformat:2 }}</span></td>
-                <td><span class="text-nowrap">R$ {{ p.preco|floatformat:2 }}</span></td>
+              <tr data-produto="{{ p.produto.id }}" style="border-bottom: 1px solid #e2e8f0;">
+                <td style="padding: 1rem 1.25rem;">
+                  <span style="font-weight: 600; color: #1e293b;">{{ p.produto.nome }}</span>
+                </td>
+                <td class="custo-cell">
+                  <span class="text-nowrap" style="font-weight: 600; color: #64748b;">R$ {{ p.custo|floatformat:2 }}</span>
+                </td>
+                <td>
+                  <span class="text-nowrap">R$ {{ p.preco|floatformat:2 }}</span>
+                </td>
                 <td>
                   {% if p.lucro_unitario %}
-                    <span class="text-nowrap">R$ {{ p.lucro_unitario|floatformat:2 }}</span>
+                    <span class="badge" style="background-color: {% if p.lucro_unitario > 0 %}#dcfce7{% else %}#fee2e2{% endif %}; color: {% if p.lucro_unitario > 0 %}#15803d{% else %}#b91c1c{% endif %}; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                      R$ {{ p.lucro_unitario|floatformat:2 }}
+                    </span>
                   {% else %}
-                    —
+                    <span style="color: #94a3b8;">—</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if p.margem %}
-                    {{ p.margem|floatformat:2 }}%
+                    <span class="badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                      {{ p.margem|floatformat:2 }}%
+                    </span>
                   {% else %}
-                    —
+                    <span style="color: #94a3b8;">—</span>
                   {% endif %}
                 </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
+                <td colspan="5" class="text-center py-5" style="color: #64748b;">
+                  <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                  <p class="mb-1">Nenhum produto encontrado.</p>
+                  <small>Cadastre produtos para gerenciar custos.</small>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -122,15 +219,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.getElementById("btnDefinir").addEventListener("click", (e) => {
+  document.getElementById("btnDefinir")?.addEventListener("click", (e) => {
     e.preventDefault();
 
     tabelaHead.innerHTML = `
-      <th>Produto</th>
-      <th>Custo (R$)</th>
-      <th>Preço Venda</th>
-      <th>Lucro Unitário</th>
-      <th>Margem (%)</th>
+      <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Produto</th>
+      <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo (R$)</th>
+      <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Preço Venda</th>
+      <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Lucro Unitário</th>
+      <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Margem (%)</th>
     `;
 
     tabelaBody.querySelectorAll("tr").forEach(row => {
@@ -139,15 +236,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const custoAtual = custoCell.innerText.replace("R$", "").trim();
 
       custoCell.innerHTML = `
-        <input type="number" step="0.01" name="custo_${id}" value="${custoAtual}" class="form-control form-control-sm">
+        <input type="number" step="0.01" name="custo_${id}" value="${custoAtual}" class="form-control form-control-sm" style="border: 2px solid #e2e8f0; border-radius: 8px;">
       `;
     });
 
     btnArea.innerHTML = `
-      <button type="button" id="btnSalvar" class="btn btn-success me-2">
-        <i class="bi bi-save"></i> Salvar Custos
+      <button type="button" id="btnSalvar" class="btn btn-success btn-sm" style="border-radius: 8px; padding: 6px 20px; font-weight: 600; background: #10b981; border: none;">
+        <i class="bi bi-save me-1"></i> Salvar Custos
       </button>
-      <button type="button" id="btnCancelar" class="btn btn-outline-secondary">Cancelar</button>
+      <button type="button" id="btnCancelar" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px; padding: 6px 20px; font-weight: 600;">
+        <i class="bi bi-x-circle me-1"></i> Cancelar
+      </button>
     `;
 
     attachSalvar();
