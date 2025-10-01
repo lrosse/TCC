@@ -39,7 +39,7 @@ from .models import Produto
 
 def home(request):
     # Busca produtos já com média das notas
-    produtos = Produto.objects.annotate(media_nota=Avg("feedbacks__nota")).order_by("-id")
+    produtos = Produto.objects.filter(ativo=True).annotate(media_nota=Avg("feedbacks__nota")).order_by("-id")
 
     # Filtros do formulário
     termo_busca = request.GET.get('q')
@@ -601,17 +601,22 @@ def adicionar_ao_carrinho(request, produto_id):
 
 def ver_carrinho(request):
     if request.user.is_authenticated:
-        # 🔒 Usuário logado → usa carrinho no banco
+        # 🔒 Usuário logado → usa carrinho do banco
         carrinho = get_or_create_carrinho(request.user)
 
-        # 🔄 Atualiza os preços unitários dos itens caso o produto tenha mudado de valor
+        # 🔄 Atualiza os preços e remove itens inativos
         for item in carrinho.itemcarrinho_set.all():
-            if item.produto and item.preco_unitario != item.produto.preco:
+            if not item.produto or not item.produto.ativo:
+                item.delete()
+                continue
+            if item.preco_unitario != item.produto.preco:
                 item.preco_unitario = item.produto.preco
                 item.save()
 
-        # 🔹 Recalcula o total do carrinho após atualização
+        # 🔹 Recalcula o total e contador da navbar
         carrinho.calcular_total()
+        request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
+        request.session.modified = True
 
         # 🔹 Monta a lista de itens para o template
         itens = []
@@ -627,26 +632,29 @@ def ver_carrinho(request):
 
         return render(request, 'loja/carrinho.html', {
             'itens': itens,
-            'total': carrinho.total(),  # sempre atualizado
+            'total': carrinho.total(),
             'sessao': False
         })
 
     else:
-        # 👤 Usuário anônimo → usa carrinho na sessão
+        # 👤 Usuário anônimo → usa carrinho da sessão
         carrinho_sessao = request.session.get("carrinho", {})
         itens = []
         total = Decimal('0.00')
 
-        # 🔄 Atualiza preços também para anônimos
+        # 🔄 Atualiza preços e remove itens inativos
         for produto_id, dados in list(carrinho_sessao.items()):
             try:
                 produto = Produto.objects.get(id=produto_id)
-                # Se preço mudou, atualiza
+                # remove se estiver inativo
+                if not produto.ativo:
+                    del carrinho_sessao[str(produto_id)]
+                    continue
+                # atualiza preço se mudou
                 if str(produto.preco) != dados["preco_unitario"]:
                     dados["preco_unitario"] = str(produto.preco)
                     carrinho_sessao[str(produto_id)] = dados
             except Produto.DoesNotExist:
-                # Se produto não existe mais, remove do carrinho
                 del carrinho_sessao[str(produto_id)]
                 continue
 
@@ -661,8 +669,9 @@ def ver_carrinho(request):
                 "imagem": dados.get("imagem"),
             })
 
-        # 🔹 Salva carrinho corrigido na sessão
+        # 🔹 Salva carrinho corrigido e atualiza contador
         request.session["carrinho"] = carrinho_sessao
+        request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
         request.session.modified = True
 
         return render(request, 'loja/carrinho.html', {
@@ -670,7 +679,7 @@ def ver_carrinho(request):
             'total': total,
             'sessao': True
         })
-        
+
 def remover_do_carrinho(request, item_id):
     if request.user.is_authenticated:
         # 🔒 Usuário logado → remove do banco

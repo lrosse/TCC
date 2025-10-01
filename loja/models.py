@@ -9,14 +9,35 @@ class Produto(models.Model):
     nome = models.CharField(max_length=200)
     descricao = models.TextField()
     preco = models.DecimalField(max_digits=10, decimal_places=2)
-    quantidade = models.IntegerField(default=0)  # Campo adicionado
+    quantidade = models.IntegerField(default=0)  # estoque atual
     imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
-     # 🔹 Novos campos
+
+    # 🔹 Campos de controle de estoque
     minimo_estoque = models.IntegerField(default=5)   # até aqui = vermelho
     ideal_estoque = models.IntegerField(default=10)   # até aqui = amarelo, acima = verde
 
+    # 🔹 Novo campo para ativar/inativar produto
+    ativo = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        """
+        Regra automática:
+        - Se quantidade == 0 → inativa o produto
+        - Se quantidade > 0 → ativa o produto (a menos que tenha sido desativado manualmente)
+        """
+        if self.quantidade <= 0:
+            self.ativo = False
+        else:
+            # Só reativa automaticamente se ainda não foi marcado como inativo manualmente
+            # Isso garante que o admin pode inativar manualmente mesmo com estoque
+            if self.ativo is not False:  
+                self.ativo = True
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.nome
+
 
 class CustoProduto(models.Model):
     produto = models.OneToOneField("Produto", on_delete=models.CASCADE, related_name="custo_info")
