@@ -2,87 +2,190 @@
 {% block title %}Gestão Financeira - Pedidos{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-3">Pedidos</h2>
-  <!-- 🔹 Form de filtro de datas padronizado -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-auto">
-      <label for="data_inicio" class="form-label">Data início</label>
-      <input type="date" id="data_inicio" name="data_inicio" class="form-control"
-             value="{{ data_inicio }}">
-    </div>
-    <div class="col-auto">
-      <label for="data_fim" class="form-label">Data fim</label>
-      <input type="date" id="data_fim" name="data_fim" class="form-control"
-             value="{{ data_fim }}">
-    </div>
-    <div class="col-auto align-self-end">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-    </div>
-    {% if data_inicio or data_fim %}
-    <div class="col-auto align-self-end">
-      <a class="btn btn-outline-secondary" href="{% url 'financeiro_pedidos' %}">Limpar</a>
-    </div>
-    {% endif %}
-  </form>
+<style>
+  /* Abas personalizadas */
+  .nav-tabs {
+    border-bottom: 2px solid #e2e8f0;
+  }
 
-  <!-- 🔹 Abas -->
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-         href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Resumo Geral
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-         href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Produtos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-         href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-        Pedidos
-      </a>
-    </li>
-  </ul>
+  .nav-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+  }
 
-  <!-- 🔹 Tabela de pedidos -->
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="fw-semibold mb-0">Lucro por Pedido</h5>
-        <input type="text" id="buscaPedidos" class="form-control" style="max-width: 260px;"
-               placeholder="Buscar...">
+  .nav-tabs .nav-link:hover {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  .nav-tabs .nav-link.active {
+    color: #3b82f6;
+    background: transparent;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  thead th {
+    vertical-align: middle;
+  }
+
+  .data-cell {
+    white-space: nowrap;
+  }
+
+  /* Responsividade */
+  @media (max-width: 992px) {
+    .table thead th {
+      font-size: 0.65rem;
+      padding: 0.75rem 0.5rem;
+    }
+    
+    .table tbody td {
+      font-size: 0.75rem;
+      padding: 0.75rem 0.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .nav-tabs .nav-link {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .table-responsive {
+      font-size: 0.7rem;
+    }
+
+    .data-cell {
+      font-size: 0.65rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão Financeira - Pedidos</h2>
+  </div>
+
+  <!-- Filtro de datas -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label class="form-label fw-semibold mb-3" style="color: #475569; font-size: 0.875rem;">Filtrar por período</label>
+    
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3 col-sm-6">
+        <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data início</label>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control form-control-sm" value="{{ data_inicio }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <label for="data_fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data fim</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control form-control-sm" value="{{ data_fim }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px; padding: 8px 20px; font-weight: 600;">
+          <i class="bi bi-funnel me-2"></i> Filtrar
+        </button>
+      </div>
+      {% if data_inicio or data_fim %}
+      <div class="col-md-2 col-sm-6">
+        <a class="btn btn-outline-secondary w-100" href="{% url 'financeiro_pedidos' %}" style="border-radius: 8px; padding: 8px 20px; font-weight: 600;">
+          <i class="bi bi-x-circle me-2"></i> Limpar
+        </a>
+      </div>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Abas -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+           href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-graph-up me-2"></i>Resumo Geral
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+           href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-box-seam me-2"></i>Produtos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+           href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-receipt me-2"></i>Pedidos
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Tabela de pedidos -->
+  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <h5 class="fw-semibold mb-0" style="color: #475569;">Lucro por Pedido</h5>
+        <input type="text" id="buscaPedidos" class="form-control form-control-sm" placeholder="Buscar pedido, cliente..." style="max-width: 300px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;">
       </div>
 
       <div class="table-responsive">
-        <table class="table table-striped align-middle">
-          <thead class="table-light">
+        <table class="table align-middle mb-0">
+          <thead style="background: #f8fafc;">
             <tr>
-              <th>Nº Pedido</th>
-              <th>Cliente</th>
-              <th>Data</th>
-              <th>Custo</th>
-              <th>Receita</th>
-              <th>Lucro</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Nº Pedido</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Cliente</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Data</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Custo</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Receita</th>
+              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Lucro</th>
             </tr>
           </thead>
           <tbody id="tabelaPedidos">
             {% for p in pedidos_data %}
-            <tr>
-              <td>#{{ p.numero }}</td>
-              <td>{{ p.cliente }}</td>
-              <td>{{ p.data }}</td>
-              <td><span class="text-nowrap">R$ {{ p.custo|floatformat:2 }}</span></td>
-              <td><span class="text-nowrap">R$ {{ p.receita|floatformat:2 }}</span></td>
-              <td class="{% if p.lucro < 0 %}text-danger{% else %}text-success{% endif %}">
-                <span class="text-nowrap">R$ {{ p.lucro|floatformat:2 }}</span>
+            <tr style="border-bottom: 1px solid #e2e8f0;">
+              <td style="padding: 1rem 1.25rem;">
+                <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ p.numero }}</span>
+              </td>
+              <td>
+                <span style="font-weight: 600; color: #1e293b;">{{ p.cliente }}</span>
+              </td>
+              <td class="data-cell">{{ p.data }}</td>
+              <td>
+                <span class="text-nowrap" style="color: #64748b;">R$ {{ p.custo|floatformat:2 }}</span>
+              </td>
+              <td>
+                <span class="text-nowrap" style="color: #1e293b; font-weight: 600;">R$ {{ p.receita|floatformat:2 }}</span>
+              </td>
+              <td>
+                <span class="badge text-nowrap" style="background-color: {% if p.lucro < 0 %}#fee2e2{% else %}#dcfce7{% endif %}; color: {% if p.lucro < 0 %}#b91c1c{% else %}#15803d{% endif %}; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                  {% if p.lucro < 0 %}<i class="bi bi-arrow-down-circle"></i>{% else %}<i class="bi bi-arrow-up-circle"></i>{% endif %}
+                  R$ {{ p.lucro|floatformat:2 }}
+                </span>
               </td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="text-center text-muted">Nenhum pedido encontrado</td></tr>
+            <tr>
+              <td colspan="6" class="text-center py-5" style="color: #64748b;">
+                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                <p class="mb-1">Nenhum pedido encontrado.</p>
+                <small>Os pedidos com dados financeiros aparecerão aqui.</small>
+              </td>
+            </tr>
             {% endfor %}
           </tbody>
         </table>
