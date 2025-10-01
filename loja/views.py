@@ -830,6 +830,8 @@ def migrar_carrinho_sessao_para_usuario(request, user):
 def adicionar_carrinho(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
 
+    aviso = None  # armazenar mensagem de limite de estoque
+
     if request.user.is_authenticated:
         # 🔒 Usuário logado → Carrinho no banco
         carrinho, _ = Carrinho.objects.get_or_create(usuario=request.user)
@@ -839,9 +841,11 @@ def adicionar_carrinho(request, produto_id):
             defaults={"quantidade": 1, "preco_unitario": produto.preco}
         )
         if not created:
-            item.quantidade += 1
-            item.save()
-
+            if item.quantidade < produto.quantidade:
+                item.quantidade += 1
+                item.save()
+            else:
+                aviso = f"O produto '{produto.nome}' só possui {produto.quantidade} unidade(s) em estoque."
         total_itens = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
         request.session["carrinho_itens"] = total_itens
 
@@ -849,7 +853,10 @@ def adicionar_carrinho(request, produto_id):
         # 👤 Usuário anônimo → Carrinho na sessão
         carrinho_sessao = request.session.get("carrinho", {})
         if str(produto_id) in carrinho_sessao:
-            carrinho_sessao[str(produto_id)]["quantidade"] += 1
+            if carrinho_sessao[str(produto_id)]["quantidade"] < produto.quantidade:
+                carrinho_sessao[str(produto_id)]["quantidade"] += 1
+            else:
+                aviso = f"O produto '{produto.nome}' só possui {produto.quantidade} unidade(s) em estoque."
         else:
             carrinho_sessao[str(produto_id)] = {
                 "nome": produto.nome,
@@ -858,17 +865,26 @@ def adicionar_carrinho(request, produto_id):
                 "imagem": produto.imagem.url if produto.imagem else None,
             }
         request.session["carrinho"] = carrinho_sessao
-
         total_itens = sum(item["quantidade"] for item in carrinho_sessao.values())
         request.session["carrinho_itens"] = total_itens
 
     request.session.modified = True
 
-    # 🔹 Sempre retorna JSON no AJAX
+    # 🔹 Caso AJAX (home/vitrine)
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        return JsonResponse({"success": True, "total_itens": total_itens})
+        if aviso:
+            return JsonResponse({"success": False, "warning": aviso, "total_itens": total_itens})
+        return JsonResponse({"success": True, "message": f"'{produto.nome}' foi adicionado ao carrinho.", "total_itens": total_itens})
 
-    return JsonResponse({"success": False})
+    # 🔹 Caso navegação normal (ex: botão dentro do carrinho)
+    if aviso:
+        messages.warning(request, aviso)
+    else:
+        messages.success(request, f"'{produto.nome}' foi adicionado ao carrinho.")
+
+    return redirect("ver_carrinho")
+
+
 
 
 @login_required

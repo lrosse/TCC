@@ -125,10 +125,10 @@
 
 <!-- 🔹 Toast -->
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 2000;">
-  <div id="toast-carrinho" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+  <div id="toast-carrinho" class="toast align-items-center text-bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="d-flex">
-      <div class="toast-body">
-        ✅ Produto adicionado ao carrinho!
+      <div class="toast-body" id="toast-carrinho-msg">
+        <!-- mensagem dinâmica -->
       </div>
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
@@ -158,24 +158,38 @@ document.addEventListener("DOMContentLoaded", function() {
         });
 
         const data = await response.json();
-        console.log("Resposta do backend:", data);
+        const toastEl = document.getElementById("toast-carrinho");
+        const toastMsg = document.getElementById("toast-carrinho-msg");
+
+        // limpa estilos anteriores
+        toastEl.classList.remove("text-bg-success", "text-bg-warning", "text-bg-danger");
 
         if (data.success) {
           const badge = document.querySelector("#carrinho-contador");
-          if (badge) {
-            badge.textContent = data.total_itens;
-          }
+          if (badge) { badge.textContent = data.total_itens; }
 
-          // Exibe toast
-          const toastEl = document.getElementById("toast-carrinho");
-          const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
-          toast.show();
+          toastEl.classList.add("text-bg-success");
+          toastMsg.textContent = "✅ " + data.message;
+        } else if (data.warning) {
+          toastEl.classList.add("text-bg-warning");
+          toastMsg.textContent = "⚠️ " + data.warning;
         } else {
-          alert("⚠️ Não foi possível adicionar ao carrinho.");
+          toastEl.classList.add("text-bg-danger");
+          toastMsg.textContent = "❌ Não foi possível adicionar ao carrinho.";
         }
+
+        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+        toast.show();
+
       } catch (error) {
         console.error("Erro:", error);
-        alert("❌ Erro ao adicionar produto.");
+        const toastEl = document.getElementById("toast-carrinho");
+        const toastMsg = document.getElementById("toast-carrinho-msg");
+        toastEl.classList.remove("text-bg-success", "text-bg-warning");
+        toastEl.classList.add("text-bg-danger");
+        toastMsg.textContent = "❌ Erro ao adicionar produto.";
+        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+        toast.show();
       }
     });
   });
