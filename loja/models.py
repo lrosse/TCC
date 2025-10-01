@@ -25,15 +25,21 @@ class Produto(models.Model):
         - Se quantidade == 0 → inativa o produto
         - Se quantidade > 0 → ativa o produto (a menos que tenha sido desativado manualmente)
         """
-        if self.quantidade <= 0:
+        try:
+            qtd = int(self.quantidade) if self.quantidade is not None else 0
+        except ValueError:
+            qtd = 0
+
+        if qtd <= 0:
             self.ativo = False
         else:
-            # Só reativa automaticamente se ainda não foi marcado como inativo manualmente
-            # Isso garante que o admin pode inativar manualmente mesmo com estoque
-            if self.ativo is not False:  
+            if self.ativo is not False:
                 self.ativo = True
 
         super().save(*args, **kwargs)
+
+        def _str_(self):
+            return self.nome
 
     def __str__(self):
         return self.nome

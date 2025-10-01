@@ -176,15 +176,19 @@ def financeiro_produtos(request):
     # Contexto para exibir tabela
     produtos_data = []
     for p in produtos:
-        custo_atual = getattr(p.custo_info, "custo", 0)
+        # Evita erro se não existir custo_info
+        custo_atual = getattr(p, "custo_info", None)
+        custo_valor = custo_atual.custo if custo_atual else 0
+
         margem = None
         lucro_unitario = None
-        if custo_atual > 0:
-            lucro_unitario = p.preco - custo_atual
-            margem = (lucro_unitario / custo_atual) * 100
+        if custo_valor > 0:
+            lucro_unitario = p.preco - custo_valor
+            margem = (lucro_unitario / custo_valor) * 100
+
         produtos_data.append({
             "produto": p,
-            "custo": custo_atual,
+            "custo": custo_valor,
             "preco": p.preco,
             "lucro_unitario": lucro_unitario,
             "margem": margem,
