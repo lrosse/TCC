@@ -2,133 +2,220 @@
 {% block title %}Gestão Financeira - Resumo{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-4">Resumo Geral</h2>
+<style>
+  /* Abas personalizadas */
+  .nav-tabs {
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .nav-tabs .nav-link {
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: #3b82f6;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  .nav-tabs .nav-link.active {
+    color: #3b82f6;
+    background: transparent;
+    border-bottom: 2px solid #3b82f6;
+    margin-bottom: -2px;
+  }
+
+  /* Cards de métricas */
+  .metric-card {
+    transition: transform 0.2s ease;
+  }
+
+  .metric-card:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .nav-tabs .nav-link {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .metric-card .display-5 {
+      font-size: 2rem !important;
+    }
+
+    .metric-card .fs-5 {
+      font-size: 1rem !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .row.g-4 {
+      gap: 0.75rem !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+  <!-- Cabeçalho -->
+  <div class="mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão Financeira</h2>
+  </div>
 
   <!-- Filtro de datas -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-auto">
-      <label for="data_inicio" class="form-label">Data início</label>
-      <input type="date" id="data_inicio" name="data_inicio" class="form-control"
-             value="{{ data_inicio }}">
-    </div>
-    <div class="col-auto">
-      <label for="data_fim" class="form-label">Data fim</label>
-      <input type="date" id="data_fim" name="data_fim" class="form-control"
-             value="{{ data_fim }}">
-    </div>
-    <div class="col-auto align-self-end">
-      <button type="submit" class="btn btn-primary">Filtrar</button>
-    </div>
-  </form>
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label class="form-label fw-semibold mb-3" style="color: #475569; font-size: 0.875rem;">Filtrar por período</label>
+    
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3 col-sm-6">
+        <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data início</label>
+        <input type="date" id="data_inicio" name="data_inicio" class="form-control form-control-sm" value="{{ data_inicio }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-3 col-sm-6">
+        <label for="data_fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data fim</label>
+        <input type="date" id="data_fim" name="data_fim" class="form-control form-control-sm" value="{{ data_fim }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+      </div>
+      <div class="col-md-3 col-sm-12">
+        <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px; padding: 8px 20px; font-weight: 600;">
+          <i class="bi bi-funnel me-2"></i> Filtrar
+        </button>
+      </div>
+    </form>
+  </div>
 
   <!-- Abas -->
-  <ul class="nav nav-tabs mb-3">
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-         href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-         Resumo Geral
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-         href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-         Produtos
-      </a>
-    </li>
-    <li class="nav-item">
-      <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-         href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
-         Pedidos
-      </a>
-    </li>
-  </ul>
+  <div class="mb-4 p-3 bg-white rounded shadow-sm">
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
+           href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-graph-up me-2"></i>Resumo Geral
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
+           href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-box-seam me-2"></i>Produtos
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
+           href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">
+           <i class="bi bi-receipt me-2"></i>Pedidos
+        </a>
+      </li>
+    </ul>
+  </div>
 
   <!-- Cards Resumo -->
-  <div class="row g-4 mb-4">
-
+  <div class="row g-3 mb-4">
     <!-- Receita -->
-    <div class="col">
-      <div class="card shadow-sm border-0 text-center h-100">
-        <div class="card-body">
-          <i class="bi bi-cash-coin display-5 text-success mb-2"></i>
-          <h6 class="fw-semibold">Receita Total</h6>
-          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ receita_total|floatformat:2 }}</span></p>
+    <div class="col-lg col-md-6">
+      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <i class="bi bi-cash-coin display-5 mb-2" style="color: #10b981;"></i>
+          <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Receita Total</h6>
+          <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
+            <span class="text-nowrap">R$ {{ receita_total|floatformat:2 }}</span>
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Custos -->
-    <div class="col">
-      <div class="card shadow-sm border-0 text-center h-100">
-        <div class="card-body">
-          <i class="bi bi-box-seam display-5 text-primary mb-2"></i>
-          <h6 class="fw-semibold">Custos Totais</h6>
-          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ custo_total|floatformat:2 }}</span></p>
+    <div class="col-lg col-md-6">
+      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <i class="bi bi-box-seam display-5 mb-2" style="color: #3b82f6;"></i>
+          <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Custos Totais</h6>
+          <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
+            <span class="text-nowrap">R$ {{ custo_total|floatformat:2 }}</span>
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Despesas Fixas -->
-    <div class="col">
-      <div class="card shadow-sm border-0 text-center h-100">
-        <div class="card-body">
-          <i class="bi bi-house-check display-5 text-warning mb-2"></i>
-          <h6 class="fw-semibold">Despesas Fixas</h6>
-          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ despesas_fixas|floatformat:2 }}</span></p>
+    <div class="col-lg col-md-6">
+      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <i class="bi bi-house-check display-5 mb-2" style="color: #f59e0b;"></i>
+          <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Despesas Fixas</h6>
+          <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
+            <span class="text-nowrap">R$ {{ despesas_fixas|floatformat:2 }}</span>
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Despesas Variáveis -->
-    <div class="col">
-      <div class="card shadow-sm border-0 text-center h-100">
-        <div class="card-body">
-          <i class="bi bi-receipt display-5 text-danger mb-2"></i>
-          <h6 class="fw-semibold">Despesas Variáveis</h6>
-          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ despesas_variaveis|floatformat:2 }}</span></p>
+    <div class="col-lg col-md-6">
+      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <i class="bi bi-receipt display-5 mb-2" style="color: #ef4444;"></i>
+          <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Despesas Variáveis</h6>
+          <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
+            <span class="text-nowrap">R$ {{ despesas_variaveis|floatformat:2 }}</span>
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Lucro Líquido -->
-    <div class="col">
-      <div class="card shadow-sm border-0 text-center h-100">
-        <div class="card-body">
-          <i class="bi bi-graph-up display-5 text-success mb-2"></i>
-          <h6 class="fw-semibold"> Resultado Líquido</h6>
-          <p class="fs-5 fw-bold"><span class="text-nowrap">R$ {{ lucro_liquido|floatformat:2 }}</span></p>
+    <div class="col-lg col-md-6">
+      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <div class="card-body p-4">
+          <i class="bi bi-graph-up display-5 mb-2 text-white"></i>
+          <h6 class="fw-semibold mb-2 text-white" style="font-size: 0.875rem;">Resultado Líquido</h6>
+          <p class="fs-5 fw-bold mb-0 text-white">
+            <span class="text-nowrap">R$ {{ lucro_liquido|floatformat:2 }}</span>
+          </p>
         </div>
       </div>
     </div>
-
   </div>
 
   <!-- Linha de gráficos -->
-  <div class="row mb-4">
+  <div class="row g-3 mb-4">
     <!-- Gráfico Receita vs Despesas -->
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="fw-semibold mb-3">Receita vs Gasto Mensal</h6>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #475569;">Receita vs Gasto Mensal</h6>
           <canvas id="graficoFinanceiro"></canvas>
         </div>
       </div>
     </div>
+    
     <!-- Gráfico Lucro Líquido -->
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="fw-semibold mb-3">Resultado Líquido</h6>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #475569;">Resultado Líquido</h6>
           <canvas id="grafico2"></canvas>
         </div>
       </div>
     </div>
+    
     <!-- Gráfico Pizza Despesas -->
-    <div class="col-md-4">
-      <div class="card shadow-sm border-0">
-        <div class="card-body">
-          <h6 class="fw-semibold mb-3">Despesas Fixas vs Variáveis</h6>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #475569;">Despesas Fixas vs Variáveis</h6>
           <canvas id="grafico3"></canvas>
         </div>
       </div>
@@ -151,20 +238,37 @@
         {
           label: 'Receita',
           data: receitas,
-          backgroundColor: 'rgba(40, 167, 69, 0.7)',
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          borderColor: 'rgba(16, 185, 129, 1)',
+          borderWidth: 1
         },
         {
           label: 'Gastos',
           data: despesas,
-          backgroundColor: 'rgba(220, 53, 69, 0.7)',
+          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+          borderColor: 'rgba(239, 68, 68, 1)',
+          borderWidth: 1
         }
       ]
     },
     options: {
       responsive: true,
-      aspectRatio: 2,
+      maintainAspectRatio: true,
+      aspectRatio: 1.5,
       scales: {
-        y: { beginAtZero: true }
+        y: { 
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
       }
     }
   });
@@ -180,17 +284,31 @@
       datasets: [{
         label: 'Lucro Líquido',
         data: dadosLucro,
-        borderColor: 'rgba(40, 167, 69, 1)',
-        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
         fill: true,
-        tension: 0.3
+        tension: 0.3,
+        borderWidth: 2
       }]
     },
     options: {
       responsive: true,
-      aspectRatio: 2,
+      maintainAspectRatio: true,
+      aspectRatio: 1.5,
       scales: {
-        y: { beginAtZero: true }
+        y: { 
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return 'R$ ' + value.toLocaleString('pt-BR');
+            }
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
       }
     }
   });
@@ -210,19 +328,24 @@
         datasets: [{
           data: despesasPizzaData,
           backgroundColor: [
-            'rgba(0, 123, 255, 0.7)', // Azul para fixas
-            'rgba(255, 193, 7, 0.7)'  // Amarelo para variáveis
+            'rgba(59, 130, 246, 0.7)',
+            'rgba(245, 158, 11, 0.7)'
           ],
           borderColor: [
-            'rgba(0, 123, 255, 1)',
-            'rgba(255, 193, 7, 1)'
+            'rgba(59, 130, 246, 1)',
+            'rgba(245, 158, 11, 1)'
           ],
           borderWidth: 2
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 1.5,
         plugins: {
+          legend: {
+            position: 'bottom'
+          },
           tooltip: {
             callbacks: {
               label: function(context) {
