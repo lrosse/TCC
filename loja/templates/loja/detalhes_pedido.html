@@ -7,16 +7,18 @@
     <h2 class="mb-4">Pedido #{{ pedido.numero_pedido }}</h2>
 
     <!-- Card com informações gerais do pedido -->
-                         <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-person-vcard me-2"></i>Dados do Cliente</h5>
-                        <p><strong>Nome:</strong> {{ pedido.nome_cliente }}</p>
-                        <p><strong>Endereço:</strong><br>{{ pedido.endereco_entrega|linebreaks }}</p>
-                        {% if pedido.observacao %}
-                            <p><strong>Observações:</strong><br>{{ pedido.observacao }}</p>
-                        {% endif %}
-                    </div>
-                </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-person-vcard me-2"></i>Dados do Cliente</h5>
+            <p><strong>Nome:</strong> {{ pedido.nome_cliente }}</p>
+            <p><strong>Endereço:</strong><br>{{ pedido.endereco_entrega|linebreaks }}</p>
+            {% if pedido.observacao %}
+                <p><strong>Observações:</strong><br>{{ pedido.observacao }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Card com informações do pedido -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <h5 class="card-title"><i class="bi bi-receipt-cutoff me-2"></i>Informações do Pedido</h5>
@@ -36,16 +38,16 @@
             </ul>
 
             <!-- Formulário para alterar status -->
-            <form method="post" action="{% url 'atualizar_status_pedido' pedido.id %}" class="mt-4">
+            <form id="formStatus" method="post" action="{% url 'atualizar_status_pedido' pedido.id %}" class="mt-4 d-flex align-items-center gap-2 flex-wrap">
                 {% csrf_token %}
-                <label for="novo_status" class="form-label">Alterar status:</label>
-                <select name="status" id="novo_status" class="form-select w-auto d-inline-block">
+                <label for="novo_status" class="form-label mb-0 me-2">Alterar status:</label>
+                <select name="status" id="novo_status" class="form-select w-auto">
                     <option value="Pendente" {% if pedido.status == 'Pendente' %}selected{% endif %}>Pendente</option>
                     <option value="Pago" {% if pedido.status == 'Pago' %}selected{% endif %}>Pago</option>
                     <option value="Cancelado" {% if pedido.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
                 </select>
-                <button type="submit" class="btn btn-primary mt-3" onclick="return confirmarAtualizacao();">
-                    <i class="bi bi-check-circle"></i> Atualizar Status
+                <button type="submit" class="btn btn-primary d-flex align-items-center">
+                    <i class="bi bi-check-circle me-1"></i> Atualizar Status
                 </button>
             </form>
         </div>
@@ -89,10 +91,26 @@
     </a>
 </div>
 
-<!-- Script de confirmação -->
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function confirmarAtualizacao() {
-    return confirm("Tem certeza que deseja atualizar o status deste pedido?");
-}
+document.getElementById("formStatus").addEventListener("submit", function(e) {
+    e.preventDefault(); // não envia ainda
+
+    Swal.fire({
+        title: 'Confirmar alteração?',
+        text: "Deseja realmente atualizar o status deste pedido?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, atualizar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0d6efd',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            this.submit(); // envia o formulário só se confirmar
+        }
+    });
+});
 </script>
 {% endblock %}
