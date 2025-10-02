@@ -3,112 +3,263 @@
 {% block title %}Detalhes do Pedido #{{ pedido.id }}{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <h2 class="mb-4">Pedido #{{ pedido.numero_pedido }}</h2>
+<style>
+  .status-badge {
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-    <!-- Card com informações gerais do pedido -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-person-vcard me-2"></i>Dados do Cliente</h5>
-            <p><strong>Nome:</strong> {{ pedido.nome_cliente }}</p>
-            <p><strong>Endereço:</strong><br>{{ pedido.endereco_entrega|linebreaks }}</p>
-            {% if pedido.observacao %}
-                <p><strong>Observações:</strong><br>{{ pedido.observacao }}</p>
-            {% endif %}
-        </div>
+  .status-badge.Pendente {
+    background-color: #fef9c3;
+    color: #92400e;
+    border: 1px solid #fde68a;
+  }
+
+  .status-badge.Pago {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
+
+  .status-badge.Cancelado {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+
+  .info-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .info-row:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+
+  .info-value {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">
+        Pedido #{{ pedido.numero_pedido }}
+      </h2>
+      <p class="text-muted mb-0" style="font-size: 0.875rem;">
+        <i class="bi bi-calendar3 me-1"></i>{{ pedido.data_criacao|date:"d/m/Y H:i" }}
+      </p>
     </div>
-
-    <!-- Card com informações do pedido -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-receipt-cutoff me-2"></i>Informações do Pedido</h5>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item"><strong>Cliente:</strong> {{ pedido.cliente.username }}</li>
-                <li class="list-group-item"><strong>Status atual:</strong> 
-                    <span class="badge 
-                        {% if pedido.status == 'Pendente' %}bg-warning text-dark
-                        {% elif pedido.status == 'Pago' %}bg-success
-                        {% elif pedido.status == 'Cancelado' %}bg-danger
-                        {% endif %}">
-                        {{ pedido.status }}
-                    </span>
-                </li>
-                <li class="list-group-item"><strong>Data:</strong> {{ pedido.data_criacao|date:"d/m/Y H:i" }}</li>
-                <li class="list-group-item"><strong>Total:</strong> R$ {{ pedido.total }}</li>
-            </ul>
-
-            <!-- Formulário para alterar status -->
-            <form id="formStatus" method="post" action="{% url 'atualizar_status_pedido' pedido.id %}" class="mt-4 d-flex align-items-center gap-2 flex-wrap">
-                {% csrf_token %}
-                <label for="novo_status" class="form-label mb-0 me-2">Alterar status:</label>
-                <select name="status" id="novo_status" class="form-select w-auto">
-                    <option value="Pendente" {% if pedido.status == 'Pendente' %}selected{% endif %}>Pendente</option>
-                    <option value="Pago" {% if pedido.status == 'Pago' %}selected{% endif %}>Pago</option>
-                    <option value="Cancelado" {% if pedido.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
-                </select>
-                <button type="submit" class="btn btn-primary d-flex align-items-center">
-                    <i class="bi bi-check-circle me-1"></i> Atualizar Status
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Card com lista de itens -->
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-box-seam me-2"></i>Itens</h5>
-            {% if itens %}
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Produto</th>
-                                <th>Quantidade</th>
-                                <th>Preço Unitário</th>
-                                <th>Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in itens %}
-                                <tr>
-                                    <td>{{ item.produto.nome }}</td>
-                                    <td>{{ item.quantidade }}</td>
-                                    <td><span class="text-nowrap">R$ {{ item.preco_unitario }}</span></td>
-                                    <td><span class="text-nowrap">R$ {{ item.subtotal }}</span></td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="text-muted">Este pedido não possui itens cadastrados.</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <a href="{% url 'pedidos' %}" class="btn btn-secondary mt-4">
-        <i class="bi bi-arrow-left"></i> Voltar para lista de pedidos
+    <a href="{% url 'pedidos' %}" class="btn btn-outline-secondary btn-voltar" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar
     </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Coluna Principal -->
+    <div class="col-lg-8">
+      <!-- Dados do Cliente -->
+      <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-person-vcard me-2" style="color: #3b82f6;"></i>Dados do Cliente
+          </h6>
+
+          <div class="info-row">
+            <div class="info-label">Nome do Cliente</div>
+            <div class="info-value">{{ pedido.nome_cliente }}</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Usuário</div>
+            <div class="info-value">
+              <i class="bi bi-person-circle me-2" style="color: #64748b;"></i>{{ pedido.cliente.username }}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Endereço de Entrega</div>
+            <div class="info-value" style="white-space: pre-line;">{{ pedido.endereco_entrega }}</div>
+          </div>
+
+          {% if pedido.observacao %}
+          <div class="info-row">
+            <div class="info-label">Observações</div>
+            <div class="info-value" style="white-space: pre-line;">{{ pedido.observacao }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Itens do Pedido -->
+      <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-box-seam me-2" style="color: #10b981;"></i>Itens do Pedido
+          </h6>
+
+          {% if itens %}
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead style="background: #f8fafc;">
+                <tr>
+                  <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Produto</th>
+                  <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-align: center;">Quantidade</th>
+                  <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-align: right;">Preço Unit.</th>
+                  <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; text-align: right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in itens %}
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 1rem 1.25rem;">
+                    <span style="font-weight: 600; color: #1e293b;">{{ item.produto.nome }}</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <span class="badge" style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
+                      {{ item.quantidade }}x
+                    </span>
+                  </td>
+                  <td style="text-align: right;">
+                    <span class="text-nowrap" style="color: #64748b;">R$ {{ item.preco_unitario }}</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">R$ {{ item.subtotal }}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5" style="color: #64748b;">
+            <i class="bi bi-inbox display-4 mb-3 d-block"></i>
+            <p class="mb-0">Este pedido não possui itens cadastrados.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna Lateral -->
+    <div class="col-lg-4">
+      <!-- Resumo do Pedido -->
+      <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-receipt-cutoff me-2" style="color: #f59e0b;"></i>Resumo do Pedido
+          </h6>
+
+          <div class="info-row">
+            <div class="info-label">Status Atual</div>
+            <div class="info-value">
+              <span class="status-badge {{ pedido.status }}">
+                {% if pedido.status == 'Pendente' %}
+                  <i class="bi bi-clock-history"></i>
+                {% elif pedido.status == 'Pago' %}
+                  <i class="bi bi-check-circle-fill"></i>
+                {% elif pedido.status == 'Cancelado' %}
+                  <i class="bi bi-x-circle-fill"></i>
+                {% endif %}
+                {{ pedido.status }}
+              </span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Total do Pedido</div>
+            <div class="info-value" style="font-size: 1.5rem; color: #10b981;">
+              R$ {{ pedido.total }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alterar Status -->
+      <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #1e293b;">
+            <i class="bi bi-arrow-repeat me-2" style="color: #3b82f6;"></i>Alterar Status
+          </h6>
+          <p class="mb-4" style="font-size: 0.875rem; color: #64748b;">
+            Atualize o status do pedido conforme necessário
+          </p>
+
+          <form id="formStatus" method="post" action="{% url 'atualizar_status_pedido' pedido.id %}">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="novo_status" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Novo Status</label>
+              <select name="status" id="novo_status" class="form-select" style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 0.75rem;">
+                <option value="Pendente" {% if pedido.status == 'Pendente' %}selected{% endif %}>Pendente</option>
+                <option value="Pago" {% if pedido.status == 'Pago' %}selected{% endif %}>Pago</option>
+                <option value="Cancelado" {% if pedido.status == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+              </select>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-check-circle me-2"></i> Atualizar Status
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.getElementById("formStatus").addEventListener("submit", function(e) {
-    e.preventDefault(); // não envia ainda
+    e.preventDefault();
 
+    const novoStatus = document.getElementById("novo_status").value;
+    
     Swal.fire({
         title: 'Confirmar alteração?',
-        text: "Deseja realmente atualizar o status deste pedido?",
+        text: `Deseja alterar o status do pedido para "${novoStatus}"?`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonText: 'Sim, atualizar',
         cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#0d6efd',
+        confirmButtonColor: '#3b82f6',
         cancelButtonColor: '#6c757d'
     }).then((result) => {
         if (result.isConfirmed) {
-            this.submit(); // envia o formulário só se confirmar
+            this.submit();
         }
     });
 });

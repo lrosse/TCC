@@ -3,62 +3,349 @@
 {% block title %}Editar Produto{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Editar Produto</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{% url 'listar_produtos' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Voltar para Produtos
-        </a>
+<style>
+  /* Upload de imagem personalizado */
+  .upload-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .upload-area:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .upload-area.drag-over {
+    border-color: #3b82f6;
+    background: #dbeafe;
+  }
+
+  .upload-area input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .upload-preview {
+    max-width: 200px;
+    max-height: 200px;
+    margin: 1rem auto;
+    border-radius: 8px;
+    display: none;
+  }
+
+  .upload-preview.show {
+    display: block;
+  }
+
+  .current-image {
+    max-width: 200px;
+    max-height: 200px;
+    margin: 0 auto;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+  }
+
+  /* Info rows */
+  .info-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .info-row:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Inputs modernos */
+  .form-control, .form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .input-group-text {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-right: none;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  .input-group .form-control {
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+  }
+
+  /* Badge de alteração */
+  .change-badge {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+
+    .upload-area {
+      padding: 2rem 1rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Editar Produto</h2>
     </div>
-</div>
+    <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary btn-voltar" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar
+    </a>
+  </div>
 
-<div class="row g-3">
-    <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Editar dados do produto</h5>
+  <!-- Formulário -->
+  <form method="post" enctype="multipart/form-data" id="formProduto">
+    {% csrf_token %}
 
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
+    <div class="row g-4">
+      <!-- Coluna Principal -->
+      <div class="col-lg-8">
+        <!-- Informações Básicas -->
+        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-info-circle me-2" style="color: #3b82f6;"></i>Informações Básicas
+            </h6>
 
-                    <div class="mb-3">
-                        <label for="id_nome" class="form-label">Nome</label>
-                        <input type="text" name="nome" id="id_nome" class="form-control" value="{{ produto.nome }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_descricao" class="form-label">Descrição</label>
-                        <textarea name="descricao" id="id_descricao" rows="4" class="form-control" required>{{ produto.descricao }}</textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_preco" class="form-label">Preço (R$)</label>
-                        <input type="number" name="preco" id="id_preco" step="0.01" class="form-control" value="{{ produto.preco }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_quantidade" class="form-label">Quantidade em Estoque</label>
-                        <input type="number" name="quantidade" id="id_quantidade" min="0" class="form-control" value="{{ produto.quantidade }}" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="id_imagem" class="form-label">Imagem do Produto</label>
-                        {% if produto.imagem %}
-                            <div class="mb-2">
-                                <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" style="max-height: 100px;" class="img-thumbnail">
-                                <p class="small text-muted">Imagem atual</p>
-                            </div>
-                        {% endif %}
-                        <input type="file" name="imagem" id="id_imagem" class="form-control">
-                        <small class="text-muted">Deixe em branco para manter a imagem atual</small>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save"></i> Salvar Alterações
-                    </button>
-                </form>
+            <div class="info-row">
+              <label for="id_nome" class="info-label">
+                Nome do Produto <span style="color: #ef4444;">*</span>
+              </label>
+              <input type="text" name="nome" id="id_nome" class="form-control" value="{{ produto.nome }}" placeholder="Ex: Camiseta Básica Algodão" required>
             </div>
+
+            <div class="info-row" style="border-bottom: none;">
+              <label for="id_descricao" class="info-label">
+                Descrição <span style="color: #ef4444;">*</span>
+              </label>
+              <textarea name="descricao" id="id_descricao" rows="5" class="form-control" placeholder="Descreva as características, materiais, benefícios..." required>{{ produto.descricao }}</textarea>
+              <small class="text-muted mt-2 d-block">Mínimo 10 caracteres</small>
+            </div>
+          </div>
         </div>
+
+        <!-- Precificação e Estoque -->
+        <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-currency-dollar me-2" style="color: #10b981;"></i>Precificação e Estoque
+            </h6>
+
+            <div class="info-row">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="id_preco" class="info-label">
+                    Preço de Venda <span style="color: #ef4444;">*</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">R$</span>
+                    <input type="number" name="preco" id="id_preco" step="0.01" min="0" class="form-control" value="{{ produto.preco }}" placeholder="0,00" required>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="id_quantidade" class="info-label">
+                    Quantidade em Estoque <span style="color: #ef4444;">*</span>
+                  </label>
+                  <input type="number" name="quantidade" id="id_quantidade" min="0" class="form-control" value="{{ produto.quantidade }}" placeholder="0" required>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna Lateral -->
+      <div class="col-lg-4">
+        <!-- Imagem Atual -->
+        {% if produto.imagem %}
+        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-image-fill me-2" style="color: #8b5cf6;"></i>Imagem Atual
+            </h6>
+            
+            <div class="text-center">
+              <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="current-image">
+              <p class="text-muted mt-3 mb-0" style="font-size: 0.8125rem;">
+                <i class="bi bi-check-circle-fill me-1" style="color: #10b981;"></i>Imagem cadastrada
+              </p>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Nova Imagem -->
+        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-image me-2" style="color: #f59e0b;"></i>Atualizar Imagem
+              <span class="change-badge ms-2">
+                <i class="bi bi-exclamation-circle"></i>Opcional
+              </span>
+            </h6>
+
+            <div class="upload-area" id="uploadArea">
+              <input type="file" name="imagem" id="id_imagem" accept="image/*">
+              <div id="uploadContent">
+                <i class="bi bi-cloud-upload display-4 mb-3 d-block" style="color: #94a3b8;"></i>
+                <p class="fw-semibold mb-1" style="color: #64748b;">Clique ou arraste a nova imagem</p>
+                <small class="text-muted">PNG, JPG ou JPEG (máx. 5MB)</small>
+              </div>
+              <img id="imagePreview" class="upload-preview" alt="Preview">
+            </div>
+
+            <div class="mt-3 p-3" style="background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle" style="color: #64748b; font-size: 1rem; margin-top: 2px;"></i>
+                <div>
+                  <small style="color: #64748b; font-size: 0.8125rem; line-height: 1.5;">
+                    Deixe em branco para manter a imagem atual. A nova imagem substituirá a anterior.
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ações -->
+        <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-3" style="color: #1e293b;">
+              <i class="bi bi-save me-2" style="color: #10b981;"></i>Salvar Alterações
+            </h6>
+            <p class="mb-4" style="font-size: 0.875rem; color: #64748b;">
+              Revise as informações antes de atualizar
+            </p>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-check-circle me-2"></i> Salvar Alterações
+              </button>
+              <a href="{% url 'listar_produtos' %}" class="btn btn-outline-secondary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-x-circle me-2"></i> Cancelar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('id_imagem');
+  const imagePreview = document.getElementById('imagePreview');
+  const uploadContent = document.getElementById('uploadContent');
+
+  // Drag and drop
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => uploadArea.classList.add('drag-over'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('drag-over'), false);
+  });
+
+  uploadArea.addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    handleFiles(files);
+  });
+
+  fileInput.addEventListener('change', function() {
+    handleFiles(this.files);
+  });
+
+  function handleFiles(files) {
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imagePreview.src = e.target.result;
+          imagePreview.classList.add('show');
+          uploadContent.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+
+  // Validação do formulário
+  document.getElementById('formProduto').addEventListener('submit', function(e) {
+    const descricao = document.getElementById('id_descricao').value;
+    if (descricao.length < 10) {
+      e.preventDefault();
+      alert('A descrição deve ter pelo menos 10 caracteres.');
+      return false;
+    }
+  });
+});
+</script>
 {% endblock %}
