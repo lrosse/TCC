@@ -2,51 +2,298 @@
 {% block title %}Detalhes do Feedback{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <h2 class="fw-semibold mb-4">Detalhes do Feedback</h2>
+<style>
+  /* Status badges */
+  .status-badge {
+    padding: 6px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <p><strong>Usuário:</strong> {{ feedback.usuario.username }}</p>
-            <p><strong>Produto:</strong> {% if feedback.produto %} {{ feedback.produto.nome }} {% else %} — {% endif %}</p>
-            <p><strong>Nota:</strong>
-                <span class="text-warning">
-                    {% for i in "12345" %}
-                        {% if forloop.counter <= feedback.nota %}
-                            <i class="bi bi-star-fill"></i>
-                        {% else %}
-                            <i class="bi bi-star"></i>
-                        {% endif %}
-                    {% endfor %}
-                </span>
-                ({{ feedback.nota }}/5)
-            </p>
-            <p><strong>Comentário:</strong><br>{{ feedback.comentario|default:"(Sem comentário)" }}</p>
-            <p><strong>Data:</strong> {{ feedback.data_criacao|date:"d/m/Y H:i" }}</p>
-            <p><strong>Status:</strong> 
-                {% if feedback.visivel %}
-                    <span class="badge bg-success">Visível</span>
-                {% else %}
-                    <span class="badge bg-secondary">Oculto</span>
-                {% endif %}
-            </p>
-        </div>
+  .status-badge.visivel {
+    background-color: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+  }
 
-        <div class="card-footer">
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="visivel" name="visivel" {% if feedback.visivel %}checked{% endif %}>
-                    <label class="form-check-label" for="visivel">
-                        Tornar este feedback visível no site
-                    </label>
-                </div>
-                <div class="mt-3">
-                    <a href="{% url 'listar_feedbacks' %}" class="btn btn-secondary">Voltar</a>
-                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                </div>
-            </form>
-        </div>
+  .status-badge.oculto {
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Info rows */
+  .info-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .info-row:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-value {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Stars rating */
+  .stars-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .stars-rating i {
+    font-size: 1.25rem;
+    color: #fbbf24;
+  }
+
+  .stars-rating i.bi-star {
+    color: #d1d5db;
+  }
+
+  /* Comentário */
+  .comentario-box {
+    background: #f8fafc;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+  }
+
+  .comentario-text {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 0.9375rem;
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  /* Form check */
+  .form-check {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  .form-check:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+  }
+
+  .form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-top: 0.125rem;
+    border: 2px solid #cbd5e1;
+    cursor: pointer;
+  }
+
+  .form-check-input:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  .form-check-label {
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    margin-left: 0.5rem;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Detalhes do Feedback</h2>
+      <p class="text-muted mb-0" style="font-size: 0.875rem;">
+        <i class="bi bi-chat-square-text me-1"></i>Avaliação do usuário {{ feedback.usuario.username }}
+      </p>
     </div>
+    <a href="{% url 'listar_feedbacks' %}" class="btn btn-outline-secondary btn-voltar" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Coluna Principal -->
+    <div class="col-lg-8">
+      <!-- Informações do Feedback -->
+      <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-chat-square-dots me-2" style="color: #3b82f6;"></i>Informações da Avaliação
+          </h6>
+
+          <div class="info-row">
+            <div class="info-label">Usuário</div>
+            <div class="info-value">
+              <i class="bi bi-person-circle me-2" style="color: #64748b;"></i>{{ feedback.usuario.username }}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Produto Avaliado</div>
+            <div class="info-value">
+              {% if feedback.produto %}
+                <i class="bi bi-box-seam me-2" style="color: #64748b;"></i>{{ feedback.produto.nome }}
+              {% else %}
+                <span class="text-muted">— Produto não especificado</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Avaliação</div>
+            <div class="info-value">
+              <div class="d-flex align-items-center gap-2">
+                <span class="stars-rating">
+                  {% for i in "12345" %}
+                    {% if forloop.counter <= feedback.nota %}
+                      <i class="bi bi-star-fill"></i>
+                    {% else %}
+                      <i class="bi bi-star"></i>
+                    {% endif %}
+                  {% endfor %}
+                </span>
+                <span style="color: #64748b; font-size: 0.9375rem;">({{ feedback.nota }}/5)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Data de Criação</div>
+            <div class="info-value">
+              <i class="bi bi-calendar3 me-2" style="color: #64748b;"></i>{{ feedback.data_criacao|date:"d/m/Y H:i" }}
+            </div>
+          </div>
+
+          <div class="info-row" style="border-bottom: none;">
+            <div class="info-label">Comentário</div>
+            <div class="comentario-box">
+              <p class="comentario-text">{{ feedback.comentario|default:"(Sem comentário)" }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna Lateral -->
+    <div class="col-lg-4">
+      <!-- Status Atual -->
+      <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-eye me-2" style="color: #f59e0b;"></i>Status de Visibilidade
+          </h6>
+
+          <div class="info-row" style="border-bottom: none; padding: 0;">
+            <div class="info-label">Status Atual</div>
+            <div class="info-value">
+              {% if feedback.visivel %}
+                <span class="status-badge visivel">
+                  <i class="bi bi-eye-fill"></i>Visível
+                </span>
+              {% else %}
+                <span class="status-badge oculto">
+                  <i class="bi bi-eye-slash-fill"></i>Oculto
+                </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gerenciar Visibilidade -->
+      <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #1e293b;">
+            <i class="bi bi-gear me-2" style="color: #3b82f6;"></i>Gerenciar Visibilidade
+          </h6>
+          <p class="mb-4" style="font-size: 0.875rem; color: #64748b;">
+            Controle se este feedback será exibido publicamente no site
+          </p>
+
+          <form method="post" id="formVisibilidade">
+            {% csrf_token %}
+            
+            <div class="form-check mb-4">
+              <input class="form-check-input" type="checkbox" id="visivel" name="visivel" {% if feedback.visivel %}checked{% endif %}>
+              <label class="form-check-label" for="visivel">
+                Tornar este feedback visível no site
+              </label>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-check-circle me-2"></i> Salvar Alterações
+              </button>
+              <a href="{% url 'listar_feedbacks' %}" class="btn btn-outline-secondary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-x-circle me-2"></i> Cancelar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById("formVisibilidade").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const visivel = document.getElementById("visivel").checked;
+    const status = visivel ? "visível" : "oculto";
+    
+    Swal.fire({
+        title: 'Confirmar alteração?',
+        text: `Deseja tornar este feedback ${status}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, atualizar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#6c757d'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            this.submit();
+        }
+    });
+});
+</script>
 {% endblock %}
