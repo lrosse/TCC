@@ -4,84 +4,205 @@
 {% block title %}Relatórios Avançados{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<style>
+  /* Cards de relatório */
+  .relatorio-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid #e2e8f0;
+  }
 
-  <!-- Título -->
-  <h2 class="fw-semibold mb-4">
-    <i class="bi bi-bar-chart"></i> Relatórios Avançados
-  </h2>
+  .relatorio-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: #cbd5e1;
+  }
+
+  .relatorio-card .card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+  }
+
+  .relatorio-card:hover .card-icon {
+    transform: scale(1.1);
+  }
+
+  .relatorio-card .btn {
+    transition: all 0.2s ease;
+  }
+
+  .relatorio-card:hover .btn {
+    padding: 0.5rem 1.5rem;
+  }
+
+  /* Cores dos cards */
+  .card-produtos:hover {
+    border-color: #3b82f6;
+  }
+
+  .card-produtos:hover .card-icon {
+    color: #3b82f6 !important;
+  }
+
+  .card-pedidos:hover {
+    border-color: #10b981;
+  }
+
+  .card-pedidos:hover .card-icon {
+    color: #10b981 !important;
+  }
+
+  .card-estoque:hover {
+    border-color: #f59e0b;
+  }
+
+  .card-estoque:hover .card-icon {
+    color: #f59e0b !important;
+  }
+
+  .card-financeiro:hover {
+    border-color: #ef4444;
+  }
+
+  .card-financeiro:hover .card-icon {
+    color: #ef4444 !important;
+  }
+
+  .card-feedbacks:hover {
+    border-color: #8b5cf6;
+  }
+
+  .card-feedbacks:hover .card-icon {
+    color: #8b5cf6 !important;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .relatorio-card .card-icon {
+      font-size: 2.5rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">
+      <i class="bi bi-bar-chart me-2"></i>Relatórios Avançados
+    </h2>
+  </div>
 
   <!-- Grid de Cards -->
-  <div class="row g-4">
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
 
     <!-- Produtos -->
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-box-seam text-primary display-4"></i>
-          <h5 class="mt-3 fw-bold">Relatório de Produtos</h5>
-          <p class="text-muted flex-grow-1">Filtros por nome, preço, quantidade e status de estoque.</p>
-          <a href="{% url 'relatorio_produtos' %}" class="btn btn-outline-primary mt-auto">
-            <i class="bi bi-arrow-right-circle"></i> Acessar
-          </a>
+    <div class="col">
+      <a href="{% url 'relatorio_produtos' %}" class="text-decoration-none">
+        <div class="card relatorio-card card-produtos shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-box-seam card-icon" style="color: #3b82f6;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatório de Produtos</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Filtros por nome, preço, quantidade e status de estoque. Visão completa do catálogo.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-primary" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right-circle me-2"></i>Gerar Relatório
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Pedidos -->
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-receipt text-success display-4"></i>
-          <h5 class="mt-3 fw-bold">Relatório de Pedidos</h5>
-          <p class="text-muted flex-grow-1">Filtros por cliente, status, valores e datas.</p>
-          <a href="{% url 'relatorio_pedidos' %}" class="btn btn-outline-success mt-auto">
-            <i class="bi bi-arrow-right-circle"></i> Acessar
-          </a>
+    <div class="col">
+      <a href="{% url 'relatorio_pedidos' %}" class="text-decoration-none">
+        <div class="card relatorio-card card-pedidos shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-receipt card-icon" style="color: #10b981;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatório de Pedidos</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Filtros por cliente, status, valores e datas. Análise completa de vendas.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-success" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right-circle me-2"></i>Gerar Relatório
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Estoque -->
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-box2-heart text-warning display-4"></i>
-          <h5 class="mt-3 fw-bold">Relatório de Estoque</h5>
-          <p class="text-muted flex-grow-1">Movimentações de entrada e ajustes de estoque.</p>
-          <a href="{% url 'relatorio_estoque' %}" class="btn btn-outline-warning mt-auto">
-            <i class="bi bi-arrow-right-circle"></i> Acessar
-          </a>
+    <div class="col">
+      <a href="{% url 'relatorio_estoque' %}" class="text-decoration-none">
+        <div class="card relatorio-card card-estoque shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-box2-heart card-icon" style="color: #f59e0b;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatório de Estoque</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Movimentações de entrada, saída e ajustes. Histórico completo do estoque.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-warning" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right-circle me-2"></i>Gerar Relatório
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Financeiro -->
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-cash-coin text-danger display-4"></i>
-          <h5 class="mt-3 fw-bold">Relatório Financeiro</h5>
-          <p class="text-muted flex-grow-1">Receitas, despesas e lançamentos financeiros.</p>
-          <a href="{% url 'relatorio_financeiro' %}" class="btn btn-outline-danger mt-auto">
-            <i class="bi bi-arrow-right-circle"></i> Acessar
-          </a>
+    <div class="col">
+      <a href="{% url 'relatorio_financeiro' %}" class="text-decoration-none">
+        <div class="card relatorio-card card-financeiro shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-cash-coin card-icon" style="color: #ef4444;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatório Financeiro</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Receitas, despesas e lançamentos financeiros. Análise de lucratividade.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-danger" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right-circle me-2"></i>Gerar Relatório
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Feedbacks -->
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm border-0">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-chat-dots text-info display-4"></i>
-          <h5 class="mt-3 fw-bold">Relatório de Feedbacks</h5>
-          <p class="text-muted flex-grow-1">Comentários e avaliações de produtos.</p>
-          <a href="{% url 'relatorio_feedbacks' %}" class="btn btn-outline-info mt-auto">
-            <i class="bi bi-arrow-right-circle"></i> Acessar
-          </a>
+    <div class="col">
+      <a href="{% url 'relatorio_feedbacks' %}" class="text-decoration-none">
+        <div class="card relatorio-card card-feedbacks shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-chat-dots card-icon" style="color: #8b5cf6;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatório de Feedbacks</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Comentários, avaliações e notas dos produtos. Satisfação dos clientes.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-primary" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem; border-color: #8b5cf6; color: #8b5cf6;">
+                <i class="bi bi-arrow-right-circle me-2"></i>Gerar Relatório
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
   </div>

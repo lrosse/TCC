@@ -2,70 +2,175 @@
 {% block title %}Gestão{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
+<style>
+  /* Cards de gestão */
+  .gestao-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid #e2e8f0;
+  }
 
+  .gestao-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: #cbd5e1;
+  }
+
+  .gestao-card .card-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+  }
+
+  .gestao-card:hover .card-icon {
+    transform: scale(1.1);
+  }
+
+  .gestao-card .btn {
+    transition: all 0.2s ease;
+  }
+
+  .gestao-card:hover .btn {
+    padding: 0.5rem 1.5rem;
+  }
+
+  /* Cores dos cards */
+  .card-financeiro:hover {
+    border-color: #10b981;
+  }
+
+  .card-financeiro:hover .card-icon {
+    color: #10b981 !important;
+  }
+
+  .card-estoque:hover {
+    border-color: #3b82f6;
+  }
+
+  .card-estoque:hover .card-icon {
+    color: #3b82f6 !important;
+  }
+
+  .card-despesas:hover {
+    border-color: #ef4444;
+  }
+
+  .card-despesas:hover .card-icon {
+    color: #ef4444 !important;
+  }
+
+  .card-relatorios:hover {
+    border-color: #f59e0b;
+  }
+
+  .card-relatorios:hover .card-icon {
+    color: #f59e0b !important;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .gestao-card .card-icon {
+      font-size: 2.5rem;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
   <!-- Cabeçalho -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-semibold">Gestão do Sistema</h2>
+  <div class="mb-4 p-4 bg-white rounded shadow-sm">
+    <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Gestão do Sistema</h2>
   </div>
 
   <!-- Grid com os cards -->
-  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
-
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+    
     <!-- Card: Financeiro -->
     <div class="col">
-      <div class="card shadow-sm h-100 border-0 rounded-3">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-cash-coin display-4 text-success mb-3"></i>
-          <h5 class="card-title">Controle Financeiro</h5>
-          <p class="text-muted small flex-grow-1">
-            Acompanhe vendas, pedidos pagos, faturamento e estatísticas financeiras.
-          </p>
-          <a href="{% url 'financeiro_resumo' %}" class="btn btn-outline-success btn-sm mt-auto">Acessar</a>
+      <a href="{% url 'financeiro_resumo' %}" class="text-decoration-none">
+        <div class="card gestao-card card-financeiro shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-cash-coin card-icon" style="color: #10b981;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Controle Financeiro</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Acompanhe vendas, pedidos pagos, faturamento e estatísticas financeiras completas.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-success" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right me-2"></i>Acessar
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Card: Estoque -->
     <div class="col">
-      <div class="card shadow-sm h-100 border-0 rounded-3">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-box-seam display-4 text-primary mb-3"></i>
-          <h5 class="card-title">Gestão de Estoque</h5>
-          <p class="text-muted small flex-grow-1">
-            Controle níveis de estoque, visualize movimentações e identifique produtos críticos.
-          </p>
-          <a href="{% url 'gestao_estoque' %}" class="btn btn-outline-primary btn-sm mt-auto">Acessar</a>
+      <a href="{% url 'gestao_estoque' %}" class="text-decoration-none">
+        <div class="card gestao-card card-estoque shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-box-seam card-icon" style="color: #3b82f6;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Gestão de Estoque</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Controle níveis de estoque, visualize movimentações e identifique produtos críticos.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-primary" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right me-2"></i>Acessar
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Card: Despesas -->
     <div class="col">
-      <div class="card shadow-sm h-100 border-0 rounded-3">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-receipt display-4 text-danger mb-3"></i>
-          <h5 class="card-title">Gestão de Despesas</h5>
-          <p class="text-muted small flex-grow-1">
-            Cadastre e acompanhe despesas fixas e variáveis para análise financeira completa.
-          </p>
-          <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-danger btn-sm mt-auto">Acessar</a>
+      <a href="{% url 'gestao_despesas' %}" class="text-decoration-none">
+        <div class="card gestao-card card-despesas shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-receipt card-icon" style="color: #ef4444;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Gestão de Despesas</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Cadastre e acompanhe despesas fixas e variáveis para análise financeira completa.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-danger" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right me-2"></i>Acessar
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
     <!-- Card: Relatórios -->
     <div class="col">
-      <div class="card shadow-sm h-100 border-0 rounded-3">
-        <div class="card-body d-flex flex-column text-center">
-          <i class="bi bi-file-earmark-bar-graph display-4 text-warning mb-3"></i>
-          <h5 class="card-title">Relatórios Avançados</h5>
-          <p class="text-muted small flex-grow-1">
-            Filtre informações por data, cliente ou produto e exporte em PDF.
-          </p>
-          <a href="{% url 'relatorio_avancado'%}" class="btn btn-outline-warning btn-sm mt-auto">Acessar</a>
+      <a href="{% url 'relatorio_avancado' %}" class="text-decoration-none">
+        <div class="card gestao-card card-relatorios shadow-sm h-100" style="border-radius: 12px;">
+          <div class="card-body d-flex flex-column text-center p-4">
+            <i class="bi bi-file-earmark-bar-graph card-icon" style="color: #f59e0b;"></i>
+            <h5 class="card-title fw-bold mb-2" style="color: #1e293b;">Relatórios Avançados</h5>
+            <p class="text-muted flex-grow-1" style="font-size: 0.875rem; line-height: 1.6;">
+              Filtre informações por data, cliente ou produto e exporte relatórios em PDF.
+            </p>
+            <div class="mt-auto">
+              <span class="btn btn-outline-warning" style="border-radius: 8px; font-weight: 600; padding: 0.5rem 1.25rem;">
+                <i class="bi bi-arrow-right me-2"></i>Acessar
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </a>
     </div>
 
   </div>
