@@ -268,16 +268,27 @@ def dashboard(request):
     agora = timezone.now()
     inicio_mes = agora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+    # Último dia do mês atual
+    from calendar import monthrange
+    ultimo_dia_mes = agora.replace(
+        day=monthrange(agora.year, agora.month)[1],
+        hour=23, minute=59, second=59, microsecond=999999
+    )
+
     # Total de vendas do mês (somente pedidos pagos)
     vendas_mes = (
         Pedido.objects
-        .filter(status='Pago', data_criacao__gte=inicio_mes)
+        .filter(status='Pago', data_criacao__gte=inicio_mes, data_criacao__lte=ultimo_dia_mes)
         .aggregate(total=Sum('total'))
         .get('total') or 0
     )
 
     # Filtra apenas pedidos pagos do mês atual
-    pedidos_pagos_qs = Pedido.objects.filter(status='Pago', data_criacao__gte=inicio_mes)
+    pedidos_pagos_qs = Pedido.objects.filter(
+        status='Pago',
+        data_criacao__gte=inicio_mes,
+        data_criacao__lte=ultimo_dia_mes
+    )
 
     # Gera os dados para o mini gráfico
     mini_labels, mini_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos_qs)
@@ -309,7 +320,11 @@ def dashboard(request):
     )
 
     # ================== 🔹 RESUMO FINANCEIRO DO MÊS ==================
-    pedidos_mes = Pedido.objects.filter(status="Pago", data_criacao__gte=inicio_mes)
+    pedidos_mes = Pedido.objects.filter(
+        status="Pago",
+        data_criacao__gte=inicio_mes,
+        data_criacao__lte=ultimo_dia_mes
+    )
 
     receita_total = float(pedidos_mes.aggregate(total=Sum("total"))["total"] or 0)
 
@@ -318,7 +333,8 @@ def dashboard(request):
         for item in PedidoItem.objects.filter(pedido__in=pedidos_mes)
     )
 
-    despesas = Despesa.objects.filter(data__gte=inicio_mes, data__lte=agora)
+    # 🔹 Agora despesas puxam o mês inteiro
+    despesas = Despesa.objects.filter(data__gte=inicio_mes, data__lte=ultimo_dia_mes)
 
     despesas_fixas_valor = float(despesas.filter(tipo="Fixo").aggregate(total=Sum("valor"))["total"] or 0)
     despesas_variaveis_valor = float(despesas.filter(tipo="Variável").aggregate(total=Sum("valor"))["total"] or 0)
@@ -347,6 +363,7 @@ def dashboard(request):
     }
 
     return render(request, 'loja/dashboard.html', ctx)
+
 
 
 
