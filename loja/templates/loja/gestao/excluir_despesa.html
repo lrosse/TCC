@@ -1,14 +1,198 @@
 {% extends "loja/barra_lateral.html" %}
 {% block title %}Excluir Despesa{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-  <h3>Excluir Despesa</h3>
-  <p>Tem certeza que deseja excluir a despesa <strong>{{ despesa.categoria }}</strong> no valor de 
-     <strong>R$ {{ despesa.valor|floatformat:2 }}</strong>?</p>
-  <form method="POST">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Excluir</button>
-    <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary">Cancelar</a>
-  </form>
+<style>
+  /* Info rows */
+  .info-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .info-row:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .info-value {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  /* Alert box */
+  .alert-danger-custom {
+    background: #fef2f2;
+    border: 2px solid #fecaca;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .alert-danger-custom .alert-icon {
+    font-size: 2.5rem;
+    color: #ef4444;
+  }
+
+  .alert-danger-custom .alert-title {
+    color: #991b1b;
+    font-weight: 700;
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .alert-danger-custom .alert-text {
+    color: #7f1d1d;
+    line-height: 1.6;
+    font-size: 0.875rem;
+  }
+
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Excluir Despesa</h2>
+    </div>
+    <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary btn-voltar" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Coluna Principal -->
+    <div class="col-lg-8">
+      <!-- Alert de Aviso -->
+      <div class="alert-danger-custom mb-4">
+        <div class="d-flex align-items-start gap-3">
+          <i class="bi bi-exclamation-triangle-fill alert-icon"></i>
+          <div>
+            <h5 class="alert-title">Atenção! Esta ação é irreversível</h5>
+            <p class="alert-text mb-0">
+              Você está prestes a excluir permanentemente esta despesa do sistema. Todos os dados serão removidos e não poderão ser recuperados.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detalhes da Despesa -->
+      <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+            <i class="bi bi-receipt me-2" style="color: #ef4444;"></i>Detalhes da Despesa
+          </h6>
+
+          <div class="info-row">
+            <div class="info-label">Título</div>
+            <div class="info-value">
+              <i class="bi bi-tag-fill me-2" style="color: #64748b;"></i>{{ despesa.categoria }}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Tipo</div>
+            <div class="info-value">
+              <i class="bi bi-folder-fill me-2" style="color: #64748b;"></i>{{ despesa.tipo }}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Valor</div>
+            <div class="info-value" style="font-size: 1.5rem; color: #ef4444;">
+              R$ {{ despesa.valor|floatformat:2 }}
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-label">Data</div>
+            <div class="info-value">
+              <i class="bi bi-calendar3 me-2" style="color: #64748b;"></i>{{ despesa.data|date:"d/m/Y" }}
+            </div>
+          </div>
+
+          {% if despesa.descricao %}
+          <div class="info-row" style="border-bottom: none;">
+            <div class="info-label">Descrição</div>
+            <div class="info-value" style="white-space: pre-line; font-weight: 400; color: #475569;">
+              {{ despesa.descricao }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Coluna Lateral -->
+    <div class="col-lg-4">
+      <!-- Ações -->
+      <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #1e293b;">
+            <i class="bi bi-shield-exclamation me-2" style="color: #ef4444;"></i>Confirmar Exclusão
+          </h6>
+          <p class="mb-4" style="font-size: 0.875rem; color: #64748b;">
+            Esta ação removerá permanentemente a despesa do sistema
+          </p>
+
+          <form method="POST" id="formExcluir">
+            {% csrf_token %}
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-danger" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-trash me-2"></i> Excluir Despesa
+              </button>
+              <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-x-circle me-2"></i> Cancelar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById("formExcluir").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    Swal.fire({
+        title: 'Confirmar exclusão?',
+        text: 'Esta ação não pode ser desfeita. A despesa será permanentemente removida.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sim, excluir',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6c757d',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            this.submit();
+        }
+    });
+});
+</script>
 {% endblock %}
