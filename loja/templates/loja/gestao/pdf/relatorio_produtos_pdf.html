@@ -9,11 +9,12 @@
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { border: 1px solid #333; padding: 6px; text-align: center; }
     th { background: #444; color: #fff; }
+    .text-nowrap { white-space: nowrap; } /* 🔹 evita quebra do valor */
   </style>
 </head>
 <body>
   <h2>Relatório de Produtos</h2>
-    <table>
+  <table>
     <thead>
       <tr>
         <th>Nome</th>
@@ -27,8 +28,8 @@
       {% for p in produtos %}
       <tr>
         <td>{{ p.nome }}</td>
-        <td>R$ {{ p.custo_info.custo|default:"0.00" }}</td>
-        <td>R$ {{ p.preco }}</td>
+        <td class="text-nowrap">R$ {{ p.custo_info.custo|default:0|floatformat:2 }}</td>
+        <td class="text-nowrap">R$ {{ p.preco|floatformat:2 }}</td>
         <td>{{ p.quantidade }}</td>
         <td>
           {% if p.quantidade < p.minimo_estoque %}
