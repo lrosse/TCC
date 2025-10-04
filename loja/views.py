@@ -447,19 +447,6 @@ def editar_produto(request, produto_id):
     return render(request, 'loja/editar_produto.html', {'produto': produto})
 
 
-@staff_required
-def excluir_produto(request, produto_id):
-    try:
-        produto = Produto.objects.get(id=produto_id)
-    except Produto.DoesNotExist:
-        return redirect('listar_produtos')
-
-    if request.method == 'POST':
-        produto.delete()
-        return redirect('listar_produtos')
-
-    return render(request, 'loja/excluir_produto.html', {'produto': produto})
-
 def produto_detalhe(request, produto_id):
     produto = get_object_or_404(Produto, id=produto_id)
 
