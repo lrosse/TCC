@@ -81,6 +81,10 @@
     .card-estatistica .fs-4 {
       font-size: 1.25rem !important;
     }
+
+    #btnArea {
+      margin-top: 0.5rem;
+    }
   }
 
   @media (max-width: 576px) {
@@ -153,16 +157,18 @@
 
   <!-- Barra de busca e filtros -->
   <div class="mb-3 p-3 bg-white rounded shadow-sm">
-    <label for="busca-produto" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar produtos em estoque</label>
+    <h5 class="fw-semibold mb-3" style="color: #1e293b; font-size: 1rem;">Filtros de Pesquisa</h5>
 
     <form id="formBusca" method="GET">
       <div class="row g-2">
-        <div class="col-md-6">
+        <div class="col-md-5">
+          <label for="busca-produto" class="form-label fw-semibold mb-1" style="color: #475569; font-size: 0.8125rem;">Buscar por nome</label>
           <input type="text" id="busca-produto" name="q" class="form-control form-control-sm" placeholder="Digite o nome do produto..." value="{{ request.GET.q }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
         </div>
 
-        <div class="col-md-4">
-          <select name="filtro" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
+        <div class="col-md-3">
+          <label for="filtro-nivel" class="form-label fw-semibold mb-1" style="color: #475569; font-size: 0.8125rem;">Nível de estoque</label>
+          <select id="filtro-nivel" name="filtro" class="form-select form-select-sm" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #ffffff; font-size: 0.8125rem;">
             <option value="">Todos os níveis</option>
             <option value="baixo" {% if request.GET.filtro == "baixo" %}selected{% endif %}>Abaixo do mínimo</option>
             <option value="medio" {% if request.GET.filtro == "medio" %}selected{% endif %}>Entre mínimo e ideal</option>
@@ -170,10 +176,13 @@
           </select>
         </div>
 
-        <div class="col-md-2 text-end" id="btnArea">
-          <button type="button" id="btnDefinir" class="btn btn-outline-secondary btn-sm w-100" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
-            <i class="bi bi-sliders me-1"></i> Definir Limites
-          </button>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold mb-1" style="color: #475569; font-size: 0.8125rem;">Ações</label>
+          <div class="d-flex gap-2" id="btnArea">
+            <button type="button" id="btnDefinir" class="btn btn-outline-secondary btn-sm flex-grow-1" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; white-space: nowrap;">
+              <i class="bi bi-sliders me-1"></i> Definir Limites
+            </button>
+          </div>
         </div>
       </div>
     </form>
@@ -319,11 +328,11 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       btnArea.innerHTML = `
-        <button type="button" id="btnSalvar" class="btn btn-success btn-sm" style="background: #10b981; border: none; border-radius: 8px; font-weight: 600;">
+        <button type="button" id="btnSalvar" class="btn btn-success btn-sm flex-grow-1" style="background: #10b981; border: none; border-radius: 8px; font-weight: 600; white-space: nowrap;">
           <i class="bi bi-save me-1"></i> Salvar
         </button>
-        <button type="button" id="btnCancelar" class="btn btn-outline-secondary btn-sm ms-2" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500;">
-          Cancelar
+        <button type="button" id="btnCancelar" class="btn btn-outline-secondary btn-sm flex-grow-1" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; white-space: nowrap;">
+          <i class="bi bi-x-lg me-1"></i> Cancelar
         </button>
       `;
 

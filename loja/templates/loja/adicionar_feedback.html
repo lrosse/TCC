@@ -4,110 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avaliar Produto</title>
-    <!-- Bootstrap CSS + Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        body { background-color: #f8f9fa; }
+        body {
+            background-color: #f8fafc;
+        }
+
         .product-img {
             max-height: 220px;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 12px;
         }
+
         .star-rating {
             display: flex;
-            gap: 5px;
-            font-size: 2rem;
+            gap: 8px;
+            font-size: 2.5rem;
+            justify-content: center;
         }
+
         .star {
             cursor: pointer;
-            color: #ddd;
-            transition: color 0.2s, transform 0.2s;
+            color: #e2e8f0;
+            transition: all 0.2s ease;
         }
+
         .star.hovered,
         .star.selected {
-            color: #ffc107;
+            color: #fbbf24;
         }
+
         .star:hover {
-            transform: scale(1.2);
+            transform: scale(1.15);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            h2 {
+                font-size: 1.25rem !important;
+            }
+
+            .star-rating {
+                font-size: 2rem;
+            }
         }
     </style>
 </head>
 <body>
 {% include "loja/_navbar.html" %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-7">
-            <div class="card shadow-sm border-0">
-                <div class="row g-0">
-                    <!-- Imagem do produto -->
-                    <div class="col-md-5 d-flex align-items-center justify-content-center bg-light p-3">
-                        {% if produto.imagem %}
-                            <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="img-fluid product-img">
-                        {% else %}
-                            <i class="bi bi-box-seam display-4 text-muted"></i>
-                        {% endif %}
+
+<div class="container my-5" style="max-width: 900px;">
+    <!-- Cabeçalho -->
+    <div class="mb-4 p-4 bg-white rounded shadow-sm">
+        <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Avaliar Produto</h2>
+        <p class="text-muted mb-0" style="font-size: 0.875rem;">
+            Compartilhe sua experiência com outros clientes
+        </p>
+    </div>
+
+    <!-- Card Principal -->
+    <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+        <div class="row g-0">
+            <!-- Imagem do produto -->
+            <div class="col-md-5 d-flex align-items-center justify-content-center p-4" style="background: #f8fafc;">
+                {% if produto.imagem %}
+                    <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="img-fluid product-img">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="width: 100%; height: 220px; background: #e2e8f0; border-radius: 12px;">
+                        <i class="bi bi-box-seam" style="font-size: 4rem; color: #94a3b8;"></i>
                     </div>
+                {% endif %}
+            </div>
 
-                    <!-- Formulário -->
-                    <div class="col-md-7">
-                        <div class="card-body">
-                            <h5 class="card-title mb-2 text-primary fw-bold">{{ produto.nome }}</h5>
-                            <p class="text-muted small">{{ produto.descricao|truncatechars:80 }}</p>
-                            <hr>
+            <!-- Formulário -->
+            <div class="col-md-7">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2" style="color: #1e293b;">{{ produto.nome }}</h5>
+                    <p class="text-muted mb-4" style="font-size: 0.875rem;">{{ produto.descricao|truncatechars:80 }}</p>
 
-                            <form method="post">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <label class="form-label">Sua Nota</label>
-                                    <div class="star-rating" id="starRating">
-                                        <i class="bi bi-star-fill star" data-value="1"></i>
-                                        <i class="bi bi-star-fill star" data-value="2"></i>
-                                        <i class="bi bi-star-fill star" data-value="3"></i>
-                                        <i class="bi bi-star-fill star" data-value="4"></i>
-                                        <i class="bi bi-star-fill star" data-value="5"></i>
-                                    </div>
-                                    {{ form.nota }}
-                                </div>
+                    <form method="post">
+                        {% csrf_token %}
 
-                                <div class="mb-3">
-                                    <label for="id_comentario" class="form-label">Comentário</label>
-                                    {{ form.comentario }}
-                                </div>
-
-                                <div class="d-flex justify-content-between">
-                                    <a href="{% url 'produto_detalhe' produto.id %}" class="btn btn-outline-secondary">
-                                        <i class="bi bi-arrow-left"></i> Voltar
-                                    </a>
-                                    <button type="submit" class="btn btn-success">
-                                        <i class="bi bi-send"></i> Enviar Feedback
-                                    </button>
-                                </div>
-                            </form>
+                        <!-- Avaliação com Estrelas -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-center d-block mb-3" style="color: #475569; font-size: 0.875rem;">
+                                Como você avalia este produto?
+                            </label>
+                            <div class="star-rating" id="starRating">
+                                <i class="bi bi-star-fill star" data-value="1"></i>
+                                <i class="bi bi-star-fill star" data-value="2"></i>
+                                <i class="bi bi-star-fill star" data-value="3"></i>
+                                <i class="bi bi-star-fill star" data-value="4"></i>
+                                <i class="bi bi-star-fill star" data-value="5"></i>
+                            </div>
+                            <div class="text-center mt-2">
+                                <small class="text-muted" id="rating-text">Clique nas estrelas para avaliar</small>
+                            </div>
+                            {{ form.nota }}
                         </div>
-                    </div>
-                </div> <!-- row -->
+
+                        <!-- Comentário -->
+                        <div class="mb-4">
+                            <label for="id_comentario" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">
+                                Compartilhe sua experiência
+                            </label>
+                            {{ form.comentario }}
+                            <small class="text-muted">Opcional: Conte o que você achou do produto</small>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'produto_detalhe' produto.id %}" class="btn btn-outline-secondary" style="border-radius: 8px; font-weight: 600; padding: 0.75rem 1.5rem;">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success" style="background: #10b981; border: none; border-radius: 8px; font-weight: 600; padding: 0.75rem 2rem;">
+                                <i class="bi bi-send me-2"></i>Enviar Avaliação
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     const stars = document.querySelectorAll(".star");
     const hiddenInput = document.getElementById("id_nota");
+    const ratingText = document.getElementById("rating-text");
+
+    const ratingLabels = {
+        1: "Muito ruim",
+        2: "Ruim",
+        3: "Regular",
+        4: "Bom",
+        5: "Excelente"
+    };
 
     stars.forEach(star => {
         star.addEventListener("mouseover", function () {
             resetHover();
-            this.classList.add("hovered");
             let val = parseInt(this.dataset.value);
             stars.forEach(s => {
                 if (parseInt(s.dataset.value) <= val) s.classList.add("hovered");
             });
+            ratingText.textContent = ratingLabels[val];
         });
 
         star.addEventListener("click", function () {
@@ -117,10 +162,16 @@
             stars.forEach(s => {
                 if (parseInt(s.dataset.value) <= val) s.classList.add("selected");
             });
+            ratingText.textContent = ratingLabels[val];
         });
 
         star.addEventListener("mouseout", function () {
             resetHover();
+            if (hiddenInput.value) {
+                ratingText.textContent = ratingLabels[hiddenInput.value];
+            } else {
+                ratingText.textContent = "Clique nas estrelas para avaliar";
+            }
         });
     });
 
