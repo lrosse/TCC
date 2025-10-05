@@ -39,10 +39,10 @@
             color: white;
         }
         .qty-input {
-            width: 45px;
+            width: 60px;
             text-align: center;
             font-size: 0.9rem;
-            padding: 2px;
+            padding: 4px;
         }
         .qty-btn {
             border-radius: 50%;
@@ -110,6 +110,7 @@
                                             min="1"
                                             class="form-control form-control-sm qty-input"
                                             oninput="if (this.value === '' || this.value < 1) this.value = 1;"
+                                            onchange="this.form.submit()"
                                         >
                                         <button type="button" class="btn btn-outline-secondary btn-sm qty-btn" onclick="stepQty(this, 1)" title="Aumentar">
                                             <i class="bi bi-plus"></i>
