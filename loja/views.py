@@ -1464,32 +1464,77 @@ def adicionar_feedback(request, produto_id):
 
 @staff_required
 def listar_feedbacks(request):
+    from django.core.paginator import Paginator
+    from datetime import datetime, timedelta
+
     feedbacks = Feedback.objects.select_related("usuario", "produto").order_by("-data_criacao")
 
-    # Filtros
-    usuario = request.GET.get("usuario")
-    produto = request.GET.get("produto")
-    nota = request.GET.get("nota")
-    status = request.GET.get("status")
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
+    # 🔹 Filtros via GET
+    usuario = request.GET.get("usuario", "")
+    produto = request.GET.get("produto", "")
+    nota = request.GET.get("nota", "")
+    status = request.GET.get("status", "")
+    data_inicio = request.GET.get("data_inicio", "")
+    data_fim = request.GET.get("data_fim", "")
 
+    # 🔸 Filtro por usuário
     if usuario:
         feedbacks = feedbacks.filter(usuario__username__icontains=usuario)
+
+    # 🔸 Filtro por produto (pode ser nome ou ID)
     if produto:
-        feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+        if produto.isdigit():
+            feedbacks = feedbacks.filter(produto__id=produto)
+        else:
+            feedbacks = feedbacks.filter(produto__nome__icontains=produto)
+
+    # 🔸 Filtro por nota
     if nota:
         feedbacks = feedbacks.filter(nota=nota)
+
+    # 🔸 Filtro por visibilidade
     if status == "visivel":
         feedbacks = feedbacks.filter(visivel=True)
     elif status == "oculto":
         feedbacks = feedbacks.filter(visivel=False)
-    if data_inicio:
-        feedbacks = feedbacks.filter(data_criacao__date__gte=data_inicio)
-    if data_fim:
-        feedbacks = feedbacks.filter(data_criacao__date__lte=data_fim)
 
-    return render(request, "loja/listar_feedbacks.html", {"feedbacks": feedbacks})
+    # 🔸 Filtro por datas
+    try:
+        if data_inicio:
+            inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+            feedbacks = feedbacks.filter(data_criacao__gte=inicio)
+        if data_fim:
+            fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
+            feedbacks = feedbacks.filter(data_criacao__lt=fim)
+    except ValueError:
+        pass
+
+    # 🔹 Paginação
+    paginator = Paginator(feedbacks, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # 🔹 Mantém filtros nos links de paginação
+    filtro_params = request.GET.copy()
+    if "page" in filtro_params:
+        filtro_params.pop("page")
+    filtro_params = filtro_params.urlencode()
+
+    context = {
+        "feedbacks": page_obj,
+        "filtros": {
+            "usuario": usuario,
+            "produto": produto,
+            "nota": nota,
+            "status": status,
+            "data_inicio": data_inicio,
+            "data_fim": data_fim,
+        },
+        "filtro_params": filtro_params,
+    }
+
+    return render(request, "loja/listar_feedbacks.html", context)
+
 
 
 @staff_required

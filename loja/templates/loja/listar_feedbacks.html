@@ -66,6 +66,26 @@
     border: 1px solid #fecaca;
   }
 
+  /* Paginação moderna azul */
+  .pagination .page-link {
+    border: none;
+    margin: 0 3px;
+    border-radius: 10px;
+    color: #2563eb;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: all 0.2s ease-in-out;
+  }
+  .pagination .page-link:hover {
+    background-color: #e0ebff;
+    color: #1d4ed8;
+  }
+  .pagination .active .page-link {
+    background-color: #2563eb;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(37,99,235,0.5);
+  }
+
   /* Responsividade */
   .data-cell {
     white-space: nowrap;
@@ -159,6 +179,11 @@
         <!-- Campo de busca -->
         <input type="text" id="filtro-busca" class="form-control form-control-sm flex-grow-1" placeholder="Pesquisar por usuário, produto ou comentário..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
 
+        <!-- Botão Buscar -->
+        <button id="btn-buscar" class="btn btn-primary btn-sm ms-2" style="border-radius: 8px; height: 32px;">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+
         <!-- Botão de filtro -->
         <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
       </div>
@@ -173,7 +198,7 @@
     </div>
   </div>
 
-  <!-- Campos extras (colapsáveis) -->
+  <!-- Campos extras -->
   <div class="collapse mb-3" id="filtrosExtras">
     <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
       <div class="col-md-2 col-sm-6">
@@ -220,7 +245,6 @@
         <table class="table align-middle mb-0">
           <thead style="background: #f8fafc;">
             <tr>
-              <!-- Checkbox geral -->
               <th style="padding: 1rem 1.25rem; text-align: left; width: 160px;">
                 <button type="button" id="btn-selecionar-todos" class="btn">
                   <i class="bi bi-check-square"></i>
@@ -240,23 +264,12 @@
           <tbody id="tabela-feedbacks">
             {% for f in feedbacks %}
               <tr data-usuario="{{ f.usuario.username|lower }}" data-produto="{% if f.produto %}{{ f.produto.nome|lower }}{% endif %}" data-id="{% if f.produto %}{{ f.produto.id }}{% endif %}" data-comentario="{{ f.comentario|lower|default:'' }}" data-nota="{{ f.nota }}" data-status="{% if f.visivel %}visivel{% else %}oculto{% endif %}" data-data="{{ f.data_criacao|date:'Y-m-d' }}" style="border-bottom: 1px solid #e2e8f0;">
-                <!-- Checkbox -->
                 <td class="text-center">
                   <input type="checkbox" name="feedbacks" value="{{ f.id }}" form="formLote" />
                 </td>
-
-                <!-- Usuário -->
-                <td style="padding: 1rem 1.25rem;">
-                  <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">{{ f.usuario.username }}</span>
-                </td>
-
-                <!-- ID Produto -->
+                <td style="padding: 1rem 1.25rem;"><span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">{{ f.usuario.username }}</span></td>
                 <td>{% if f.produto %}{{ f.produto.id }}{% else %}—{% endif %}</td>
-
-                <!-- Produto -->
                 <td>{% if f.produto %}{{ f.produto.nome }}{% else %}—{% endif %}</td>
-
-                <!-- Nota -->
                 <td>
                   <div class="d-flex align-items-center gap-1">
                     {% for i in "12345" %}
@@ -268,23 +281,9 @@
                     {% endfor %}
                   </div>
                 </td>
-
-                <!-- Comentário -->
                 <td>{{ f.comentario|truncatechars:40|default:"(Sem comentário)" }}</td>
-
-                <!-- Data -->
                 <td class="data-cell">{{ f.data_criacao|date:"d/m/Y H:i" }}</td>
-
-                <!-- Status -->
-                <td>
-                  {% if f.visivel %}
-                    <span class="status visivel">Visível</span>
-                  {% else %}
-                    <span class="status oculto">Oculto</span>
-                  {% endif %}
-                </td>
-
-                <!-- Ações -->
+                <td>{% if f.visivel %}<span class="status visivel">Visível</span>{% else %}<span class="status oculto">Oculto</span>{% endif %}</td>
                 <td>
                   <div class="d-flex justify-content-center gap-3">
                     <a href="{% url 'detalhes_feedback' f.id %}" class="action-btn text-primary"><i class="bi bi-search"></i> Detalhes</a>
@@ -304,6 +303,31 @@
         </table>
       </div>
     </div>
+
+    <!-- Paginação -->
+    {% if feedbacks.has_other_pages %}
+      <nav aria-label="Page navigation" class="my-4">
+        <ul class="pagination justify-content-center">
+          {% if feedbacks.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ feedbacks.previous_page_number }}&{{ filtro_params }}">&laquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+          {% endif %}
+          {% for num in feedbacks.paginator.page_range %}
+            {% if feedbacks.number == num %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ num }}&{{ filtro_params }}">{{ num }}</a></li>
+            {% endif %}
+          {% endfor %}
+          {% if feedbacks.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ feedbacks.next_page_number }}&{{ filtro_params }}">&raquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% endif %}
   </div>
 </div>
 
@@ -315,9 +339,7 @@
         <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmar Alteração</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body">
-        Tem certeza que deseja alterar a visibilidade dos feedbacks selecionados?
-      </div>
+      <div class="modal-body">Tem certeza que deseja alterar a visibilidade dos feedbacks selecionados?</div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="submit" form="formLote" class="btn btn-primary">Sim, confirmar</button>
@@ -328,16 +350,14 @@
 
 {% block extra_js %}
 <script>
-  // Funcionalidade do botão "Selecionar todos"
+  // Selecionar todos
   let todosSelecionados = false;
   const btn = document.getElementById("btn-selecionar-todos");
   const icone = btn.querySelector("i");
   const texto = btn.querySelector("span");
-
   function atualizarEstadoBotao() {
     const checkboxes = document.querySelectorAll("input[name='feedbacks']");
     const selecionados = document.querySelectorAll("input[name='feedbacks']:checked").length;
-    
     if (selecionados === checkboxes.length && checkboxes.length > 0) {
       btn.classList.add("todos-selecionados");
       icone.className = "bi bi-check-square-fill";
@@ -350,13 +370,10 @@
       todosSelecionados = false;
     }
   }
-
   btn.addEventListener("click", function() {
     const checkboxes = document.querySelectorAll("input[name='feedbacks']");
     todosSelecionados = !todosSelecionados;
-    
     checkboxes.forEach(cb => cb.checked = todosSelecionados);
-    
     if (todosSelecionados) {
       btn.classList.add("todos-selecionados");
       icone.className = "bi bi-check-square-fill";
@@ -367,13 +384,11 @@
       texto.textContent = "Selecionar todos";
     }
   });
-
-  // Atualizar o estado do botão quando checkboxes individuais são clicados
   document.querySelectorAll("input[name='feedbacks']").forEach(checkbox => {
     checkbox.addEventListener("change", atualizarEstadoBotao);
   });
 
-  // Filtros
+    // ====== Filtros ======
   const filtroBusca = document.getElementById("filtro-busca");
   const filtroId = document.getElementById("filtro-id");
   const filtroNota = document.getElementById("filtro-nota");
@@ -381,54 +396,37 @@
   const filtroDataInicio = document.getElementById("filtro-data-inicio");
   const filtroDataFim = document.getElementById("filtro-data-fim");
   const btnLimpar = document.getElementById("btn-limpar");
-  const linhas = document.querySelectorAll("#tabela-feedbacks tr[data-usuario]");
 
-  function aplicarFiltros() {
-    const termo = filtroBusca.value.trim().toLowerCase();
-    const idFiltro = filtroId.value.trim();
-    const nota = filtroNota.value;
-    const status = filtroStatus.value;
-    const dataInicio = filtroDataInicio.value;
-    const dataFim = filtroDataFim.value;
+  // ✅ Preencher campos com os valores atuais da URL (mantém filtros)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("usuario")) filtroBusca.value = urlParams.get("usuario");
+  if (urlParams.get("produto")) filtroId.value = urlParams.get("produto");
+  if (urlParams.get("nota")) filtroNota.value = urlParams.get("nota");
+  if (urlParams.get("status")) filtroStatus.value = urlParams.get("status");
+  if (urlParams.get("data_inicio")) filtroDataInicio.value = urlParams.get("data_inicio");
+  if (urlParams.get("data_fim")) filtroDataFim.value = urlParams.get("data_fim");
 
-    linhas.forEach(tr => {
-      const usuario = tr.dataset.usuario;
-      const produto = tr.dataset.produto || "";
-      const idProduto = tr.dataset.id || "";
-      const comentario = tr.dataset.comentario;
-      const notaTr = tr.dataset.nota;
-      const statusTr = tr.dataset.status;
-      const dataTr = tr.dataset.data;
-
-      const matchBusca = !termo || usuario.includes(termo) || produto.includes(termo) || comentario.includes(termo);
-      const matchId = !idFiltro || idProduto === idFiltro;
-      const matchNota = !nota || notaTr === nota;
-      const matchStatus = !status || statusTr === status;
-      const matchDataInicio = !dataInicio || dataTr >= dataInicio;
-      const matchDataFim = !dataFim || dataTr <= dataFim;
-
-      tr.style.display = (matchBusca && matchId && matchNota && matchStatus && matchDataInicio && matchDataFim) ? "" : "none";
-    });
-  }
-
-  // Eventos
-  [filtroBusca, filtroId, filtroNota, filtroStatus, filtroDataInicio, filtroDataFim].forEach(el => {
-    el?.addEventListener("input", aplicarFiltros);
-    el?.addEventListener("change", aplicarFiltros);
+  // ✅ Botão "Buscar" — aplica filtros via GET
+  document.getElementById("btn-buscar").addEventListener("click", () => {
+    const params = new URLSearchParams();
+    if (filtroBusca.value.trim()) params.append("usuario", filtroBusca.value.trim());
+    if (filtroId.value.trim()) params.append("produto", filtroId.value.trim());
+    if (filtroNota.value) params.append("nota", filtroNota.value);
+    if (filtroStatus.value) params.append("status", filtroStatus.value);
+    if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
+    if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
   });
 
-  // Botão limpar
+  // ✅ Botão "Limpar" — reseta filtros e recarrega
   btnLimpar.addEventListener("click", () => {
-    filtroBusca.value = "";
-    filtroId.value = "";
-    filtroNota.value = "";
-    filtroStatus.value = "";
-    filtroDataInicio.value = "";
-    filtroDataFim.value = "";
-    aplicarFiltros();
+    filtroBusca.value = filtroId.value = filtroNota.value = filtroStatus.value = "";
+    filtroDataInicio.value = filtroDataFim.value = "";
+    window.location.href = window.location.pathname;
   });
 
-  // Passa visibilidade escolhida para input hidden ao abrir modal
+
+  // Modal confirmação
   const modal = document.getElementById("confirmarLote");
   modal.addEventListener("show.bs.modal", event => {
     const botao = event.relatedTarget;

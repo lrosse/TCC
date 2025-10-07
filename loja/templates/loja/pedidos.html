@@ -353,7 +353,9 @@
 
 {% block extra_js %}
 <script>
-  // Selecionar todos
+  // ================================
+  // Botão "Selecionar todos"
+  // ================================
   let todosSelecionados = false;
   const btn = document.getElementById("btn-selecionar-todos");
   const icone = btn.querySelector("i");
@@ -362,7 +364,7 @@
   function atualizarEstadoBotao() {
     const checkboxes = document.querySelectorAll("input[name='pedidos']");
     const selecionados = document.querySelectorAll("input[name='pedidos']:checked").length;
-    
+
     if (selecionados === checkboxes.length && checkboxes.length > 0) {
       btn.classList.add("todos-selecionados");
       icone.className = "bi bi-check-square-fill";
@@ -379,6 +381,7 @@
   btn.addEventListener("click", function() {
     const checkboxes = document.querySelectorAll("input[name='pedidos']");
     todosSelecionados = !todosSelecionados;
+
     checkboxes.forEach(cb => cb.checked = todosSelecionados);
 
     if (todosSelecionados) {
@@ -396,34 +399,46 @@
     checkbox.addEventListener("change", atualizarEstadoBotao);
   });
 
+  // ================================
   // Filtros
+  // ================================
   const filtroNome = document.getElementById("filtro-nome");
   const filtroStatus = document.getElementById("status");
   const filtroValor = document.getElementById("valor");
   const filtroDataInicio = document.getElementById("data_inicio");
   const filtroDataFim = document.getElementById("data_fim");
+  const btnBuscar = document.getElementById("btn-buscar");
   const btnLimpar = document.getElementById("btn-limpar-filtros");
 
-  // Botão "Buscar" - aplica filtros via GET (somente quando clicado)
-  document.getElementById("btn-buscar").addEventListener("click", () => {
+  // ✅ Preenche os campos com base nos parâmetros da URL (mantém filtros)
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("nome")) filtroNome.value = urlParams.get("nome");
+  if (urlParams.get("status")) filtroStatus.value = urlParams.get("status");
+  if (urlParams.get("valor")) filtroValor.value = urlParams.get("valor");
+  if (urlParams.get("data_inicio")) filtroDataInicio.value = urlParams.get("data_inicio");
+  if (urlParams.get("data_fim")) filtroDataFim.value = urlParams.get("data_fim");
+
+  // ✅ Botão "Buscar" — aplica filtros via GET
+  btnBuscar.addEventListener("click", () => {
     const params = new URLSearchParams();
     if (filtroNome.value.trim()) params.append("nome", filtroNome.value.trim());
     if (filtroStatus.value) params.append("status", filtroStatus.value);
     if (filtroValor.value.trim()) params.append("valor", filtroValor.value.trim());
     if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
     if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
-
     window.location.href = `${window.location.pathname}?${params.toString()}`;
   });
 
-  // Botão "Limpar" - reseta campos e recarrega a página
+  // ✅ Botão "Limpar" — limpa e recarrega página
   btnLimpar.addEventListener("click", () => {
     filtroNome.value = filtroStatus.value = filtroValor.value = "";
     filtroDataInicio.value = filtroDataFim.value = "";
     window.location.href = window.location.pathname;
   });
 
+  // ================================
   // Modal de confirmação
+  // ================================
   const modal = document.getElementById("confirmarLote");
   modal.addEventListener("show.bs.modal", event => {
     const botao = event.relatedTarget;
@@ -431,5 +446,7 @@
     document.getElementById("status-hidden").value = status;
   });
 </script>
+
+
 {% endblock %}
 {% endblock %}
