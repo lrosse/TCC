@@ -437,37 +437,71 @@ def financeiro_resumo(request):
 @login_required
 @user_passes_test(admin_required)
 def gestao_despesas(request):
+    from django.core.paginator import Paginator
+    from datetime import datetime, timedelta
+    from django.db.models import Q
+
     despesas = Despesa.objects.all().order_by("-data")
 
     # 🔹 Filtros GET
-    data_inicio = request.GET.get("data_inicio")
-    data_fim = request.GET.get("data_fim")
-    tipo = request.GET.get("tipo")
-    q = request.GET.get("q")
+    q = request.GET.get("q", "")
+    tipo = request.GET.get("tipo", "")
+    data_inicio = request.GET.get("data_inicio", "")
+    data_fim = request.GET.get("data_fim", "")
+    valor_min = request.GET.get("valor_min", "")
+    valor_max = request.GET.get("valor_max", "")
 
-    # 🔹 Filtro por data início
-    if data_inicio:
-        despesas = despesas.filter(data__gte=data_inicio)
-
-    # 🔹 Filtro por data fim
-    if data_fim:
-        despesas = despesas.filter(data__lte=data_fim)
+    # 🔹 Filtro de busca (categoria ou descrição)
+    if q:
+        despesas = despesas.filter(Q(categoria__icontains=q) | Q(descricao__icontains=q))
 
     # 🔹 Filtro por tipo
     if tipo:
         despesas = despesas.filter(tipo=tipo)
 
-    # 🔹 Busca em categoria (título) OU descrição
-    if q:
-        from django.db.models import Q
-        despesas = despesas.filter(
-            Q(categoria__icontains=q) | Q(descricao__icontains=q)
-        )
+    # 🔹 Filtro por intervalo de datas
+    try:
+        if data_inicio:
+            inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+            despesas = despesas.filter(data__gte=inicio)
+        if data_fim:
+            fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
+            despesas = despesas.filter(data__lt=fim)
+    except ValueError:
+        pass
+
+    # 🔹 Filtro por faixa de valor
+    if valor_min:
+        despesas = despesas.filter(valor__gte=valor_min)
+    if valor_max:
+        despesas = despesas.filter(valor__lte=valor_max)
+
+    # 🔹 Paginação
+    paginator = Paginator(despesas, 10)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # 🔹 Mantém filtros nos links da paginação
+    filtro_params = request.GET.copy()
+    if "page" in filtro_params:
+        filtro_params.pop("page")
+    filtro_params = filtro_params.urlencode()
 
     context = {
-        "despesas": despesas,
+        "despesas": page_obj,
+        "filtros": {
+            "q": q,
+            "tipo": tipo,
+            "data_inicio": data_inicio,
+            "data_fim": data_fim,
+            "valor_min": valor_min,
+            "valor_max": valor_max,
+        },
+        "filtro_params": filtro_params,
     }
+
     return render(request, "loja/gestao/gestao_despesas.html", context)
+
 
 @login_required
 @user_passes_test(admin_required)

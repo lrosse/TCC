@@ -57,13 +57,47 @@
     border: 1px solid #fde68a;
   }
 
+  /* ===== Paginação ===== */
+  .pagination {
+    --bs-pagination-color: #2563eb;
+    --bs-pagination-border-color: #e2e8f0;
+    --bs-pagination-bg: #ffffff;
+    --bs-pagination-hover-color: #ffffff;
+    --bs-pagination-hover-bg: #2563eb;
+    --bs-pagination-hover-border-color: #2563eb;
+    --bs-pagination-active-bg: #2563eb;
+    --bs-pagination-active-border-color: #2563eb;
+    --bs-pagination-focus-color: #ffffff;
+    --bs-pagination-focus-bg: #2563eb;
+    --bs-pagination-disabled-bg: #f1f5f9;
+    --bs-pagination-disabled-color: #94a3b8;
+    --bs-pagination-disabled-border-color: #e2e8f0;
+  }
+
+  .pagination .page-link {
+    border-radius: 8px;
+    margin: 0 4px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .pagination .page-link:hover {
+    transform: translateY(-2px);
+  }
+
+  .pagination .page-item.active .page-link {
+    color: #fff !important;
+    font-weight: 600;
+  }
+
   /* Responsividade */
   @media (max-width: 992px) {
     .table thead th {
       font-size: 0.65rem;
       padding: 0.75rem 0.5rem;
     }
-    
+
     .table tbody td {
       font-size: 0.75rem;
       padding: 0.75rem 0.5rem;
@@ -95,7 +129,8 @@
       font-size: 0.7rem;
     }
 
-    .data-cell, .valor-cell {
+    .data-cell,
+    .valor-cell {
       font-size: 0.65rem;
     }
   }
@@ -117,6 +152,11 @@
     <div class="d-flex align-items-center gap-2 flex-wrap">
       <!-- Campo de busca -->
       <input type="text" id="filtro-busca" class="form-control form-control-sm" placeholder="Buscar por categoria ou descrição..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem; flex-grow: 1; min-width: 200px;" />
+
+      <!-- Botão Buscar -->
+      <button id="btn-buscar" class="btn btn-primary btn-sm d-flex align-items-center" type="button" style="border-radius: 8px; padding: 6px 16px; font-weight: 500; background-color: #2563eb; border-color: #2563eb;">
+        <i class="bi bi-search me-1"></i> Buscar
+      </button>
 
       <!-- Botão de filtro -->
       <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;">
@@ -167,23 +207,18 @@
         <table class="table align-middle mb-0">
           <thead style="background: #f8fafc;">
             <tr>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Categoria</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Tipo</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Valor</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Data</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Descrição</th>
-              <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Ações</th>
+              <th>Categoria</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Ações</th>
             </tr>
           </thead>
-          <tbody id="tabela-despesas">
+          <tbody>
             {% for d in despesas %}
-            <tr data-categoria="{{ d.categoria|lower }}" data-descricao="{{ d.descricao|lower|default:'' }}" data-tipo="{% if d.tipo == 'Fixo' %}fixo{% else %}variavel{% endif %}" data-valor="{{ d.valor }}" data-data="{{ d.data|date:'Y-m-d' }}" style="border-bottom: 1px solid #e2e8f0;">
-              <!-- Categoria -->
-              <td style="padding: 1rem 1.25rem;">
-                <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ d.categoria }}</span>
-              </td>
-
-              <!-- Tipo -->
+            <tr data-categoria="{{ d.categoria|lower }}" data-descricao="{{ d.descricao|lower|default:'' }}" data-tipo="{% if d.tipo == 'Fixo' %}fixo{% else %}variavel{% endif %}" data-valor="{{ d.valor }}" data-data="{{ d.data|date:'Y-m-d' }}">
+              <td>{{ d.categoria }}</td>
               <td>
                 {% if d.tipo == "Fixo" %}
                   <span class="badge-tipo fixo">Fixo</span>
@@ -191,43 +226,22 @@
                   <span class="badge-tipo variavel">Variável</span>
                 {% endif %}
               </td>
-
-              <!-- Valor -->
-              <td class="valor-cell">
-                <span style="font-weight: 600; color: #dc2626;">R$ {{ d.valor|floatformat:2 }}</span>
-              </td>
-
-              <!-- Data -->
+              <td class="valor-cell">R$ {{ d.valor|floatformat:2 }}</td>
               <td class="data-cell">{{ d.data|date:"d/m/Y" }}</td>
-
-              <!-- Descrição -->
-              <td>
-                <div class="descricao-truncada">
-                  {{ d.descricao|default:"—" }}
-                </div>
-              </td>
-
-              <!-- Ações -->
+              <td><div class="descricao-truncada">{{ d.descricao|default:"—" }}</div></td>
               <td>
                 <div class="d-flex justify-content-center gap-3">
-                  <a href="{% url 'detalhes_despesa' d.id %}" class="action-btn text-primary" title="Ver detalhes">
-                    <i class="bi bi-search"></i>
-                  </a>
-                  <a href="{% url 'editar_despesa' d.id %}" class="action-btn text-dark" title="Editar">
-                    <i class="bi bi-pencil-square"></i>
-                  </a>
-                  <a href="{% url 'excluir_despesa' d.id %}" class="action-btn text-danger" title="Excluir">
-                    <i class="bi bi-trash"></i>
-                  </a>
+                  <a href="{% url 'detalhes_despesa' d.id %}" class="action-btn text-primary"><i class="bi bi-search"></i></a>
+                  <a href="{% url 'editar_despesa' d.id %}" class="action-btn text-dark"><i class="bi bi-pencil-square"></i></a>
+                  <a href="{% url 'excluir_despesa' d.id %}" class="action-btn text-danger"><i class="bi bi-trash"></i></a>
                 </div>
               </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="text-center py-5" style="color: #64748b;">
+              <td colspan="6" class="text-center py-5 text-muted">
                 <i class="bi bi-inbox display-1 mb-3 d-block"></i>
-                <p class="mb-1">Nenhuma despesa cadastrada.</p>
-                <small>Clique em "Nova Despesa" para começar.</small>
+                Nenhuma despesa cadastrada.
               </td>
             </tr>
             {% endfor %}
@@ -236,61 +250,135 @@
       </div>
     </div>
   </div>
+
+  <!-- Paginação -->
+  {% if despesas.has_other_pages %}
+<style>
+  /* ======= Paginação estilo premium (idêntico à imagem) ======= */
+  .pagination {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .pagination .page-item {
+    list-style: none;
+  }
+
+  .pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: none;
+    color: #2563EB;
+    font-weight: 500;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #EFF6FF;
+    transform: translateY(-2px);
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #2563EB;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+  }
+
+  .pagination .page-item.disabled .page-link {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  @media (max-width: 576px) {
+    .pagination .page-link {
+      width: 30px;
+      height: 30px;
+      font-size: 0.8rem;
+      border-radius: 10px;
+    }
+  }
+</style>
+
+<div class="d-flex justify-content-center my-4">
+  <nav>
+    <ul class="pagination mb-0">
+      {% if despesas.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ despesas.previous_page_number }}&{{ filtro_params }}">&laquo;</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+      {% endif %}
+
+      {% for i in despesas.paginator.page_range %}
+      <li class="page-item {% if despesas.number == i %}active{% endif %}">
+        <a class="page-link" href="?page={{ i }}&{{ filtro_params }}">{{ i }}</a>
+      </li>
+      {% endfor %}
+
+      {% if despesas.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ despesas.next_page_number }}&{{ filtro_params }}">&raquo;</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&raquo;</span>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endif %}
+
 </div>
 
 {% block extra_js %}
 <script>
-  // Filtros
   const filtroBusca = document.getElementById("filtro-busca");
   const filtroDataInicio = document.getElementById("filtro-data-inicio");
   const filtroDataFim = document.getElementById("filtro-data-fim");
   const filtroTipo = document.getElementById("filtro-tipo");
   const filtroValorMin = document.getElementById("filtro-valor-min");
   const filtroValorMax = document.getElementById("filtro-valor-max");
+  const btnBuscar = document.getElementById("btn-buscar");
   const btnLimpar = document.getElementById("btn-limpar");
-  const linhas = document.querySelectorAll("#tabela-despesas tr[data-categoria]");
 
-  function aplicarFiltros() {
-    const termo = filtroBusca.value.trim().toLowerCase();
-    const dataInicio = filtroDataInicio.value.trim();
-    const dataFim = filtroDataFim.value.trim();
-    const tipo = filtroTipo.value.trim().toLowerCase();
-    const valorMin = filtroValorMin.value ? parseFloat(filtroValorMin.value) : null;
-    const valorMax = filtroValorMax.value ? parseFloat(filtroValorMax.value) : null;
+  // ✅ Preenche campos da URL
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("q")) filtroBusca.value = urlParams.get("q");
+  if (urlParams.get("data_inicio")) filtroDataInicio.value = urlParams.get("data_inicio");
+  if (urlParams.get("data_fim")) filtroDataFim.value = urlParams.get("data_fim");
+  if (urlParams.get("tipo")) filtroTipo.value = urlParams.get("tipo");
+  if (urlParams.get("valor_min")) filtroValorMin.value = urlParams.get("valor_min");
+  if (urlParams.get("valor_max")) filtroValorMax.value = urlParams.get("valor_max");
 
-    linhas.forEach(tr => {
-      const categoria = tr.dataset.categoria;
-      const descricao = tr.dataset.descricao;
-      const tipoTr = tr.dataset.tipo;
-      const valorTr = parseFloat(tr.dataset.valor);
-      const dataTr = tr.dataset.data;
-
-      const matchBusca = !termo || categoria.includes(termo) || descricao.includes(termo);
-      const matchTipo = !tipo || tipoTr === tipo;
-      const matchDataInicio = !dataInicio || dataTr >= dataInicio;
-      const matchDataFim = !dataFim || dataTr <= dataFim;
-      const matchValorMin = valorMin === null || valorTr >= valorMin;
-      const matchValorMax = valorMax === null || valorTr <= valorMax;
-
-      tr.style.display = (matchBusca && matchTipo && matchDataInicio && matchDataFim && matchValorMin && matchValorMax) ? "" : "none";
-    });
-  }
-
-  // Eventos
-  [filtroBusca, filtroDataInicio, filtroDataFim, filtroTipo, filtroValorMin, filtroValorMax].forEach(el => {
-    el?.addEventListener("input", aplicarFiltros);
-    el?.addEventListener("change", aplicarFiltros);
+  // ✅ Buscar
+  btnBuscar.addEventListener("click", () => {
+    const params = new URLSearchParams();
+    if (filtroBusca.value.trim()) params.append("q", filtroBusca.value.trim());
+    if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
+    if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
+    if (filtroTipo.value) params.append("tipo", filtroTipo.value);
+    if (filtroValorMin.value) params.append("valor_min", filtroValorMin.value);
+    if (filtroValorMax.value) params.append("valor_max", filtroValorMax.value);
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
   });
 
-  // Botão limpar
+  // ✅ Limpar
   btnLimpar.addEventListener("click", () => {
-    filtroBusca.value = "";
-    filtroDataInicio.value = "";
-    filtroDataFim.value = "";
-    filtroTipo.value = "";
-    filtroValorMin.value = "";
-    filtroValorMax.value = "";
-    aplicarFiltros();
+    filtroBusca.value = filtroDataInicio.value = filtroDataFim.value = filtroTipo.value = filtroValorMin.value = filtroValorMax.value = "";
+    window.location.href = window.location.pathname;
   });
 </script>
 {% endblock %}
