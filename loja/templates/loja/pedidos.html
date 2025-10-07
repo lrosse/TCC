@@ -379,9 +379,8 @@
   btn.addEventListener("click", function() {
     const checkboxes = document.querySelectorAll("input[name='pedidos']");
     todosSelecionados = !todosSelecionados;
-    
     checkboxes.forEach(cb => cb.checked = todosSelecionados);
-    
+
     if (todosSelecionados) {
       btn.classList.add("todos-selecionados");
       icone.className = "bi bi-check-square-fill";
@@ -404,45 +403,8 @@
   const filtroDataInicio = document.getElementById("data_inicio");
   const filtroDataFim = document.getElementById("data_fim");
   const btnLimpar = document.getElementById("btn-limpar-filtros");
-  const linhas = document.querySelectorAll("#tabela-pedidos tr[data-id]");
 
-  function aplicarFiltros() {
-    const termo = filtroNome.value.trim().toLowerCase();
-    const status = filtroStatus.value;
-    const valor = filtroValor.value.trim();
-    const inicio = filtroDataInicio.value;
-    const fim = filtroDataFim.value;
-
-    linhas.forEach(tr => {
-      const cliente = tr.dataset.cliente;
-      const st = tr.dataset.status;
-      const vl = tr.dataset.valor;
-      const dt = tr.dataset.data;
-
-      const okNome = !termo || cliente.includes(termo);
-      const okStatus = !status || st === status;
-      const okValor = !valor || vl.includes(valor);
-
-      let okData = true;
-      if (inicio && dt < inicio) okData = false;
-      if (fim && dt > fim) okData = false;
-
-      tr.style.display = (okNome && okStatus && okValor && okData) ? "" : "none";
-    });
-  }
-
-  [filtroNome, filtroStatus, filtroValor, filtroDataInicio, filtroDataFim].forEach(el => {
-    el?.addEventListener("input", aplicarFiltros);
-    el?.addEventListener("change", aplicarFiltros);
-  });
-
-  btnLimpar.addEventListener("click", () => {
-    filtroNome.value = filtroStatus.value = filtroValor.value = "";
-    filtroDataInicio.value = filtroDataFim.value = "";
-    aplicarFiltros();
-  });
-
-  // Botão Buscar - aplica filtros via GET
+  // Botão "Buscar" - aplica filtros via GET (somente quando clicado)
   document.getElementById("btn-buscar").addEventListener("click", () => {
     const params = new URLSearchParams();
     if (filtroNome.value.trim()) params.append("nome", filtroNome.value.trim());
@@ -450,7 +412,15 @@
     if (filtroValor.value.trim()) params.append("valor", filtroValor.value.trim());
     if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
     if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
+
     window.location.href = `${window.location.pathname}?${params.toString()}`;
+  });
+
+  // Botão "Limpar" - reseta campos e recarrega a página
+  btnLimpar.addEventListener("click", () => {
+    filtroNome.value = filtroStatus.value = filtroValor.value = "";
+    filtroDataInicio.value = filtroDataFim.value = "";
+    window.location.href = window.location.pathname;
   });
 
   // Modal de confirmação
