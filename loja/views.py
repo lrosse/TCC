@@ -416,16 +416,40 @@ def listar_produtos(request):
     if quantidade_max:
         produtos = produtos.filter(quantidade__lte=quantidade_max)
 
+    # -------------------------------
+    # 🔹 PAGINAÇÃO (mantendo filtros)
+    # -------------------------------
+    from django.core.paginator import Paginator
+
+    # Define quantos produtos por página
+    paginator = Paginator(produtos, 8)  # ← Altere o número conforme desejar
+
+    # Captura o número da página atual
+    page_number = request.GET.get("page")
+
+    # Retorna apenas os produtos dessa página
+    page_obj = paginator.get_page(page_number)
+
+    # Mantém os parâmetros de filtro ao mudar de página
+    querystring = request.GET.copy()
+    if "page" in querystring:
+        del querystring["page"]
+    filtro_params = querystring.urlencode()
+
+    # Contexto
     context = {
-        "produtos": produtos,
+        "produtos": page_obj,  # ⬅️ substitui o queryset direto pelo paginado
         "nome": nome,
         "id": produto_id,
         "preco_min": preco_min,
         "preco_max": preco_max,
         "quantidade_min": quantidade_min,
         "quantidade_max": quantidade_max,
+        "filtro_params": filtro_params,  # ⬅️ usado na paginação do HTML
     }
+
     return render(request, "loja/listar_produtos.html", context)
+
 
 @staff_required
 def editar_produto(request, produto_id):
@@ -580,10 +604,64 @@ def ajuste_estoque(request):
     return render(request, 'loja/ajuste_estoque.html', {'produtos': produtos})
 
 
+from datetime import datetime, timedelta
+
 @staff_required
 def historico_estoque(request):
+    # 🔹 Captura filtros da URL
+    nome = request.GET.get("nome", "")
+    produto_id = request.GET.get("id", "")
+    data_inicio = request.GET.get("data_inicio", "")
+    data_fim = request.GET.get("data_fim", "")
+    tipo = request.GET.get("tipo", "")
+
     movimentacoes = MovimentacaoEstoque.objects.select_related('produto').order_by('-data')
-    return render(request, 'loja/historico_estoque.html', {'movimentacoes': movimentacoes})
+
+    # 🔹 Aplicando filtros
+    if nome:
+        movimentacoes = movimentacoes.filter(produto__nome__icontains=nome)
+    if produto_id:
+        movimentacoes = movimentacoes.filter(produto__id=produto_id)
+
+    # ✅ Filtro por data corrigido (funciona em qualquer banco)
+    try:
+        if data_inicio:
+            data_inicio_dt = datetime.strptime(data_inicio, "%Y-%m-%d")
+            movimentacoes = movimentacoes.filter(data__gte=data_inicio_dt)
+        if data_fim:
+            # adiciona 1 dia para incluir o dia final inteiro
+            data_fim_dt = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
+            movimentacoes = movimentacoes.filter(data__lt=data_fim_dt)
+    except ValueError:
+        pass  # ignora caso as datas estejam inválidas
+
+    if tipo:
+        movimentacoes = movimentacoes.filter(tipo=tipo)
+
+    # 🔹 Paginação
+    from django.core.paginator import Paginator
+    paginator = Paginator(movimentacoes, 5)
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # 🔹 Mantém os filtros ao trocar de página
+    filtro_params = request.GET.copy()
+    if "page" in filtro_params:
+        filtro_params.pop("page")
+    filtro_params = filtro_params.urlencode()
+
+    context = {
+        "movimentacoes": page_obj,
+        "nome": nome,
+        "produto_id": produto_id,
+        "data_inicio": data_inicio,
+        "data_fim": data_fim,
+        "tipo": tipo,
+        "filtro_params": filtro_params,
+    }
+
+    return render(request, "loja/historico_estoque.html", context)
+
 
 
 # FUNÇÃO AUXILIAR SEM DECORATOR
@@ -630,7 +708,7 @@ def adicionar_ao_carrinho(request, produto_id):
 
     request.session.modified = True
     messages.success(request, f"'{produto.nome}' foi adicionado ao carrinho.")
-    return redirect('ver_carrinho')
+    return redirect('ver_carrinho') 
 
 
 def ver_carrinho(request):
