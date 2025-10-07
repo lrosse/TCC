@@ -1293,13 +1293,31 @@ def _contagem_pedidos_por_status(queryset):
     return labels, values
 
 
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from .models import Pedido  # ajuste o import se estiver em outro app
+
 @login_required
 def meus_pedidos(request):
     """
-    Exibe todos os pedidos feitos pelo usuário logado.
+    Exibe todos os pedidos feitos pelo usuário logado, com paginação.
     """
-    pedidos = Pedido.objects.filter(cliente=request.user).order_by('-data_criacao')
+    # 🔹 Busca todos os pedidos do usuário logado, ordenados por data (mais recente primeiro)
+    pedidos_list = Pedido.objects.filter(cliente=request.user).order_by('-data_criacao')
+
+    # 🔹 Define quantos pedidos aparecem por página
+    paginator = Paginator(pedidos_list, 5)  # <<-- Altere o número conforme desejar
+
+    # 🔹 Captura o número da página atual
+    page_number = request.GET.get('page')
+
+    # 🔹 Retorna a página específica (com tratamento automático de erro)
+    pedidos = paginator.get_page(page_number)
+
+    # 🔹 Renderiza a página com o objeto paginado
     return render(request, 'loja/meus_pedidos.html', {'pedidos': pedidos})
+
 
 @login_required
 def detalhes_pedido_cliente(request, pedido_id):

@@ -54,6 +54,34 @@
             transform: scale(1.05);
         }
 
+        /* Estilos da paginação moderna */
+        .pagination .page-link {
+            border: none;
+            margin: 0 4px;
+            padding: 8px 14px;
+            border-radius: 8px !important;
+            color: #2563eb;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .pagination .page-link:hover {
+            background-color: #e0ecff;
+            color: #1d4ed8;
+        }
+
+        .pagination .active .page-link {
+            background-color: #2563eb !important;
+            border-color: #2563eb !important;
+            color: #fff !important;
+            box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
+        }
+
+        .pagination .page-item.disabled .page-link {
+            background-color: #f1f5f9;
+            color: #94a3b8;
+        }
+
         /* Responsividade */
         @media (max-width: 992px) {
             .table thead th {
@@ -157,8 +185,52 @@
                 </div>
             </div>
         </div>
+
+        <!-- Paginação -->
+        {% if pedidos.paginator.num_pages > 1 %}
+        <div class="mt-4 d-flex justify-content-center">
+          <nav aria-label="Paginação de pedidos">
+            <ul class="pagination">
+              <!-- Primeira página -->
+              {% if pedidos.has_previous %}
+              <li class="page-item">
+                <a class="page-link rounded-3" href="?page=1" aria-label="Primeira">&laquo;</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link rounded-3">&laquo;</span>
+              </li>
+              {% endif %}
+
+              <!-- Números das páginas -->
+              {% for num in pedidos.paginator.page_range %}
+                {% if pedidos.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link rounded-3 bg-primary text-white border-primary shadow-sm">{{ num }}</span>
+                  </li>
+                {% else %}
+                  <li class="page-item">
+                    <a class="page-link rounded-3 text-primary border-0" href="?page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              <!-- Última página -->
+              {% if pedidos.has_next %}
+              <li class="page-item">
+                <a class="page-link rounded-3" href="?page={{ pedidos.paginator.num_pages }}" aria-label="Última">&raquo;</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link rounded-3">&raquo;</span>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
     {% else %}
-        <!-- Empty State -->
+        <!-- Nenhum pedido -->
         <div class="card shadow-sm" style="border: none; border-radius: 12px;">
             <div class="card-body p-5">
                 <div class="text-center py-5">
