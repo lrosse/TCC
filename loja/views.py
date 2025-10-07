@@ -640,7 +640,7 @@ def historico_estoque(request):
 
     # 🔹 Paginação
     from django.core.paginator import Paginator
-    paginator = Paginator(movimentacoes, 5)
+    paginator = Paginator(movimentacoes, 40)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
@@ -1094,37 +1094,66 @@ def finalizar_compra(request):
     })
 
 
+from datetime import datetime, timedelta
+
 @staff_required
 def pedidos(request):
     from .models import Pedido  # Garante importação segura
 
-    # Filtros
+    # 🔹 Filtros capturados da URL
     termo_nome = request.GET.get("nome", "")
     status = request.GET.get("status", "")
     valor = request.GET.get("valor", "")
-    data = request.GET.get("data", "")
+    data_inicio = request.GET.get("data_inicio", "")
+    data_fim = request.GET.get("data_fim", "")
 
     pedidos = Pedido.objects.select_related("cliente").order_by("-data_criacao")
 
+    # 🔹 Aplicação dos filtros
     if termo_nome:
         pedidos = pedidos.filter(cliente__username__icontains=termo_nome)
     if status:
         pedidos = pedidos.filter(status=status)
     if valor:
         pedidos = pedidos.filter(total__icontains=valor)
-    if data:
-        pedidos = pedidos.filter(data_criacao__date=data)
+
+    # ✅ Filtro de data corrigido (funciona com MySQL)
+    try:
+        if data_inicio:
+            inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
+            pedidos = pedidos.filter(data_criacao__gte=inicio)
+        if data_fim:
+            fim = datetime.strptime(data_fim, "%Y-%m-%d") + timedelta(days=1)
+            pedidos = pedidos.filter(data_criacao__lt=fim)
+    except ValueError:
+        pass
+
+    # 🔹 Paginação
+    from django.core.paginator import Paginator
+    paginator = Paginator(pedidos, 10)  # ← quantidade por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    # 🔹 Mantém os filtros durante a paginação
+    filtro_params = request.GET.copy()
+    if "page" in filtro_params:
+        filtro_params.pop("page")
+    filtro_params = filtro_params.urlencode()
 
     context = {
-        "pedidos": pedidos,
+        "pedidos": page_obj,
         "filtros": {
             "nome": termo_nome,
             "status": status,
             "valor": valor,
-            "data": data
-        }
+            "data_inicio": data_inicio,
+            "data_fim": data_fim
+        },
+        "filtro_params": filtro_params,
     }
+
     return render(request, "loja/pedidos.html", context)
+
 
 
 @staff_required
@@ -1371,10 +1400,6 @@ def _contagem_pedidos_por_status(queryset):
     return labels, values
 
 
-from django.core.paginator import Paginator
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from .models import Pedido  # ajuste o import se estiver em outro app
 
 @login_required
 def meus_pedidos(request):
