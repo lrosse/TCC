@@ -1217,15 +1217,27 @@ def detalhes_pedido(request, pedido_id):
 @staff_required
 @require_POST
 def atualizar_status_pedido(request, pedido_id):
+    """
+    Atualiza o status de um pedido individual.
+    - Valida estoque ao marcar como Pago.
+    - Permite forçar atualização (forcar=true) se o estoque for insuficiente.
+    - Ao cancelar um pedido Pago, devolve a quantidade dos produtos ao estoque.
+    """
+    from .models import Pedido, MovimentacaoEstoque
+    from django.http import JsonResponse
+    from django.shortcuts import get_object_or_404
+    import json
+
     pedido = get_object_or_404(Pedido, id=pedido_id)
     novo_status = request.POST.get("status")
-    forcar = request.GET.get("forcar") == "true"  # 👈 detecta se é uma confirmação forçada
+    forcar = request.GET.get("forcar") == "true"
 
     if novo_status not in ["Pendente", "Pago", "Cancelado"]:
-        messages.error(request, "Status inválido.")
         return redirect("pedidos")
 
-    # 🔹 Se for marcar como Pago
+    # =============================
+    # 🧮 1. Validação de estoque ao marcar como Pago
+    # =============================
     if novo_status == "Pago" and pedido.status != "Pago":
         estoque_insuficiente = []
 
@@ -1233,8 +1245,6 @@ def atualizar_status_pedido(request, pedido_id):
             produto = item.produto
             if not produto:
                 continue
-
-            # Caso não haja estoque suficiente
             if produto.quantidade < item.quantidade:
                 estoque_insuficiente.append({
                     "produto": produto.nome,
@@ -1242,31 +1252,27 @@ def atualizar_status_pedido(request, pedido_id):
                     "necessario": item.quantidade
                 })
 
-        # 🚫 Caso tenha falta de estoque e ainda não forçou
+        # 🚫 Retorna JSON se não houver estoque e não for confirmado ainda
         if estoque_insuficiente and not forcar:
-            # Responde em JSON para o JavaScript abrir o modal
             return JsonResponse({
                 "erro_estoque": True,
                 "mensagem": "Estoque insuficiente para alguns produtos.",
                 "detalhes": estoque_insuficiente,
             })
 
-        # ✅ Se confirmou (forcar=True), força a baixa
+        # ✅ Força atualização (estoque não pode ficar negativo)
         for item in pedido.itens.all():
             produto = item.produto
             if not produto:
                 continue
 
             if produto.quantidade < item.quantidade:
-                # zera o estoque mas não deixa negativo
                 produto.quantidade = 0
             else:
                 produto.quantidade -= item.quantidade
-
             produto.save()
 
-            # Registra movimentação
-            from .models import MovimentacaoEstoque
+            # Cria movimentação de saída
             MovimentacaoEstoque.objects.create(
                 produto=produto,
                 tipo="saida",
@@ -1275,14 +1281,31 @@ def atualizar_status_pedido(request, pedido_id):
                 observacao=f"Baixa automática por pagamento do pedido {pedido.numero_pedido or pedido.id}"
             )
 
-    # 🔸 Atualiza status
+    # =============================
+    # 🔁 2. Retorna estoque ao cancelar um pedido já pago
+    # =============================
+    if pedido.status == "Pago" and novo_status == "Cancelado":
+        for item in pedido.itens.all():
+            produto = item.produto
+            if not produto:
+                continue
+
+            produto.quantidade += item.quantidade
+            produto.save()
+
+            MovimentacaoEstoque.objects.create(
+                produto=produto,
+                tipo="entrada",
+                quantidade=item.quantidade,
+                estoque_final=produto.quantidade,
+                observacao=f"Estoque devolvido por cancelamento do pedido {pedido.numero_pedido or pedido.id}"
+            )
+
+    # =============================
+    # 🔄 3. Atualiza status do pedido
+    # =============================
     pedido.status = novo_status
     pedido.save()
-
-    if forcar:
-        messages.warning(request, f"Pedido #{pedido.numero_pedido or pedido.id} marcado como Pago mesmo com estoque insuficiente.")
-    else:
-        messages.success(request, f"Status do pedido #{pedido.numero_pedido or pedido.id} atualizado para '{novo_status}'.")
 
     return redirect("pedidos")
 
@@ -1290,11 +1313,13 @@ def atualizar_status_pedido(request, pedido_id):
 @require_POST
 def atualizar_status_pedidos_lote(request):
     """
-    Atualiza o status de múltiplos pedidos selecionados na listagem.
-    - Exibe aviso de estoque insuficiente e permite confirmação forçada.
-    - Se confirmado, força a baixa e zera estoques insuficientes.
+    Atualiza o status de múltiplos pedidos em lote.
+    - Verifica estoque ao marcar como Pago.
+    - Permite confirmação forçada (?forcar=true).
+    - Ao cancelar pedidos pagos, devolve estoque e registra movimentação.
     """
     from .models import Pedido, MovimentacaoEstoque
+    from django.http import JsonResponse
     import json
 
     pedido_ids = request.POST.getlist("pedidos")
@@ -1302,18 +1327,17 @@ def atualizar_status_pedidos_lote(request):
     forcar = request.GET.get("forcar") == "true"
 
     if not pedido_ids:
-        messages.warning(request, "Nenhum pedido selecionado.")
         return redirect("pedidos")
 
     if novo_status not in ["Pendente", "Pago", "Cancelado"]:
-        messages.error(request, "Status inválido.")
         return redirect("pedidos")
 
     pedidos = Pedido.objects.filter(id__in=pedido_ids)
-    alterados = 0
     estoque_insuficiente = []
 
-    # 🔍 Valida estoques apenas se estiver indo para Pago
+    # =============================
+    # 🧮 1. Verifica estoques ao marcar como Pago
+    # =============================
     if novo_status == "Pago":
         for pedido in pedidos:
             for item in pedido.itens.all():
@@ -1328,7 +1352,7 @@ def atualizar_status_pedidos_lote(request):
                         "necessario": item.quantidade
                     })
 
-        # 🚫 Caso tenha falta de estoque e ainda não forçou
+        # 🚫 Caso tenha falta e ainda não confirmou
         if estoque_insuficiente and not forcar:
             return JsonResponse({
                 "erro_estoque": True,
@@ -1336,8 +1360,11 @@ def atualizar_status_pedidos_lote(request):
                 "detalhes": estoque_insuficiente,
             })
 
-    # ✅ Aplica atualização (forçada ou normal)
+    # =============================
+    # 🔄 2. Aplica atualização (baixa ou devolução)
+    # =============================
     for pedido in pedidos:
+        # 🔻 Caso esteja indo para Pago → baixa estoque
         if novo_status == "Pago" and pedido.status != "Pago":
             for item in pedido.itens.all():
                 produto = item.produto
@@ -1345,14 +1372,11 @@ def atualizar_status_pedidos_lote(request):
                     continue
 
                 if produto.quantidade < item.quantidade:
-                    # força estoque para zero
                     produto.quantidade = 0
                 else:
                     produto.quantidade -= item.quantidade
-
                 produto.save()
 
-                # Cria movimentação
                 MovimentacaoEstoque.objects.create(
                     produto=produto,
                     tipo="saida",
@@ -1361,53 +1385,33 @@ def atualizar_status_pedidos_lote(request):
                     observacao=f"Baixa automática por pagamento do pedido {pedido.numero_pedido or pedido.id}"
                 )
 
+        # 🔁 Caso esteja indo de Pago → Cancelado → devolve estoque
+        if pedido.status == "Pago" and novo_status == "Cancelado":
+            for item in pedido.itens.all():
+                produto = item.produto
+                if not produto:
+                    continue
+
+                produto.quantidade += item.quantidade
+                produto.save()
+
+                MovimentacaoEstoque.objects.create(
+                    produto=produto,
+                    tipo="entrada",
+                    quantidade=item.quantidade,
+                    estoque_final=produto.quantidade,
+                    observacao=f"Estoque devolvido por cancelamento do pedido {pedido.numero_pedido or pedido.id}"
+                )
+
+        # 🔸 Atualiza status normalmente
         pedido.status = novo_status
         pedido.save()
-        alterados += 1
 
     return redirect("pedidos")
 
 # ============================
 # ✅ NOVA VIEW: RELATÓRIOS
 # ============================
-def _agregar_vendas_por_mes(queryset):
-    """
-    Soma total por mês do ANO ATUAL (1..12), preenchendo zeros onde não houver venda.
-    """
-    ano = timezone.localdate().year
-    labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-    values = [0.0] * 12
-
-    pedidos_ano = queryset.filter(data_criacao__year=ano)
-    
-    if pedidos_ano.count() == 0:
-        return labels, values
-
-    try:
-        agregados = (
-            pedidos_ano
-            .extra(select={'mes_num': "EXTRACT(month FROM data_criacao)"})
-            .values('mes_num')
-            .annotate(total=Sum('total'))
-            .order_by('mes_num')
-        )
-
-        for row in agregados:
-            mes_num = row['mes_num']
-            total = row['total']
-            
-            if mes_num and 1 <= mes_num <= 12:
-                values[int(mes_num) - 1] = float(total) if total else 0.0
-
-    except Exception as e:
-        # Fallback: método manual
-        for pedido in pedidos_ano:
-            mes = pedido.data_criacao.month
-            total = float(pedido.total) if pedido.total else 0.0
-            values[mes - 1] += total
-
-    return labels, values
-
 
 def _agregar_vendas_mes_atual_por_dia(queryset):
     """
