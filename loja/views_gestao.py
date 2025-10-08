@@ -18,6 +18,7 @@ from django.utils import timezone
 import locale
 from django.utils.dateparse import parse_date
 from decimal import Decimal, InvalidOperation
+from django.core.paginator import Paginator
 
 # Defina o locale para português (Windows pode precisar de 'pt_BR')
 try:
@@ -719,11 +720,13 @@ def relatorio_avancado(request):
 @user_passes_test(admin_required)
 def relatorio_produtos(request):
     """
-    Relatório de Produtos – lista com filtros por nome, preço, quantidade e status de estoque.
+    Relatório de Produtos – lista com filtros, ordenação e paginação.
     """
     produtos = Produto.objects.all()
 
-    # Filtros
+    # --------------------------
+    # FILTROS
+    # --------------------------
     nome = request.GET.get("nome")
     preco_min = request.GET.get("preco_min")
     preco_max = request.GET.get("preco_max")
@@ -753,7 +756,9 @@ def relatorio_produtos(request):
     elif status_estoque == "bom":
         produtos = produtos.filter(quantidade__gt=models.F("ideal_estoque"))
 
-    # Ordenação
+    # --------------------------
+    # ORDENAÇÃO
+    # --------------------------
     if ordenar_por == "nome":
         produtos = produtos.order_by("nome")
     elif ordenar_por == "preco":
@@ -763,7 +768,19 @@ def relatorio_produtos(request):
     elif ordenar_por == "recente":
         produtos = produtos.order_by("-id")
 
-    context = {"produtos": produtos}
+    # --------------------------
+    # PAGINAÇÃO
+    # --------------------------
+    paginator = Paginator(produtos, 10)  # 10 produtos por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj,
+        "produtos": page_obj.object_list,
+        "request_get": request.GET,  # para manter filtros nos links
+    }
+
     return render(request, "loja/gestao/relatorio_produtos.html", context)
 
 @login_required
