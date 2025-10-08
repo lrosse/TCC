@@ -219,8 +219,8 @@ class Despesa(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPOS)
     valor = models.DecimalField(max_digits=10, decimal_places=2)
     data = models.DateField(default=now)  # data inicial
+    data_compra = models.DateField(null=True, blank=True)  # 🆕 nova data da compra
     descricao = models.TextField(blank=True, null=True)
-
     fornecedor = models.CharField(max_length=150, blank=True, null=True)  # 🔹 novo campo
     parcelas = models.PositiveIntegerField(default=1)  # 🔹 número de parcelas
 

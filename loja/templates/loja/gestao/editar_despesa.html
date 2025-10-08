@@ -139,46 +139,61 @@
       <!-- Coluna Lateral -->
       <div class="col-lg-4">
         <!-- Resumo -->
-        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
-          <div class="card-body p-4">
-            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
-              <i class="bi bi-info-circle me-2" style="color: #f59e0b;"></i>Resumo
-            </h6>
-
-            <div class="text-center py-3">
-              <div style="font-size: 1.75rem; font-weight: 700; color: #ef4444; margin-bottom: 0.5rem;">
-                <i class="bi bi-cash-stack me-2"></i>
-                <span id="valorDisplay">R$ {{ despesa.valor|floatformat:2 }}</span>
-              </div>
-              <p class="text-muted mb-0" style="font-size: 0.875rem;">
-                Valor atual da despesa
-              </p>
-            </div>
-          </div>
-        </div>
-
         <!-- Valores e Data -->
         <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
           <div class="card-body p-4">
             <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
-              <i class="bi bi-currency-dollar me-2" style="color: #ef4444;"></i>Valores e Data
+              <i class="bi bi-currency-dollar me-2" style="color: #ef4444;"></i>Valores e Datas
             </h6>
 
+            <!-- Valor -->
             <div class="mb-3">
               <label for="id_valor" class="info-label">
                 Valor da Despesa <span style="color: #ef4444;">*</span>
               </label>
               <div class="input-group">
                 <span class="input-group-text">R$</span>
-                <input type="number" name="valor" id="id_valor" step="0.01" min="0" class="form-control" value="{{ despesa.valor }}" placeholder="0,00" required>
+                <input
+                  type="number"
+                  name="valor"
+                  id="id_valor"
+                  step="0.01"
+                  min="0"
+                  class="form-control"
+                  value="{{ despesa.valor }}"
+                  placeholder="0,00"
+                  required
+                >
               </div>
             </div>
 
+            <!-- 🆕 Data da compra -->
+            <div class="mb-3">
+              <label for="id_data_compra" class="info-label">
+                Data da compra
+              </label>
+              <input
+                type="date"
+                name="data_compra"
+                id="id_data_compra"
+                class="form-control"
+                value="{{ despesa.data_compra|date:'Y-m-d' }}"
+              >
+            </div>
+
+            <!-- Data de pagamento -->
             <div class="mb-0">
               <label for="id_data" class="info-label">
-                Data <span style="color: #ef4444;">*</span>
+                Data de pagamento <span style="color: #ef4444;">*</span>
               </label>
-              <input type="date" name="data" id="id_data" class="form-control" value="{{ despesa.data|date:'Y-m-d' }}" required>
+              <input
+                type="date"
+                name="data"
+                id="id_data"
+                class="form-control"
+                value="{{ despesa.data|date:'Y-m-d' }}"
+                required
+              >
             </div>
           </div>
         </div>

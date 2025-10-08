@@ -513,14 +513,15 @@ def criar_despesa(request):
 
             # número de parcelas
             num_parcelas = despesa.parcelas if despesa.parcelas > 0 else 1
-            data_base = despesa.data
+            data_base = despesa.data  # data de pagamento
 
             for i in range(num_parcelas):
-                nova_despesa = Despesa.objects.create(
+                Despesa.objects.create(
                     categoria=despesa.categoria,
                     tipo=despesa.tipo,
                     valor=despesa.valor,
-                    data=data_base + relativedelta(months=i),
+                    data=data_base + relativedelta(months=i),  # data de pagamento
+                    data_compra=despesa.data_compra,  # 🆕 nova linha
                     descricao=despesa.descricao,
                     fornecedor=despesa.fornecedor,
                     parcelas=1  # cada registro individual representa 1 parcela
@@ -534,15 +535,15 @@ def criar_despesa(request):
     return render(request, "loja/gestao/criar_despesa.html", {"form": form})
 
 @login_required
-@user_passes_test(admin_required)
 def editar_despesa(request, pk):
-    despesa = get_object_or_404(Despesa, pk=pk)
+    despesa = get_object_or_404(Despesa, id=pk)
 
     if request.method == "POST":
         despesa.categoria = request.POST.get("categoria")
         despesa.tipo = request.POST.get("tipo")
         despesa.valor = request.POST.get("valor")
-        despesa.data = request.POST.get("data")
+        despesa.data = request.POST.get("data")  # data de pagamento
+        despesa.data_compra = request.POST.get("data_compra") or None
         despesa.descricao = request.POST.get("descricao")
         despesa.save()
 
@@ -550,6 +551,7 @@ def editar_despesa(request, pk):
         return redirect("gestao_despesas")
 
     return render(request, "loja/gestao/editar_despesa.html", {"despesa": despesa})
+
 
 @login_required
 @user_passes_test(admin_required)

@@ -48,11 +48,12 @@ class FeedbackForm(forms.ModelForm):
 class DespesaForm(forms.ModelForm):
     class Meta:
         model = Despesa
-        fields = ["categoria", "tipo", "valor", "data", "parcelas", "fornecedor", "descricao"]
+        fields = ["categoria", "tipo", "valor", "data_compra", "data", "parcelas", "fornecedor", "descricao"]
         widgets = {
             "categoria": forms.TextInput(attrs={"class": "form-control"}),
             "tipo": forms.Select(attrs={"class": "form-select"}),
             "valor": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "data_compra": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "data": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "parcelas": forms.NumberInput(attrs={"class": "form-control", "min": 1, "value": 1}),
             "fornecedor": forms.TextInput(attrs={"class": "form-control"}),

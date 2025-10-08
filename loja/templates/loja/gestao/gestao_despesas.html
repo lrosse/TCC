@@ -1,385 +1,393 @@
-{% extends "loja/barra_lateral.html" %}
-{% block title %}Gestão de Despesas{% endblock %}
+  {% extends "loja/barra_lateral.html" %}
+  {% block title %}Gestão de Despesas{% endblock %}
 
-{% block content %}
-<style>
-  .action-btn {
-    text-decoration: none;
-    transition: transform 0.2s ease;
-  }
-  .action-btn:hover {
-    transform: scale(1.2);
-  }
-
-  thead th {
-    vertical-align: middle;
-  }
-
-  .valor-cell {
-    white-space: nowrap;
-  }
-
-  .data-cell {
-    white-space: nowrap;
-  }
-
-  .descricao-truncada {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: normal;
-    word-break: break-word;
-    font-size: 0.875rem;
-    line-height: 1.3;
-    max-width: 250px;
-  }
-
-  .badge-tipo {
-    display: inline-block;
-    padding: 4px 10px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-
-  .badge-tipo.fixo {
-    background-color: #dbeafe;
-    color: #1e40af;
-    border: 1px solid #bfdbfe;
-  }
-
-  .badge-tipo.variavel {
-    background-color: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a;
-  }
-
-  /* ===== Paginação ===== */
-  .pagination {
-    --bs-pagination-color: #2563eb;
-    --bs-pagination-border-color: #e2e8f0;
-    --bs-pagination-bg: #ffffff;
-    --bs-pagination-hover-color: #ffffff;
-    --bs-pagination-hover-bg: #2563eb;
-    --bs-pagination-hover-border-color: #2563eb;
-    --bs-pagination-active-bg: #2563eb;
-    --bs-pagination-active-border-color: #2563eb;
-    --bs-pagination-focus-color: #ffffff;
-    --bs-pagination-focus-bg: #2563eb;
-    --bs-pagination-disabled-bg: #f1f5f9;
-    --bs-pagination-disabled-color: #94a3b8;
-    --bs-pagination-disabled-border-color: #e2e8f0;
-  }
-
-  .pagination .page-link {
-    border-radius: 8px;
-    margin: 0 4px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  .pagination .page-link:hover {
-    transform: translateY(-2px);
-  }
-
-  .pagination .page-item.active .page-link {
-    color: #fff !important;
-    font-weight: 600;
-  }
-
-  /* Responsividade */
-  @media (max-width: 992px) {
-    .table thead th {
-      font-size: 0.65rem;
-      padding: 0.75rem 0.5rem;
-    }
-
-    .table tbody td {
-      font-size: 0.75rem;
-      padding: 0.75rem 0.5rem;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .container-fluid {
-      padding-left: 1rem !important;
-      padding-right: 1rem !important;
-    }
-
-    h2 {
-      font-size: 1.25rem !important;
-    }
-
-    .btn-nova-despesa {
-      font-size: 0.875rem !important;
-      padding: 8px 16px !important;
-    }
-
+  {% block content %}
+  <style>
     .action-btn {
-      font-size: 0.75rem;
+      text-decoration: none;
+      transition: transform 0.2s ease;
     }
-  }
-
-  @media (max-width: 576px) {
-    .table-responsive {
-      font-size: 0.7rem;
+    .action-btn:hover {
+      transform: scale(1.2);
     }
 
-    .data-cell,
+    thead th {
+      vertical-align: middle;
+    }
+
     .valor-cell {
-      font-size: 0.65rem;
+      white-space: nowrap;
     }
-  }
-</style>
 
-<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
-  <!-- Cabeçalho -->
-  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
-    <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão de Despesas</h2>
-    <a href="{% url 'criar_despesa' %}" class="btn btn-success btn-nova-despesa" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-      <i class="bi bi-plus-circle me-2"></i> Nova Despesa
-    </a>
-  </div>
+    .data-cell {
+      white-space: nowrap;
+    }
 
-  <!-- Barra de busca + botão de filtros -->
-  <div class="mb-3 p-3 bg-white rounded shadow-sm">
-    <label for="filtro-busca" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar despesas</label>
+    .descricao-truncada {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      word-break: break-word;
+      font-size: 0.875rem;
+      line-height: 1.3;
+      max-width: 250px;
+    }
 
-    <div class="d-flex align-items-center gap-2 flex-wrap">
-      <!-- Campo de busca -->
-      <input type="text" id="filtro-busca" class="form-control form-control-sm" placeholder="Buscar por categoria ou descrição..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem; flex-grow: 1; min-width: 200px;" />
+    .badge-tipo {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
 
-      <!-- Botão Buscar -->
-      <button id="btn-buscar" class="btn btn-primary btn-sm d-flex align-items-center" type="button" style="border-radius: 8px; padding: 6px 16px; font-weight: 500; background-color: #2563eb; border-color: #2563eb;">
-        <i class="bi bi-search me-1"></i> Buscar
-      </button>
+    .badge-tipo.fixo {
+      background-color: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
 
-      <!-- Botão de filtro -->
-      <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;">
-        <i class="bi bi-sliders"></i>
-      </button>
+    .badge-tipo.variavel {
+      background-color: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fde68a;
+    }
+
+    /* ===== Paginação ===== */
+    .pagination {
+      --bs-pagination-color: #2563eb;
+      --bs-pagination-border-color: #e2e8f0;
+      --bs-pagination-bg: #ffffff;
+      --bs-pagination-hover-color: #ffffff;
+      --bs-pagination-hover-bg: #2563eb;
+      --bs-pagination-hover-border-color: #2563eb;
+      --bs-pagination-active-bg: #2563eb;
+      --bs-pagination-active-border-color: #2563eb;
+      --bs-pagination-focus-color: #ffffff;
+      --bs-pagination-focus-bg: #2563eb;
+      --bs-pagination-disabled-bg: #f1f5f9;
+      --bs-pagination-disabled-color: #94a3b8;
+      --bs-pagination-disabled-border-color: #e2e8f0;
+    }
+
+    .pagination .page-link {
+      border-radius: 8px;
+      margin: 0 4px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .pagination .page-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .pagination .page-item.active .page-link {
+      color: #fff !important;
+      font-weight: 600;
+    }
+
+    /* Responsividade */
+    @media (max-width: 992px) {
+      .table thead th {
+        font-size: 0.65rem;
+        padding: 0.75rem 0.5rem;
+      }
+
+      .table tbody td {
+        font-size: 0.75rem;
+        padding: 0.75rem 0.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container-fluid {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+      }
+
+      h2 {
+        font-size: 1.25rem !important;
+      }
+
+      .btn-nova-despesa {
+        font-size: 0.875rem !important;
+        padding: 8px 16px !important;
+      }
+
+      .action-btn {
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .table-responsive {
+        font-size: 0.7rem;
+      }
+
+      .data-cell,
+      .valor-cell {
+        font-size: 0.65rem;
+      }
+    }
+  </style>
+
+  <div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+    <!-- Cabeçalho -->
+    <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+      <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão de Despesas</h2>
+      <a href="{% url 'criar_despesa' %}" class="btn btn-success btn-nova-despesa" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <i class="bi bi-plus-circle me-2"></i> Nova Despesa
+      </a>
     </div>
-  </div>
 
-  <!-- Campos extras (colapsáveis) -->
-  <div class="collapse mb-3" id="filtrosExtras">
-    <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
-      <div class="col-md-2 col-sm-6">
-        <label for="filtro-data-inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Início</label>
-        <input type="date" id="filtro-data-inicio" class="form-control form-control-sm" />
-      </div>
-      <div class="col-md-2 col-sm-6">
-        <label for="filtro-data-fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Fim</label>
-        <input type="date" id="filtro-data-fim" class="form-control form-control-sm" />
-      </div>
-      <div class="col-md-2 col-sm-6">
-        <label for="filtro-tipo" class="form-label" style="font-size: 0.75rem; color: #475569;">Tipo</label>
-        <select id="filtro-tipo" class="form-select form-select-sm">
-          <option value="">Todos</option>
-          <option value="fixo">Fixo</option>
-          <option value="variavel">Variável</option>
-        </select>
-      </div>
-      <div class="col-md-2 col-sm-6">
-        <label for="filtro-valor-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Valor Mín.</label>
-        <input type="number" id="filtro-valor-min" class="form-control form-control-sm" placeholder="R$ 0,00" step="0.01" />
-      </div>
-      <div class="col-md-2 col-sm-6">
-        <label for="filtro-valor-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Valor Máx.</label>
-        <input type="number" id="filtro-valor-max" class="form-control form-control-sm" placeholder="R$ 9999,99" step="0.01" />
-      </div>
-      <div class="col-md-2 col-sm-12 d-flex align-items-end">
-        <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100">
-          <i class="bi bi-arrow-clockwise me-1"></i> Limpar
+    <!-- Barra de busca + botão de filtros -->
+    <div class="mb-3 p-3 bg-white rounded shadow-sm">
+      <label for="filtro-busca" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar despesas</label>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Campo de busca -->
+        <input type="text" id="filtro-busca" class="form-control form-control-sm" placeholder="Buscar por categoria ou descrição..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem; flex-grow: 1; min-width: 200px;" />
+
+        <!-- Botão Buscar -->
+        <button id="btn-buscar" class="btn btn-primary btn-sm d-flex align-items-center" type="button" style="border-radius: 8px; padding: 6px 16px; font-weight: 500; background-color: #2563eb; border-color: #2563eb;">
+          <i class="bi bi-search me-1"></i> Buscar
+        </button>
+
+        <!-- Botão de filtro -->
+        <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;">
+          <i class="bi bi-sliders"></i>
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- Tabela -->
-  <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table align-middle mb-0">
-          <thead style="background: #f8fafc;">
-            <tr>
-              <th>Categoria</th>
-              <th>Tipo</th>
-              <th>Valor</th>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for d in despesas %}
-            <tr data-categoria="{{ d.categoria|lower }}" data-descricao="{{ d.descricao|lower|default:'' }}" data-tipo="{% if d.tipo == 'Fixo' %}fixo{% else %}variavel{% endif %}" data-valor="{{ d.valor }}" data-data="{{ d.data|date:'Y-m-d' }}">
-              <td>{{ d.categoria }}</td>
-              <td>
-                {% if d.tipo == "Fixo" %}
-                  <span class="badge-tipo fixo">Fixo</span>
-                {% else %}
-                  <span class="badge-tipo variavel">Variável</span>
-                {% endif %}
-              </td>
-              <td class="valor-cell">R$ {{ d.valor|floatformat:2 }}</td>
-              <td class="data-cell">{{ d.data|date:"d/m/Y" }}</td>
-              <td><div class="descricao-truncada">{{ d.descricao|default:"—" }}</div></td>
-              <td>
-                <div class="d-flex justify-content-center gap-3">
-                  <a href="{% url 'detalhes_despesa' d.id %}" class="action-btn text-primary"><i class="bi bi-search"></i></a>
-                  <a href="{% url 'editar_despesa' d.id %}" class="action-btn text-dark"><i class="bi bi-pencil-square"></i></a>
-                  <a href="{% url 'excluir_despesa' d.id %}" class="action-btn text-danger"><i class="bi bi-trash"></i></a>
-                </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="6" class="text-center py-5 text-muted">
-                <i class="bi bi-inbox display-1 mb-3 d-block"></i>
-                Nenhuma despesa cadastrada.
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+    <!-- Campos extras (colapsáveis) -->
+    <div class="collapse mb-3" id="filtrosExtras">
+      <div class="row g-2 p-3 bg-white rounded shadow-sm" style="border: 1px solid #e2e8f0; margin-top: 1rem;">
+        <div class="col-md-2 col-sm-6">
+          <label for="filtro-data-inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Início</label>
+          <input type="date" id="filtro-data-inicio" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2 col-sm-6">
+          <label for="filtro-data-fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data Fim</label>
+          <input type="date" id="filtro-data-fim" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2 col-sm-6">
+          <label for="filtro-tipo" class="form-label" style="font-size: 0.75rem; color: #475569;">Tipo</label>
+          <select id="filtro-tipo" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="fixo">Fixo</option>
+            <option value="variavel">Variável</option>
+          </select>
+        </div>
+        <div class="col-md-2 col-sm-6">
+          <label for="filtro-valor-min" class="form-label" style="font-size: 0.75rem; color: #475569;">Valor Mín.</label>
+          <input type="number" id="filtro-valor-min" class="form-control form-control-sm" placeholder="R$ 0,00" step="0.01" />
+        </div>
+        <div class="col-md-2 col-sm-6">
+          <label for="filtro-valor-max" class="form-label" style="font-size: 0.75rem; color: #475569;">Valor Máx.</label>
+          <input type="number" id="filtro-valor-max" class="form-control form-control-sm" placeholder="R$ 9999,99" step="0.01" />
+        </div>
+        <div class="col-md-2 col-sm-12 d-flex align-items-end">
+          <button type="button" id="btn-limpar" class="btn btn-outline-danger btn-sm w-100">
+            <i class="bi bi-arrow-clockwise me-1"></i> Limpar
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- Tabela -->
+    <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead style="background: #f8fafc;">
+              <tr>
+                <th>Categoria</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Data da compra</th>
+                <th>Data de pagamento</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in despesas %}
+              <tr data-categoria="{{ d.categoria|lower }}" data-descricao="{{ d.descricao|lower|default:'' }}" data-tipo="{% if d.tipo == 'Fixo' %}fixo{% else %}variavel{% endif %}" data-valor="{{ d.valor }}" data-data="{{ d.data|date:'Y-m-d' }}">
+                <td>{{ d.categoria }}</td>
+                <td>
+                  {% if d.tipo == "Fixo" %}
+                    <span class="badge-tipo fixo">Fixo</span>
+                  {% else %}
+                    <span class="badge-tipo variavel">Variável</span>
+                  {% endif %}
+                </td>
+                <td class="valor-cell">R$ {{ d.valor|floatformat:2 }}</td>
+                <td>
+                  {% if d.data_compra %}
+                    {{ d.data_compra|date:"d/m/Y" }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td class="data-cell">{{ d.data|date:"d/m/Y" }}</td>
+                <td><div class="descricao-truncada">{{ d.descricao|default:"—" }}</div></td>
+                <td>
+                  <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'detalhes_despesa' d.id %}" class="action-btn text-primary"><i class="bi bi-search"></i></a>
+                    <a href="{% url 'editar_despesa' d.id %}" class="action-btn text-dark"><i class="bi bi-pencil-square"></i></a>
+                    <a href="{% url 'excluir_despesa' d.id %}" class="action-btn text-danger"><i class="bi bi-trash"></i></a>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                  <i class="bi bi-inbox display-1 mb-3 d-block"></i>
+                  Nenhuma despesa cadastrada.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paginação -->
+    {% if despesas.has_other_pages %}
+  <style>
+    /* ======= Paginação estilo premium (idêntico à imagem) ======= */
+    .pagination {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .pagination .page-item {
+      list-style: none;
+    }
+
+    .pagination .page-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: none;
+      color: #2563EB;
+      font-weight: 500;
+      background-color: #ffffff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .pagination .page-link:hover {
+      background-color: #EFF6FF;
+      transform: translateY(-2px);
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: #2563EB;
+      color: #ffffff !important;
+      font-weight: 600;
+      box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
+    }
+
+    .pagination .page-item.disabled .page-link {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    @media (max-width: 576px) {
+      .pagination .page-link {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+        border-radius: 10px;
+      }
+    }
+  </style>
+
+  <div class="d-flex justify-content-center my-4">
+    <nav>
+      <ul class="pagination mb-0">
+        {% if despesas.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ despesas.previous_page_number }}&{{ filtro_params }}">&laquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link">&laquo;</span>
+        </li>
+        {% endif %}
+
+        {% for i in despesas.paginator.page_range %}
+        <li class="page-item {% if despesas.number == i %}active{% endif %}">
+          <a class="page-link" href="?page={{ i }}&{{ filtro_params }}">{{ i }}</a>
+        </li>
+        {% endfor %}
+
+        {% if despesas.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ despesas.next_page_number }}&{{ filtro_params }}">&raquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link">&raquo;</span>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+
   </div>
 
-  <!-- Paginação -->
-  {% if despesas.has_other_pages %}
-<style>
-  /* ======= Paginação estilo premium (idêntico à imagem) ======= */
-  .pagination {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-  }
+  {% block extra_js %}
+  <script>
+    const filtroBusca = document.getElementById("filtro-busca");
+    const filtroDataInicio = document.getElementById("filtro-data-inicio");
+    const filtroDataFim = document.getElementById("filtro-data-fim");
+    const filtroTipo = document.getElementById("filtro-tipo");
+    const filtroValorMin = document.getElementById("filtro-valor-min");
+    const filtroValorMax = document.getElementById("filtro-valor-max");
+    const btnBuscar = document.getElementById("btn-buscar");
+    const btnLimpar = document.getElementById("btn-limpar");
 
-  .pagination .page-item {
-    list-style: none;
-  }
+    // ✅ Preenche campos da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("q")) filtroBusca.value = urlParams.get("q");
+    if (urlParams.get("data_inicio")) filtroDataInicio.value = urlParams.get("data_inicio");
+    if (urlParams.get("data_fim")) filtroDataFim.value = urlParams.get("data_fim");
+    if (urlParams.get("tipo")) filtroTipo.value = urlParams.get("tipo");
+    if (urlParams.get("valor_min")) filtroValorMin.value = urlParams.get("valor_min");
+    if (urlParams.get("valor_max")) filtroValorMax.value = urlParams.get("valor_max");
 
-  .pagination .page-link {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    border: none;
-    color: #2563EB;
-    font-weight: 500;
-    background-color: #ffffff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-    transition: all 0.2s ease;
-  }
+    // ✅ Buscar
+    btnBuscar.addEventListener("click", () => {
+      const params = new URLSearchParams();
+      if (filtroBusca.value.trim()) params.append("q", filtroBusca.value.trim());
+      if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
+      if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
+      if (filtroTipo.value) params.append("tipo", filtroTipo.value);
+      if (filtroValorMin.value) params.append("valor_min", filtroValorMin.value);
+      if (filtroValorMax.value) params.append("valor_max", filtroValorMax.value);
+      window.location.href = `${window.location.pathname}?${params.toString()}`;
+    });
 
-  .pagination .page-link:hover {
-    background-color: #EFF6FF;
-    transform: translateY(-2px);
-  }
-
-  .pagination .page-item.active .page-link {
-    background-color: #2563EB;
-    color: #ffffff !important;
-    font-weight: 600;
-    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.25);
-  }
-
-  .pagination .page-item.disabled .page-link {
-    opacity: 0.4;
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-
-  @media (max-width: 576px) {
-    .pagination .page-link {
-      width: 30px;
-      height: 30px;
-      font-size: 0.8rem;
-      border-radius: 10px;
-    }
-  }
-</style>
-
-<div class="d-flex justify-content-center my-4">
-  <nav>
-    <ul class="pagination mb-0">
-      {% if despesas.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ despesas.previous_page_number }}&{{ filtro_params }}">&laquo;</a>
-      </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&laquo;</span>
-      </li>
-      {% endif %}
-
-      {% for i in despesas.paginator.page_range %}
-      <li class="page-item {% if despesas.number == i %}active{% endif %}">
-        <a class="page-link" href="?page={{ i }}&{{ filtro_params }}">{{ i }}</a>
-      </li>
-      {% endfor %}
-
-      {% if despesas.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?page={{ despesas.next_page_number }}&{{ filtro_params }}">&raquo;</a>
-      </li>
-      {% else %}
-      <li class="page-item disabled">
-        <span class="page-link">&raquo;</span>
-      </li>
-      {% endif %}
-    </ul>
-  </nav>
-</div>
-{% endif %}
-
-</div>
-
-{% block extra_js %}
-<script>
-  const filtroBusca = document.getElementById("filtro-busca");
-  const filtroDataInicio = document.getElementById("filtro-data-inicio");
-  const filtroDataFim = document.getElementById("filtro-data-fim");
-  const filtroTipo = document.getElementById("filtro-tipo");
-  const filtroValorMin = document.getElementById("filtro-valor-min");
-  const filtroValorMax = document.getElementById("filtro-valor-max");
-  const btnBuscar = document.getElementById("btn-buscar");
-  const btnLimpar = document.getElementById("btn-limpar");
-
-  // ✅ Preenche campos da URL
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get("q")) filtroBusca.value = urlParams.get("q");
-  if (urlParams.get("data_inicio")) filtroDataInicio.value = urlParams.get("data_inicio");
-  if (urlParams.get("data_fim")) filtroDataFim.value = urlParams.get("data_fim");
-  if (urlParams.get("tipo")) filtroTipo.value = urlParams.get("tipo");
-  if (urlParams.get("valor_min")) filtroValorMin.value = urlParams.get("valor_min");
-  if (urlParams.get("valor_max")) filtroValorMax.value = urlParams.get("valor_max");
-
-  // ✅ Buscar
-  btnBuscar.addEventListener("click", () => {
-    const params = new URLSearchParams();
-    if (filtroBusca.value.trim()) params.append("q", filtroBusca.value.trim());
-    if (filtroDataInicio.value) params.append("data_inicio", filtroDataInicio.value);
-    if (filtroDataFim.value) params.append("data_fim", filtroDataFim.value);
-    if (filtroTipo.value) params.append("tipo", filtroTipo.value);
-    if (filtroValorMin.value) params.append("valor_min", filtroValorMin.value);
-    if (filtroValorMax.value) params.append("valor_max", filtroValorMax.value);
-    window.location.href = `${window.location.pathname}?${params.toString()}`;
-  });
-
-  // ✅ Limpar
-  btnLimpar.addEventListener("click", () => {
-    filtroBusca.value = filtroDataInicio.value = filtroDataFim.value = filtroTipo.value = filtroValorMin.value = filtroValorMax.value = "";
-    window.location.href = window.location.pathname;
-  });
-</script>
-{% endblock %}
-{% endblock %}
+    // ✅ Limpar
+    btnLimpar.addEventListener("click", () => {
+      filtroBusca.value = filtroDataInicio.value = filtroDataFim.value = filtroTipo.value = filtroValorMin.value = filtroValorMax.value = "";
+      window.location.href = window.location.pathname;
+    });
+  </script>
+  {% endblock %}
+  {% endblock %}
