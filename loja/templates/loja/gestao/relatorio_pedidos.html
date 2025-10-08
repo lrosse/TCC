@@ -44,13 +44,43 @@
     border: 1px solid #fecaca;
   }
 
+  /* ============================
+     🔹 Estilo Padrão de Paginação
+     ============================ */
+  .pagination .page-link {
+    border: none;
+    margin: 0 4px;
+    padding: 8px 14px;
+    border-radius: 8px !important;
+    color: #2563eb;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .pagination .page-link:hover {
+    background-color: #e0ecff;
+    color: #1d4ed8;
+  }
+
+  .pagination .active .page-link {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #fff !important;
+    box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
+  }
+
+  .pagination .page-item.disabled .page-link {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+  }
+
   /* Responsividade */
   @media (max-width: 992px) {
     .table thead th {
       font-size: 0.65rem;
       padding: 0.75rem 0.5rem;
     }
-    
+
     .table tbody td {
       font-size: 0.75rem;
       padding: 0.75rem 0.5rem;
@@ -199,27 +229,10 @@
           <tbody>
             {% for p in pedidos %}
             <tr style="border-bottom: 1px solid #e2e8f0;">
-              <!-- Número -->
-              <td style="padding: 1rem 1.25rem;">
-                <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ p.numero_pedido }}</span>
-              </td>
-
-              <!-- Cliente -->
-              <td>
-                <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ p.cliente.username }}</span>
-              </td>
-
-              <!-- Total -->
-              <td class="valor-cell">
-                <span style="font-weight: 600; color: #059669;">R$ {{ p.total }}</span>
-              </td>
-
-              <!-- Custo -->
-              <td class="custo-cell">
-                <span style="font-weight: 600; color: #64748b;">R$ {{ p.custo_total|default:"0.00" }}</span>
-              </td>
-
-              <!-- Status -->
+              <td style="padding: 1rem 1.25rem;"><span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ p.numero_pedido }}</span></td>
+              <td><span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ p.cliente.username }}</span></td>
+              <td class="valor-cell"><span style="font-weight: 600; color: #059669;">R$ {{ p.total }}</span></td>
+              <td class="custo-cell"><span style="font-weight: 600; color: #64748b;">R$ {{ p.custo_total|default:"0.00" }}</span></td>
               <td>
                 {% if p.status == "Pendente" %}
                   <span class="badge-status pendente">Pendente</span>
@@ -229,8 +242,6 @@
                   <span class="badge-status cancelado">Cancelado</span>
                 {% endif %}
               </td>
-
-              <!-- Data -->
               <td class="data-cell">{{ p.data_criacao|date:"d/m/Y" }}</td>
             </tr>
             {% empty %}
@@ -247,5 +258,34 @@
       </div>
     </div>
   </div>
+
+  <!-- Paginação -->
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="mt-4 d-flex justify-content-center">
+    <nav aria-label="Paginação de pedidos">
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link rounded-3" href="?page=1&{{ request_get.urlencode }}" aria-label="Primeira">&laquo;</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link rounded-3">&laquo;</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link rounded-3 bg-primary text-white">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link rounded-3" href="?page={{ num }}&{{ request_get.urlencode }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link rounded-3" href="?page={{ page_obj.paginator.num_pages }}&{{ request_get.urlencode }}" aria-label="Última">&raquo;</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link rounded-3">&raquo;</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
