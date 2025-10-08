@@ -96,7 +96,20 @@
                         <tbody>
                             {% for item in itens %}
                             <tr>
-                                <td>{{ item.nome }}</td>
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="{% if item.em_falta %}text-muted text-decoration-line-through{% endif %}">
+                                            {{ item.nome }}
+                                        </span>
+
+                                        {% if item.em_falta %}
+                                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            Produto indisponível — retire do carrinho!
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
                                 <td class="text-center align-middle">
                                     <form method="POST" action="{% url 'alterar_quantidade' item.id %}" class="d-inline-flex align-items-center gap-1">
                                         {% csrf_token %}

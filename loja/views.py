@@ -712,84 +712,119 @@ def adicionar_ao_carrinho(request, produto_id):
 
 
 def ver_carrinho(request):
+    """
+    Exibe o carrinho de compras.
+    Agora, produtos inativos não são removidos automaticamente,
+    mas exibem um aviso ao cliente para removê-los manualmente.
+    """
     if request.user.is_authenticated:
-        # 🔒 Usuário logado → usa carrinho do banco
+        # 🔒 Usuário logado → Carrinho no banco
         carrinho = get_or_create_carrinho(request.user)
 
-        # 🔄 Atualiza os preços e remove itens inativos
-        for item in carrinho.itemcarrinho_set.all():
-            if not item.produto or not item.produto.ativo:
+        itens = []
+        mensagens_alerta = []  # lista para armazenar alertas de produtos inativos
+
+        for item in carrinho.itemcarrinho_set.select_related("produto"):
+            produto = item.produto
+
+            if not produto:
+                # Produto inexistente → ainda removemos, pois não há como exibir
                 item.delete()
                 continue
-            if item.preco_unitario != item.produto.preco:
-                item.preco_unitario = item.produto.preco
+
+            em_falta = False  # flag de disponibilidade
+
+            # 🔸 Produto inativo: não remove, apenas marca e alerta o cliente
+            if not produto.ativo:
+                em_falta = True
+                mensagens_alerta.append(
+                    f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
+                )
+
+            # 🔹 Atualiza preço se o produto estiver ativo
+            if produto.ativo and item.preco_unitario != produto.preco:
+                item.preco_unitario = produto.preco
                 item.save()
 
-        # 🔹 Recalcula o total e contador da navbar
+            itens.append({
+                "id": item.id,
+                "nome": produto.nome,
+                "quantidade": item.quantidade,
+                "preco_unitario": item.preco_unitario,
+                "subtotal": item.subtotal(),
+                "imagem": produto.imagem.url if produto.imagem else None,
+                "em_falta": em_falta,  # 👈 flag para o template
+            })
+
+        # 🔹 Recalcula o total (só produtos ativos contam)
         carrinho.calcular_total()
         request.session["carrinho_itens"] = sum(i.quantidade for i in carrinho.itemcarrinho_set.all())
         request.session.modified = True
 
-        # 🔹 Monta a lista de itens para o template
-        itens = []
-        for item in ItemCarrinho.objects.filter(carrinho=carrinho):
-            itens.append({
-                "id": item.id,
-                "nome": item.produto.nome,
-                "quantidade": item.quantidade,
-                "preco_unitario": item.preco_unitario,
-                "subtotal": item.subtotal(),
-                "imagem": item.produto.imagem.url if item.produto.imagem else None,
-            })
+        # Exibe avisos no topo da página (usando o sistema de mensagens)
+        for alerta in mensagens_alerta:
+            messages.warning(request, alerta)
 
-        return render(request, 'loja/carrinho.html', {
-            'itens': itens,
-            'total': carrinho.total(),
-            'sessao': False
+        return render(request, "loja/carrinho.html", {
+            "itens": itens,
+            "total": carrinho.total(),
+            "sessao": False,
         })
 
     else:
-        # 👤 Usuário anônimo → usa carrinho da sessão
+        # 👤 Usuário anônimo → Carrinho da sessão
         carrinho_sessao = request.session.get("carrinho", {})
         itens = []
-        total = Decimal('0.00')
+        total = Decimal("0.00")
+        mensagens_alerta = []
 
-        # 🔄 Atualiza preços e remove itens inativos
         for produto_id, dados in list(carrinho_sessao.items()):
             try:
                 produto = Produto.objects.get(id=produto_id)
-                # remove se estiver inativo
-                if not produto.ativo:
-                    del carrinho_sessao[str(produto_id)]
-                    continue
-                # atualiza preço se mudou
-                if str(produto.preco) != dados["preco_unitario"]:
-                    dados["preco_unitario"] = str(produto.preco)
-                    carrinho_sessao[str(produto_id)] = dados
             except Produto.DoesNotExist:
+                # Produto deletado de vez → remover
                 del carrinho_sessao[str(produto_id)]
                 continue
 
+            em_falta = False
+
+            if not produto.ativo:
+                em_falta = True
+                mensagens_alerta.append(
+                    f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
+                )
+
+            # 🔹 Atualiza preço apenas se produto ainda estiver ativo
+            if produto.ativo and str(produto.preco) != dados["preco_unitario"]:
+                dados["preco_unitario"] = str(produto.preco)
+                carrinho_sessao[str(produto_id)] = dados
+
             subtotal = Decimal(dados["preco_unitario"]) * dados["quantidade"]
-            total += subtotal
+            if produto.ativo:
+                total += subtotal  # produtos inativos não contam no total
+
             itens.append({
                 "id": produto_id,
-                "nome": dados["nome"],
+                "nome": produto.nome,
                 "quantidade": dados["quantidade"],
                 "preco_unitario": Decimal(dados["preco_unitario"]),
                 "subtotal": subtotal,
                 "imagem": dados.get("imagem"),
+                "em_falta": em_falta,  # 👈 flag para template
             })
 
-        # 🔹 Salva carrinho corrigido e atualiza contador
+        # 🔹 Atualiza carrinho e contador
         request.session["carrinho"] = carrinho_sessao
         request.session["carrinho_itens"] = sum(item["quantidade"] for item in carrinho_sessao.values())
         request.session.modified = True
 
-        return render(request, 'loja/carrinho.html', {
-            'itens': itens,
-            'total': total,
-            'sessao': True
+        for alerta in mensagens_alerta:
+            messages.warning(request, alerta)
+
+        return render(request, "loja/carrinho.html", {
+            "itens": itens,
+            "total": total,
+            "sessao": True,
         })
 
 def remover_do_carrinho(request, item_id):
