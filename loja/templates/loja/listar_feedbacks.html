@@ -285,8 +285,12 @@
                 <td class="data-cell">{{ f.data_criacao|date:"d/m/Y H:i" }}</td>
                 <td>{% if f.visivel %}<span class="status visivel">Visível</span>{% else %}<span class="status oculto">Oculto</span>{% endif %}</td>
                 <td>
-                  <div class="d-flex justify-content-center gap-3">
-                    <a href="{% url 'detalhes_feedback' f.id %}" class="action-btn text-primary"><i class="bi bi-search"></i> Detalhes</a>
+                  <div class="d-flex justify-content-center">
+                    <a href="{% url 'detalhes_feedback' f.id %}" 
+                      class="action-btn text-primary d-inline-flex align-items-center gap-1">
+                      <i class="bi bi-search"></i>
+                      <span>Detalhes</span>
+                    </a>
                   </div>
                 </td>
               </tr>
