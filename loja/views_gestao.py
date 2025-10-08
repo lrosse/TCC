@@ -1242,15 +1242,23 @@ def relatorio_financeiro_pdf(request):
 
     return response
 
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.shortcuts import render
+from .models import Feedback
+
 @login_required
 @user_passes_test(admin_required)
 def relatorio_feedbacks(request):
     """
     Relatório de Feedbacks – lista com filtros por produto, usuário, nota e visibilidade.
+    Inclui paginação e filtros persistentes.
     """
-    feedbacks = Feedback.objects.all()
+    feedbacks = Feedback.objects.select_related("produto", "usuario").all().order_by("-id")
 
-    # Filtros
+    # --------------------------
+    # FILTROS
+    # --------------------------
     produto = request.GET.get("produto")
     usuario = request.GET.get("usuario")
     nota = request.GET.get("nota")
@@ -1265,8 +1273,20 @@ def relatorio_feedbacks(request):
     if visivel in ["True", "False"]:
         feedbacks = feedbacks.filter(visivel=(visivel == "True"))
 
-    context = {"feedbacks": feedbacks}
+    # --------------------------
+    # PAGINAÇÃO
+    # --------------------------
+    paginator = Paginator(feedbacks, 10)  # 10 feedbacks por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj,
+        "feedbacks": page_obj.object_list,
+        "request_get": request.GET,  # mantém filtros ativos
+    }
     return render(request, "loja/gestao/relatorio_feedbacks.html", context)
+
 
 @login_required
 @user_passes_test(admin_required)
