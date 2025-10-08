@@ -998,11 +998,13 @@ from datetime import datetime, time
 @user_passes_test(admin_required)
 def relatorio_estoque(request):
     """
-    Relatório de Estoque – lista com filtros por produto, tipo e data.
+    Relatório de Estoque – lista com filtros, paginação e exportação.
     """
-    movs = MovimentacaoEstoque.objects.select_related("produto").all().order_by("-data")  # 🔹 mais recente primeiro
+    movs = MovimentacaoEstoque.objects.select_related("produto").all().order_by("-data")
 
-    # Filtros
+    # --------------------------
+    # FILTROS
+    # --------------------------
     produto = request.GET.get("produto")
     tipo = request.GET.get("tipo")
     data_inicio_raw = request.GET.get("data_inicio")
@@ -1016,18 +1018,26 @@ def relatorio_estoque(request):
     if data_inicio_raw:
         data_inicio = parse_date(data_inicio_raw)
         if data_inicio:
-            dt_inicio = datetime.combine(data_inicio, time.min)
-            movs = movs.filter(data__gte=dt_inicio)
+            movs = movs.filter(data__gte=datetime.combine(data_inicio, time.min))
 
     if data_fim_raw:
         data_fim = parse_date(data_fim_raw)
         if data_fim:
-            dt_fim = datetime.combine(data_fim, time.max)
-            movs = movs.filter(data__lte=dt_fim)
+            movs = movs.filter(data__lte=datetime.combine(data_fim, time.max))
 
-    context = {"movs": movs}
+    # --------------------------
+    # PAGINAÇÃO
+    # --------------------------
+    paginator = Paginator(movs, 40)  # 10 movimentações por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        "page_obj": page_obj,
+        "movs": page_obj.object_list,
+        "request_get": request.GET,  # mantém filtros na paginação
+    }
     return render(request, "loja/gestao/relatorio_estoque.html", context)
-
 @login_required
 @user_passes_test(admin_required)
 def relatorio_estoque_pdf(request):
