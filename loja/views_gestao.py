@@ -1082,18 +1082,16 @@ def relatorio_estoque_pdf(request):
 @user_passes_test(admin_required)
 def relatorio_financeiro(request):
     """
-    Relatório Financeiro – exibe valores DIÁRIOS (receita, custo, despesas fixas/variáveis e lucro líquido).
-    Permite ordenar por data (padrão), receita, custo, fixa, variável ou lucro.
+    Relatório Financeiro – valores diários (receita, custo, despesas e lucro líquido)
+    com filtros, ordenação e paginação.
     """
-
-    # 📌 Filtros de data (agora opcionais, se não passar mostra tudo)
     data_inicio_raw = request.GET.get("data_inicio")
     data_fim_raw = request.GET.get("data_fim")
+    ordenar_por = request.GET.get("ordenar_por")
 
     data_inicio = parse_date(data_inicio_raw) if data_inicio_raw else None
     data_fim = parse_date(data_fim_raw) if data_fim_raw else None
 
-    # Busca bruta
     pedidos = Pedido.objects.filter(status="Pago")
     despesas = Despesa.objects.all()
 
@@ -1107,8 +1105,7 @@ def relatorio_financeiro(request):
         pedidos = pedidos.filter(data_criacao__lte=dt_fim)
         despesas = despesas.filter(data__lte=data_fim)
 
-    # 📅 Monta estrutura por dia
-    from collections import defaultdict
+    # 📅 Monta estrutura diária
     dados_diarios = defaultdict(lambda: {"receita": 0, "custo": 0, "fixa": 0, "variavel": 0})
 
     for p in pedidos:
@@ -1142,17 +1139,23 @@ def relatorio_financeiro(request):
         })
 
     # 🔽 Ordenação
-    ordenar_por = request.GET.get("ordenar_por")
     if ordenar_por in ["receita", "custo", "fixa", "variavel", "lucro"]:
         tabela = sorted(tabela, key=lambda x: x[ordenar_por], reverse=True)
     else:
-        tabela = sorted(tabela, key=lambda x: x["data"], reverse=True)  # padrão: mais recente → mais antigo
+        tabela = sorted(tabela, key=lambda x: x["data"], reverse=True)
+
+    # 📄 Paginação
+    paginator = Paginator(tabela, 10)  # 10 dias por página
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
 
     context = {
-        "tabela": tabela,
+        "page_obj": page_obj,
+        "tabela": page_obj.object_list,
         "data_inicio": data_inicio,
         "data_fim": data_fim,
         "ordenar_por": ordenar_por or "data",
+        "request_get": request.GET,
     }
     return render(request, "loja/gestao/relatorio_financeiro.html", context)
 
