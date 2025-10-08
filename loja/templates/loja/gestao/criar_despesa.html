@@ -2,62 +2,249 @@
 {% block title %}Nova Despesa{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-  <h2 class="fw-semibold mb-4">Nova Despesa</h2>
+<style>
+  /* Info rows */
+  .info-row {
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
 
-  <div class="card shadow-sm border-0">
-    <div class="card-body">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label class="form-label">Título</label>
-            {{ form.categoria }}
-        </div>
+  .info-row:last-child {
+    border-bottom: none;
+  }
 
-        <div class="mb-3">
-            <label class="form-label">Fornecedor</label>
-            {{ form.fornecedor }}
-        </div>
+  .info-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
 
-        <div class="mb-3">
-          <label class="form-label">Tipo</label>
-          {{ form.tipo }}
-        </div>
+  /* Inputs modernos */
+  .form-control, .form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: border-color 0.2s ease;
+  }
 
-        <div class="mb-3">
-          <label class="form-label">Valor</label>
-          {{ form.valor }}
-        </div>
-        <!-- 🆕 Campo adicionado: Data da compra -->
-        <div class="mb-3">
-          <label class="form-label">Data da compra</label>
-          {{ form.data_compra }}
-        </div>
+  .form-control:focus, .form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
 
-        <div class="mb-3">
-          <label class="form-label">Data de pagamento</label>
-          {{ form.data }}
-        </div>
+  .input-group-text {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-right: none;
+    color: #64748b;
+    font-weight: 600;
+  }
 
-        <div class="mb-3">
-            <label class="form-label">Parcelas</label>
-            {{ form.parcelas }}
-            <small class="text-muted">Informe o número de parcelas (ex.: 12 para 12 meses)</small>
-        </div>
+  .input-group .form-control {
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+  }
 
-        <div class="mb-3">
-          <label class="form-label">Descrição</label>
-          {{ form.descricao }}
-        </div>
+  /* Responsividade */
+  @media (max-width: 768px) {
+    .container-fluid {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
 
-        <div class="d-flex justify-content-between">
-          <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary">Cancelar</a>
-          <button type="submit" class="btn btn-success">
-            <i class="bi bi-save"></i> Salvar
-          </button>
-        </div>
-      </form>
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
+    .btn-voltar {
+      font-size: 0.875rem !important;
+      padding: 8px 16px !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem; padding-bottom: 3rem;">
+  <!-- Cabeçalho -->
+  <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">Nova Despesa</h2>
     </div>
+    <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary btn-voltar" style="border-radius: 8px; padding: 10px 20px; font-weight: 600;">
+      <i class="bi bi-arrow-left me-2"></i> Voltar
+    </a>
   </div>
+
+  <!-- Formulário -->
+  <form method="POST" id="formDespesa">
+    {% csrf_token %}
+
+    <div class="row g-4">
+      <!-- Coluna Principal -->
+      <div class="col-lg-8">
+        <!-- Informações Básicas -->
+        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-receipt me-2" style="color: #3b82f6;"></i>Informações da Despesa
+            </h6>
+
+            <div class="info-row">
+              <label for="id_categoria" class="info-label">
+                Título <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.categoria }}
+              <small class="text-muted mt-2 d-block">Informe o título da despesa</small>
+            </div>
+
+            <div class="info-row">
+              <label for="id_fornecedor" class="info-label">
+                Fornecedor <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.fornecedor }}
+              <small class="text-muted mt-2 d-block">Nome do fornecedor ou prestador de serviço</small>
+            </div>
+
+            <div class="info-row">
+              <label for="id_tipo" class="info-label">
+                Tipo <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.tipo }}
+              <small class="text-muted mt-2 d-block">
+                <strong>Fixo:</strong> despesas recorrentes | <strong>Variável:</strong> despesas esporádicas
+              </small>
+            </div>
+
+            <div class="info-row" style="border-bottom: none;">
+              <label for="id_descricao" class="info-label">
+                Descrição
+              </label>
+              {{ form.descricao }}
+              <small class="text-muted mt-2 d-block">Campo opcional para informações complementares</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna Lateral -->
+      <div class="col-lg-4">
+        <!-- Valores e Datas -->
+        <div class="card shadow-sm mb-4" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-4 pb-3" style="color: #1e293b; border-bottom: 2px solid #f1f5f9;">
+              <i class="bi bi-currency-dollar me-2" style="color: #ef4444;"></i>Valores e Datas
+            </h6>
+
+            <div class="mb-3">
+              <label for="id_valor" class="info-label">
+                Valor <span style="color: #ef4444;">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                {{ form.valor }}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="id_parcelas" class="info-label">
+                Parcelas <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.parcelas }}
+              <small class="text-muted mt-2 d-block">Informe o número de parcelas (ex.: 12 para 12 meses)</small>
+            </div>
+
+            <div class="mb-3">
+              <label for="id_data_compra" class="info-label">
+                Data da Compra <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.data_compra }}
+            </div>
+
+            <div class="mb-0">
+              <label for="id_data" class="info-label">
+                Data de Pagamento <span style="color: #ef4444;">*</span>
+              </label>
+              {{ form.data }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Ações -->
+        <div class="card shadow-sm" style="border: none; border-radius: 12px;">
+          <div class="card-body p-4">
+            <h6 class="fw-semibold mb-3" style="color: #1e293b;">
+              <i class="bi bi-check-circle me-2" style="color: #10b981;"></i>Pronto para cadastrar?
+            </h6>
+            <p class="mb-4" style="font-size: 0.875rem; color: #64748b;">
+              Revise as informações antes de salvar
+            </p>
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-success" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-save me-2"></i> Salvar Despesa
+              </button>
+              <a href="{% url 'gestao_despesas' %}" class="btn btn-outline-secondary" style="font-weight: 600; padding: 0.75rem; border-radius: 8px;">
+                <i class="bi bi-x-circle me-2"></i> Cancelar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Adiciona classes aos campos do formulário Django
+  const campos = ['categoria', 'fornecedor', 'tipo', 'valor', 'parcelas', 'data_compra', 'data', 'descricao'];
+  
+  campos.forEach(campo => {
+    const elemento = document.querySelector(`[name="${campo}"]`);
+    if (elemento) {
+      if (elemento.tagName === 'SELECT') {
+        elemento.classList.add('form-select');
+      } else if (elemento.tagName === 'TEXTAREA') {
+        elemento.classList.add('form-control');
+        elemento.rows = 4;
+        elemento.placeholder = 'Adicione detalhes ou observações sobre esta despesa...';
+      } else if (campo === 'valor') {
+        elemento.classList.add('form-control');
+        elemento.placeholder = '0,00';
+        elemento.style.borderRadius = '0 8px 8px 0';
+        elemento.style.borderLeft = 'none';
+      } else {
+        elemento.classList.add('form-control');
+        
+        // Adiciona placeholders específicos
+        if (campo === 'categoria') {
+          elemento.placeholder = 'Ex: Aluguel, Fornecedores, Energia';
+        } else if (campo === 'fornecedor') {
+          elemento.placeholder = 'Ex: Empresa XYZ Ltda';
+        } else if (campo === 'parcelas') {
+          elemento.placeholder = '1';
+        }
+      }
+    }
+  });
+
+  // Validação do formulário
+  document.getElementById('formDespesa').addEventListener('submit', function(e) {
+    const valor = parseFloat(document.querySelector('[name="valor"]').value);
+    const parcelas = parseInt(document.querySelector('[name="parcelas"]').value);
+    
+    if (valor <= 0 || isNaN(valor)) {
+      e.preventDefault();
+      alert('Por favor, informe um valor válido para a despesa.');
+      return false;
+    }
+    
+    if (parcelas < 1 || isNaN(parcelas)) {
+      e.preventDefault();
+      alert('Por favor, informe um número válido de parcelas (mínimo 1).');
+      return false;
+    }
+  });
+});
+</script>
 {% endblock %}
