@@ -186,6 +186,19 @@
     <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de pedidos</h2>
   </div>
 
+  <div class="card shadow-sm mb-4 border-0">
+    <div class="card-body">
+      <h5 class="card-title fw-semibold mb-3">
+        <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Pedidos por status
+      </h5>
+      <div class="d-flex justify-content-center">
+        <div style="max-width: 280px; max-height: 280px;">
+          <canvas id="chartStatusPedidos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Barra de busca + botão de filtros -->
   <div class="mb-3 p-3 bg-white rounded shadow-sm">
     <label for="filtro-nome" class="form-label fw-semibold" style="color: #475569; font-size: 0.875rem;">Pesquisar pedidos</label>
@@ -352,6 +365,7 @@
 </div>
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   // ================================
   // Botão "Selecionar todos"
@@ -445,6 +459,59 @@
     const status = botao.getAttribute("data-status");
     document.getElementById("status-hidden").value = status;
   });
+
+ // ================================
+    // 📊 Gráfico de Pedidos por Status
+    // ================================
+    const statusLabels = {{ status_labels_json|safe }};
+    const statusValues = {{ status_values_json|safe }};
+
+    // Define cores de acordo com o status
+    function getStatusColors(labels) {
+      return labels.map(label => {
+        const lower = label.toLowerCase();
+        if (lower === 'pago') return '#4BC683';       // verde
+        if (lower === 'pendente') return '#FF9F40';   // laranja
+        if (lower === 'cancelado') return '#FF6384';  // vermelho
+        return '#808080';                             // cinza padrão
+      });
+    }
+
+    const ctxPedidos = document.getElementById('chartStatusPedidos');
+      if (ctxPedidos) {
+        new Chart(ctxPedidos, {
+          type: 'doughnut',
+          data: {
+            labels: statusLabels,
+            datasets: [{
+              label: 'Quantidade',
+              data: statusValues,
+              backgroundColor: getStatusColors(statusLabels),
+              borderColor: getStatusColors(statusLabels),
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true, // mantém proporção 1:1
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { font: { size: 12 } }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed || 0;
+                    return `${label}: ${value} pedidos`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
 </script>
 
 

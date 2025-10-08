@@ -1093,12 +1093,12 @@ def finalizar_compra(request):
         'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
     })
 
-
 from datetime import datetime, timedelta
 
 @staff_required
 def pedidos(request):
     from .models import Pedido  # Garante importação segura
+    import json  # para converter dados para o gráfico
 
     # 🔹 Filtros capturados da URL
     termo_nome = request.GET.get("nome", "")
@@ -1118,6 +1118,7 @@ def pedidos(request):
         pedidos = pedidos.filter(total__icontains=valor)
 
     # ✅ Filtro de data corrigido (funciona com MySQL)
+    from datetime import datetime, timedelta
     try:
         if data_inicio:
             inicio = datetime.strptime(data_inicio, "%Y-%m-%d")
@@ -1140,6 +1141,10 @@ def pedidos(request):
         filtro_params.pop("page")
     filtro_params = filtro_params.urlencode()
 
+    # 🔹 Dados do gráfico (Pedidos por status)
+    status_labels, status_values = _contagem_pedidos_por_status(Pedido.objects.all())
+
+    # 🔹 Contexto final
     context = {
         "pedidos": page_obj,
         "filtros": {
@@ -1147,14 +1152,16 @@ def pedidos(request):
             "status": status,
             "valor": valor,
             "data_inicio": data_inicio,
-            "data_fim": data_fim
+            "data_fim": data_fim,
         },
         "filtro_params": filtro_params,
+
+        # Dados do gráfico
+        "status_labels_json": json.dumps(status_labels, ensure_ascii=False),
+        "status_values_json": json.dumps(status_values),
     }
 
     return render(request, "loja/pedidos.html", context)
-
-
 
 @staff_required
 def detalhes_pedido(request, pedido_id):
