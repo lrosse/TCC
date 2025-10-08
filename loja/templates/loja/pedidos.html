@@ -364,6 +364,30 @@
   </div>
 </div>
 
+<div class="modal fade" id="modalEstoqueInsuficiente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Estoque insuficiente
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>Alguns produtos não possuem estoque suficiente para concluir a operação:</p>
+        <ul id="listaEstoqueProblemas" class="list-group list-group-flush mb-3"></ul>
+        <p class="mb-0 fw-semibold">Deseja continuar assim mesmo e marcar os pedidos como <span class="text-success">Pago</span>?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btnForcarEstoque" class="btn btn-warning text-dark fw-semibold">
+          <i class="bi bi-check-circle me-1"></i>Sim, confirmar mesmo assim
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -512,6 +536,70 @@
           }
         });
       }
+    
+// ================================
+// ⚠️ Intercepta submissão do formulário de lote
+// ================================
+document.getElementById("formLote").addEventListener("submit", async function (e) {
+  e.preventDefault(); // impede envio imediato
+
+  const form = e.target;
+  const formData = new FormData(form);
+  const status = formData.get("status");
+
+  // envia requisição normal via fetch
+  const resposta = await fetch(form.action, {
+    method: "POST",
+    body: formData,
+    headers: { "X-Requested-With": "XMLHttpRequest" },
+  });
+
+  // tenta ler JSON (caso haja erro de estoque)
+  let data;
+  try {
+    data = await resposta.json();
+  } catch {
+    // se não for JSON, redireciona normalmente
+    window.location.reload();
+    return;
+  }
+
+  // caso tenha erro de estoque
+  if (data.erro_estoque) {
+    const lista = document.getElementById("listaEstoqueProblemas");
+    lista.innerHTML = ""; // limpa lista anterior
+
+    data.detalhes.forEach(item => {
+      const li = document.createElement("li");
+      li.className = "list-group-item small";
+      li.textContent = `Pedido #${item.pedido} – ${item.produto} (Disponível: ${item.disponivel}, Necessário: ${item.necessario})`;
+      lista.appendChild(li);
+    });
+
+    // mostra modal
+    const modalEstoque = new bootstrap.Modal(document.getElementById("modalEstoqueInsuficiente"));
+    modalEstoque.show();
+
+    // se confirmar → reenviar com ?forcar=true
+    const btnConfirmar = document.getElementById("btnForcarEstoque");
+    btnConfirmar.onclick = async () => {
+      modalEstoque.hide();
+
+      const urlForcada = form.action + "?forcar=true";
+      const respostaForcada = await fetch(urlForcada, {
+        method: "POST",
+        body: formData,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+
+      // recarrega após conclusão
+      window.location.reload();
+    };
+  } else {
+    // caso não tenha erro de estoque → recarrega normal
+    window.location.reload();
+  }
+});
 </script>
 
 
