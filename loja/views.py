@@ -1286,26 +1286,6 @@ def atualizar_status_pedidos_lote(request):
 # ============================
 # ✅ NOVA VIEW: RELATÓRIOS
 # ============================
-@staff_required  
-def relatorios(request):
-    pedidos_pagos = Pedido.objects.filter(status='Pago')
-    todos_pedidos = Pedido.objects.all()
-
-    mes_labels, mes_values = _agregar_vendas_por_mes(pedidos_pagos)
-    dia_labels, dia_values = _agregar_vendas_mes_atual_por_dia(pedidos_pagos)
-    status_labels, status_values = _contagem_pedidos_por_status(todos_pedidos)
-
-    context = {
-        'mes_labels_json': json.dumps(mes_labels, ensure_ascii=False),
-        'mes_values_json': json.dumps(mes_values),
-        'dia_labels_json': json.dumps(dia_labels, ensure_ascii=False),
-        'dia_values_json': json.dumps(dia_values),
-        'status_labels_json': json.dumps(status_labels, ensure_ascii=False),
-        'status_values_json': json.dumps(status_values),
-        'tabela_mensal': list(zip(mes_labels, mes_values)),
-    }
-    return render(request, 'loja/relatorios.html', context)
-
 def _agregar_vendas_por_mes(queryset):
     """
     Soma total por mês do ANO ATUAL (1..12), preenchendo zeros onde não houver venda.
