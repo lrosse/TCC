@@ -170,14 +170,24 @@
                 </div>
 
                 <!-- Botões -->
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'home' %}" class="btn btn-continuar btn-sm">
+                <div class="d-flex justify-content-between mt-4 align-items-center flex-wrap">
+                    <a href="{% url 'home' %}" class="btn btn-continuar btn-sm mb-2 mb-sm-0">
                         <i class="bi bi-arrow-left me-1"></i>Continuar Comprando
                     </a>
-                    <a href="{% url 'finalizar_compra' %}" class="btn btn-comprar btn-sm">
-                        <i class="bi bi-check-circle me-1"></i>Comprar
-                    </a>
+                        {% if bloqueio_compra %}
+                        <div class="alert alert-warning mt-3 py-2 px-3 small d-inline-flex align-items-center" style="border-radius: 10px;">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Ajuste seu carrinho antes de finalizar a compra — há produtos indisponíveis ou com estoque insuficiente.
+                        </div>
+                        {% endif %}
+                    <div class="text-end">
+                        <a href="{% url 'finalizar_compra' %}"
+                           class="btn btn-comprar btn-sm {% if bloqueio_compra %}disabled opacity-50{% endif %}">
+                           <i class="bi bi-check-circle me-1"></i>Comprar
+                        </a>
+                    </div>
                 </div>
+
                 {% else %}
                 <p class="text-muted text-center my-4">Seu carrinho está vazio.</p>
                 {% endif %}
@@ -196,8 +206,7 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
       </div>
-      <div class="modal-body fs-6" id="estoqueModalBody">
-      </div>
+      <div class="modal-body fs-6" id="estoqueModalBody"></div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok, entendi</button>
       </div>
@@ -218,14 +227,12 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        // Passa mensagens do Django para o JS como array
         const messages = [
           {% for message in messages %}
             "{{ message|escapejs }}",
           {% endfor %}
         ];
 
-        // Procura mensagens que envolvem estoque
         messages.forEach(msg => {
             if (msg.includes("estoque") || msg.includes("ajustada")) {
                 var estoqueModal = new bootstrap.Modal(document.getElementById("estoqueModal"));
