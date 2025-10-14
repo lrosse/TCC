@@ -103,6 +103,11 @@
           </div>
 
           <div class="info-row">
+            <div class="info-label">Número de WhatsApp</div>
+            <div class="info-value">{{ pedido.numero_whatsapp|default:"Não informado" }}</div>
+          </div>
+
+          <div class="info-row">
             <div class="info-label">Usuário</div>
             <div class="info-value">
               <i class="bi bi-person-circle me-2" style="color: #64748b;"></i>{{ pedido.cliente.username }}

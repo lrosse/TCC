@@ -108,6 +108,11 @@
                     </h6>
 
                     <div class="info-row">
+                    <div class="info-label">Número de WhatsApp</div>
+                    <div class="info-value">{{ pedido.numero_whatsapp|default:"Não informado" }}</div>
+                    </div>
+
+                    <div class="info-row">
                         <div class="info-label">Endereço de Entrega</div>
                         <div class="info-value" style="white-space: pre-line;">{{ pedido.endereco_entrega }}</div>
                     </div>

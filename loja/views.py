@@ -1038,8 +1038,8 @@ def adicionar_carrinho(request, produto_id):
 @login_required
 def finalizar_compra(request):
     """Finaliza a compra, cria o pedido com itens congelados (nome, preço e custo)."""
-    
-    # 1) Busca carrinho
+
+    # 1) Busca o carrinho do usuário logado
     try:
         carrinho = Carrinho.objects.get(usuario=request.user)
     except Carrinho.DoesNotExist:
@@ -1051,8 +1051,9 @@ def finalizar_compra(request):
         messages.warning(request, "Seu carrinho está vazio.")
         return redirect('ver_carrinho')
 
+    # 2) Quando o usuário envia o formulário (POST)
     if request.method == 'POST':
-        # 2) Pega dados do form
+        # Captura os dados do formulário
         nome = request.POST.get("nome", "").strip()
         rua = request.POST.get("rua", "").strip()
         numero = request.POST.get("numero", "").strip()
@@ -1060,8 +1061,9 @@ def finalizar_compra(request):
         cidade = request.POST.get("cidade", "").strip()
         complemento = request.POST.get("complemento", "").strip()
         referencia = request.POST.get("referencia", "").strip()
+        numero_whatsapp = request.POST.get("whatsapp", "").strip()  # ✅ novo campo
 
-        # 3) Validação
+        # 3) Validação: campos obrigatórios
         if not all([nome, rua, numero, bairro, cidade]):
             messages.error(request, "Preencha todos os campos obrigatórios.")
             return render(request, 'loja/finalizar_compra.html', {
@@ -1070,7 +1072,7 @@ def finalizar_compra(request):
                 'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
             })
 
-        # 4) Monta endereço
+        # 4) Monta o endereço completo em formato de texto
         endereco_parts = [f"{rua}, {numero}", f"{bairro} – {cidade}"]
         if complemento:
             endereco_parts.append(f"Complemento: {complemento}")
@@ -1079,33 +1081,36 @@ def finalizar_compra(request):
         endereco_texto = "\n".join(endereco_parts)
 
         try:
-            # 5) Cria pedido
+            # 5) Cria o pedido no banco de dados
             pedido = Pedido.objects.create(
                 cliente=request.user,
                 total=Decimal(str(carrinho.total())),
                 status='Pendente',
                 nome_cliente=nome,
-                endereco_entrega=endereco_texto
+                endereco_entrega=endereco_texto,
+                numero_whatsapp=numero_whatsapp,  # ✅ salva o número no banco
             )
-            
-            # 6) Cria itens do pedido (congelando valores)
+
+            # 6) Cria os itens do pedido (congelando dados)
             for item in itens:
-                custo_unit = getattr(item.produto.custo_info, "custo", 0) if item.produto and hasattr(item.produto, "custo_info") else 0
+                custo_unit = getattr(item.produto.custo_info, "custo", 0) \
+                    if item.produto and hasattr(item.produto, "custo_info") else 0
 
                 PedidoItem.objects.create(
                     pedido=pedido,
-                    produto=item.produto,  # mantém referência, mas pode ser nulo no futuro
+                    produto=item.produto,  # mantém referência ao produto
                     nome_produto=item.produto.nome if item.produto else "Produto removido",
                     quantidade=item.quantidade,
                     preco_unitario=item.preco_unitario,
                     custo_unitario=custo_unit
                 )
 
-            # 7) Limpa carrinho
+            # 7) Limpa o carrinho do usuário
             itens.delete()
             carrinho.valor_total = Decimal('0.00')
             carrinho.save()
 
+            # Reseta contador de itens da sessão
             request.session["carrinho_itens"] = 0
             request.session.modified = True
 
@@ -1119,10 +1124,11 @@ def finalizar_compra(request):
                 'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
             })
 
-        # 8) Monta WhatsApp
-        produtos_texto = []
-        for item in pedido.itens.all():
-            produtos_texto.append(f"- {item.quantidade}x {item.nome_produto} – R$ {item.subtotal()}")
+        # 8) Monta a mensagem para envio via WhatsApp
+        produtos_texto = [
+            f"- {item.quantidade}x {item.nome_produto} – R$ {item.subtotal()}"
+            for item in pedido.itens.all()
+        ]
 
         mensagem_parts = [
             f"🛒 *Pedido {pedido.numero_pedido} realizado através do site*:",
@@ -1135,6 +1141,8 @@ def finalizar_compra(request):
             "📍 *Endereço de entrega:*",
             *endereco_texto.split("\n"),
             "",
+            f"📱 *WhatsApp do cliente:* {numero_whatsapp}",
+            "",
             f"🙋 Cliente: {nome}",
             "",
             "Agradeço desde já! 😊",
@@ -1144,7 +1152,7 @@ def finalizar_compra(request):
         numero_vendedor = getattr(settings, 'WHATSAPP_NUMBER', '5518981078919')
         whatsapp_url = f"https://wa.me/{numero_vendedor}?text={quote(mensagem_final)}"
 
-        # 9) Sucesso → página de confirmação
+        # 9) Retorna página de confirmação
         return render(request, "loja/pedido_confirmado.html", {
             "whatsapp_url": whatsapp_url,
             "pedido_id": pedido.id,
@@ -1152,12 +1160,13 @@ def finalizar_compra(request):
             "numero_pedido": pedido.numero_pedido,
         })
 
-    # GET
+    # 10) GET → exibe formulário de finalização
     return render(request, 'loja/finalizar_compra.html', {
         'itens': itens,
         'total': carrinho.total(),
         'numero_vendedor': getattr(settings, 'WHATSAPP_NUMBER', '5518981078919'),
     })
+
 
 from datetime import datetime, timedelta
 

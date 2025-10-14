@@ -122,6 +122,7 @@ class Pedido(models.Model):
 
     nome_cliente = models.CharField(max_length=100)
     endereco_entrega = models.TextField()
+    numero_whatsapp = models.CharField(max_length=20, blank=True, null=True)
 
     numero_pedido = models.CharField(max_length=30, unique=True, editable=False, blank=True, null=True)
 
