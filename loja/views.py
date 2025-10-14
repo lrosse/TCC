@@ -71,7 +71,7 @@ def buscar_produtos(request):
     resultados = []
 
     if termo:
-        produtos = Produto.objects.filter(nome__icontains=termo)[:10]
+        produtos = Produto.objects.filter(nome__icontains=termo, ativo=True)[:10]
         for p in produtos:
             resultados.append({
                 "id": p.id,
