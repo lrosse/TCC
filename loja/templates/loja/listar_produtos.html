@@ -46,6 +46,17 @@
       color: #3b82f6;
     }
 
+    td.preco {
+    white-space: nowrap;              /* evita quebra de linha */
+    text-align: left;                 /* alinha o conteúdo */
+    vertical-align: middle;           /* centraliza verticalmente */
+  }
+
+  td.preco span {
+    display: inline-block;
+    white-space: nowrap;
+  }
+
     #btn-selecionar-todos i {
       font-size: 0.875rem;
     }
@@ -217,7 +228,7 @@
                   </div>
                 </td>
                 <td>{{ produto.nome }}</td>
-                <td>R$ {{ produto.preco }}</td>
+                <td class="preco"><span>R$ {{ produto.preco }}</span></td>
                 <td>{{ produto.descricao|truncatechars:50 }}</td>
                 <td>{{ produto.quantidade }}</td>
                 <td>
