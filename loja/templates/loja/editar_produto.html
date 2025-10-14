@@ -320,12 +320,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Validação do formulário
+  // 🔹 Função para exibir alerta Bootstrap
+  function showBootstrapAlert(message, type = "danger") {
+    const alertContainer = document.createElement("div");
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3 shadow-lg`;
+    alertContainer.style.zIndex = "2000";
+    alertContainer.style.maxWidth = "600px";
+    alertContainer.innerHTML = `
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    `;
+    document.body.appendChild(alertContainer);
+
+    // Remove automaticamente após 4 segundos
+    setTimeout(() => {
+      const alert = bootstrap.Alert.getOrCreateInstance(alertContainer);
+      alert.close();
+    }, 4000);
+  }
+
+  // 🔹 Validação do formulário
   document.getElementById('formProduto').addEventListener('submit', function(e) {
     const descricao = document.getElementById('id_descricao').value;
     if (descricao.length < 10) {
       e.preventDefault();
-      alert('A descrição deve ter pelo menos 10 caracteres.');
+      showBootstrapAlert('A descrição deve ter pelo menos 10 caracteres.', 'warning');
       return false;
     }
   });
