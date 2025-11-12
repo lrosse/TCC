@@ -1,122 +1,120 @@
+{% load format_brl %}
+
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Finalizar Pedido</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Bootstrap 5.3 + Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
 
     <style>
-        .pedido-card {
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            margin-bottom: 2rem;
-        }
-        .form-section {
-            border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-            padding: 2rem;
-        }
-        .btn-whatsapp {
-            background-color: #25D366;
-            border: none;
-        }
-        .btn-whatsapp:hover {
-            background-color: #1ebe5d;
-        }
+      .pedido-card {
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+      }
+      .form-section {
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        padding: 2rem;
+      }
+      .btn-whatsapp {
+        background-color: #25d366;
+        border: none;
+      }
+      .btn-whatsapp:hover {
+        background-color: #1ebe5d;
+      }
     </style>
-</head>
-<body>
-    {% include "loja/_navbar.html" %}
-<div class="container my-5">
-    <h2 class="text-center mb-5 text-primary">Finalizar Pedido</h2>
+  </head>
+  <body>
+    {% include 'loja/_navbar.html' %}
+    <div class="container my-5">
+      <h2 class="text-center mb-5 text-primary">Finalizar Pedido</h2>
 
-    <!-- Resumo do Carrinho -->
-    <div class="card pedido-card">
+      <!-- Resumo do Carrinho -->
+      <div class="card pedido-card">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="bi bi-cart-check"></i> Resumo do Carrinho</h5>
+          <h5 class="mb-0"><i class="bi bi-cart-check"></i> Resumo do Carrinho</h5>
         </div>
         <div class="card-body">
-            {% if itens %}
+          {% if itens %}
             <ul class="list-group mb-3">
-                {% for item in itens %}
+              {% for item in itens %}
                 <li class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex justify-content-between align-items-center">
                     <span class="me-2">{{ item.quantidade }}x {{ item.produto.nome }}</span>
                     <div class="d-flex">
-                    <span class="me-1">R$</span>
-                    <span>{{ item.subtotal }}</span>
+                      <span>{{ item.subtotal |brl_currency }}</span>
                     </div>
-                </div>
+                  </div>
                 </li>
-                {% endfor %}
-                <li class="list-group-item">
+              {% endfor %}
+              <li class="list-group-item">
                 <div class="d-flex justify-content-between fw-bold">
-                    <span class="me-2">Total:</span>
-                    <div class="d-flex">
-                    <span class="me-1">R$</span>
-                    <span>{{ total }}</span>
-                    </div>
+                  <span class="me-2">Total:</span>
+                  <div class="d-flex">
+                    <span>{{ total |brl_currency }}</span>
+                  </div>
                 </div>
-                </li>
+              </li>
             </ul>
-            {% else %}
+          {% else %}
             <p class="text-muted">Seu carrinho está vazio.</p>
-            {% endif %}
+          {% endif %}
         </div>
-    </div>
+      </div>
 
-    <!-- Formulário de Entrega -->
-    <div class="form-section bg-white">
+      <!-- Formulário de Entrega -->
+      <div class="form-section bg-white">
         <h5 class="mb-4"><i class="bi bi-truck"></i> Dados para Entrega</h5>
         <div id="alertaCampos" class="alert alert-danger d-none">Por favor, preencha todos os campos obrigatórios antes de finalizar o pedido.</div>
 
-                <form method="POST">
-            {% csrf_token %}
+        <form method="POST">
+          {% csrf_token %}
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Nome completo *" name="nome" required>
-                </div>
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Rua *" name="rua" required>
-                </div>
-                <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Número *" name="numero" required>
-                </div>
-                <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Bairro *" name="bairro" required>
-                </div>
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Cidade *" name="cidade" required>
-                </div>
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Número de WhatsApp *" name="whatsapp" required>
-                </div>
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Complemento" name="complemento">
-                </div>
-                <div class="col-md-6">
-                    <input type="text" class="form-control" placeholder="Referência" name="referencia">
-                </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Nome completo *" name="nome" required />
             </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Rua *" name="rua" required />
+            </div>
+            <div class="col-md-3">
+              <input type="text" class="form-control" placeholder="Número *" name="numero" required />
+            </div>
+            <div class="col-md-3">
+              <input type="text" class="form-control" placeholder="Bairro *" name="bairro" required />
+            </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Cidade *" name="cidade" required />
+            </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Número de WhatsApp *" name="whatsapp" required />
+            </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Complemento" name="complemento" />
+            </div>
+            <div class="col-md-6">
+              <input type="text" class="form-control" placeholder="Referência" name="referencia" />
+            </div>
+          </div>
 
-            <div class="text-center mt-4">
-                <button type="submit" class="btn btn-whatsapp text-white fw-semibold">
-                    <i class="bi bi-whatsapp me-2"></i>Confirmar Pedido via WhatsApp
-                </button>
-            </div>
+          <div class="text-center mt-4">
+            <button type="submit" class="btn btn-whatsapp text-white fw-semibold"><i class="bi bi-whatsapp me-2"></i>Confirmar Pedido via WhatsApp</button>
+          </div>
         </form>
+      </div>
     </div>
-</div>
 
-<!-- JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
     function finalizarPedido() {
         const campos = ['nome', 'rua', 'numero', 'bairro', 'cidade'];
         let vazio = false;
@@ -163,5 +161,5 @@
         window.open(url, '_blank');
     }
 </script>
-</body>
+  </body>
 </html>
