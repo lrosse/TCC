@@ -1,3 +1,5 @@
+{% load format_brl %}
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -61,7 +63,7 @@
 
             <h1>{{ produto.nome }}</h1>
             <p class="text-muted">{{ produto.descricao }}</p>
-            <p class="produto-preco">R$ {{ produto.preco }}</p>
+            <p class="produto-preco">{{ produto.preco |brl_currency }}</p>
             <p class="text-muted">
                 {{ produto.quantidade|estoque_format }}
             </p>
