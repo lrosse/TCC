@@ -1,252 +1,242 @@
+{% load format_brl %}
+
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meus Pedidos</title>
 
     <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
 
     <style>
-        body {
-            background-color: #f8fafc;
+      body {
+        background-color: #f8fafc;
+      }
+      
+      .status-badge {
+        padding: 6px 14px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      
+      .status-badge.Pendente {
+        background-color: #fef9c3;
+        color: #92400e;
+        border: 1px solid #fde68a;
+      }
+      
+      .status-badge.Pago {
+        background-color: #dcfce7;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      
+      .status-badge.Cancelado {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+      }
+      
+      .data-cell {
+        white-space: nowrap;
+      }
+      
+      .action-btn {
+        transition: transform 0.2s ease;
+      }
+      
+      .action-btn:hover {
+        transform: scale(1.05);
+      }
+      
+      /* Estilos da paginação moderna */
+      .pagination .page-link {
+        border: none;
+        margin: 0 4px;
+        padding: 8px 14px;
+        border-radius: 8px !important;
+        color: #2563eb;
+        font-weight: 500;
+        transition: all 0.2s ease;
+      }
+      
+      .pagination .page-link:hover {
+        background-color: #e0ecff;
+        color: #1d4ed8;
+      }
+      
+      .pagination .active .page-link {
+        background-color: #2563eb !important;
+        border-color: #2563eb !important;
+        color: #fff !important;
+        box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
+      }
+      
+      .pagination .page-item.disabled .page-link {
+        background-color: #f1f5f9;
+        color: #94a3b8;
+      }
+      
+      /* Responsividade */
+      @media (max-width: 992px) {
+        .table thead th {
+          font-size: 0.65rem;
+          padding: 0.75rem 0.5rem;
         }
-
-        .status-badge {
-            padding: 6px 14px;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            border-radius: 6px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+      
+        .table tbody td {
+          font-size: 0.75rem;
+          padding: 0.75rem 0.5rem;
         }
-
-        .status-badge.Pendente {
-            background-color: #fef9c3;
-            color: #92400e;
-            border: 1px solid #fde68a;
+      }
+      
+      @media (max-width: 768px) {
+        .container {
+          padding-left: 1rem !important;
+          padding-right: 1rem !important;
         }
-
-        .status-badge.Pago {
-            background-color: #dcfce7;
-            color: #15803d;
-            border: 1px solid #bbf7d0;
+      
+        h2 {
+          font-size: 1.25rem !important;
         }
-
-        .status-badge.Cancelado {
-            background-color: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .data-cell {
-            white-space: nowrap;
-        }
-
-        .action-btn {
-            transition: transform 0.2s ease;
-        }
-
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-
-        /* Estilos da paginação moderna */
-        .pagination .page-link {
-            border: none;
-            margin: 0 4px;
-            padding: 8px 14px;
-            border-radius: 8px !important;
-            color: #2563eb;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .pagination .page-link:hover {
-            background-color: #e0ecff;
-            color: #1d4ed8;
-        }
-
-        .pagination .active .page-link {
-            background-color: #2563eb !important;
-            border-color: #2563eb !important;
-            color: #fff !important;
-            box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
-        }
-
-        .pagination .page-item.disabled .page-link {
-            background-color: #f1f5f9;
-            color: #94a3b8;
-        }
-
-        /* Responsividade */
-        @media (max-width: 992px) {
-            .table thead th {
-                font-size: 0.65rem;
-                padding: 0.75rem 0.5rem;
-            }
-            
-            .table tbody td {
-                font-size: 0.75rem;
-                padding: 0.75rem 0.5rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding-left: 1rem !important;
-                padding-right: 1rem !important;
-            }
-
-            h2 {
-                font-size: 1.25rem !important;
-            }
-        }
+      }
     </style>
-</head>
-<body>
-{% include "loja/_navbar.html" %}
+  </head>
+  <body>
+    {% include 'loja/_navbar.html' %}
 
-<div class="container py-4" style="max-width: 1400px;">
-    <!-- Cabeçalho -->
-    <div class="mb-4 p-4 bg-white rounded shadow-sm">
-        <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;">
-            <i class="bi bi-box-seam me-2"></i>Meus Pedidos
-        </h2>
-    </div>
+    <div class="container py-4" style="max-width: 1400px;">
+      <!-- Cabeçalho -->
+      <div class="mb-4 p-4 bg-white rounded shadow-sm">
+        <h2 class="fw-bold mb-1" style="color: #1e293b; letter-spacing: -0.025em;"><i class="bi bi-box-seam me-2"></i>Meus Pedidos</h2>
+      </div>
 
-    {% if pedidos %}
+      {% if pedidos %}
         <!-- Tabela -->
         <div class="card shadow-sm" style="border: none; border-radius: 12px; overflow: hidden;">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead style="background: #f8fafc;">
-                            <tr>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Código</th>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Data</th>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Status</th>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Total</th>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Endereço</th>
-                                <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for pedido in pedidos %}
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <!-- Código -->
-                                <td style="padding: 1rem 1.25rem;">
-                                    <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ pedido.numero_pedido }}</span>
-                                </td>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table align-middle mb-0">
+                <thead style="background: #f8fafc;">
+                  <tr>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem; padding: 1rem 1.25rem;">Código</th>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Data</th>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Status</th>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Total</th>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Endereço</th>
+                    <th style="color: #64748b; font-weight: 500; font-size: 0.75rem;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for pedido in pedidos %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                      <!-- Código -->
+                      <td style="padding: 1rem 1.25rem;">
+                        <span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ pedido.numero_pedido }}</span>
+                      </td>
 
-                                <!-- Data -->
-                                <td class="data-cell">{{ pedido.data_criacao|date:"d/m/Y H:i" }}</td>
+                      <!-- Data -->
+                      <td class="data-cell">{{ pedido.data_criacao|date:'d/m/Y H:i' }}</td>
 
-                                <!-- Status -->
-                                <td>
-                                    {% if pedido.status == "Pendente" %}
-                                        <span class="status-badge Pendente">
-                                            <i class="bi bi-clock-history"></i>{{ pedido.status }}
-                                        </span>
-                                    {% elif pedido.status == "Pago" %}
-                                        <span class="status-badge Pago">
-                                            <i class="bi bi-check-circle-fill"></i>{{ pedido.status }}
-                                        </span>
-                                    {% else %}
-                                        <span class="status-badge Cancelado">
-                                            <i class="bi bi-x-circle-fill"></i>{{ pedido.status }}
-                                        </span>
-                                    {% endif %}
-                                </td>
+                      <!-- Status -->
+                      <td>
+                        {% if pedido.status == 'Pendente' %}
+                          <span class="status-badge Pendente"><i class="bi bi-clock-history"></i>{{ pedido.status }}</span>
+                        {% elif pedido.status == 'Pago' %}
+                          <span class="status-badge Pago"><i class="bi bi-check-circle-fill"></i>{{ pedido.status }}</span>
+                        {% else %}
+                          <span class="status-badge Cancelado"><i class="bi bi-x-circle-fill"></i>{{ pedido.status }}</span>
+                        {% endif %}
+                      </td>
 
-                                <!-- Total -->
-                                <td>
-                                    <span style="font-weight: 600; color: #1e293b;">R$ {{ pedido.total }}</span>
-                                </td>
+                      <!-- Total -->
+                      <td>
+                        <span style="font-weight: 600; color: #1e293b;">{{ pedido.total |brl_currency }}</span>
+                      </td>
 
-                                <!-- Endereço -->
-                                <td>
-                                    <span style="color: #64748b;">{{ pedido.endereco_entrega|truncatechars:30 }}</span>
-                                </td>
+                      <!-- Endereço -->
+                      <td>
+                        <span style="color: #64748b;">{{ pedido.endereco_entrega|truncatechars:30 }}</span>
+                      </td>
 
-                                <!-- Ações -->
-                                <td>
-                                    <a href="{% url 'detalhes_pedido_cliente' pedido.id %}" class="btn btn-sm btn-primary action-btn" style="border-radius: 6px; font-weight: 600;">
-                                        <i class="bi bi-eye me-1"></i> Ver Detalhes
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                      <!-- Ações -->
+                      <td>
+                        <a href="{% url 'detalhes_pedido_cliente' pedido.id %}" class="btn btn-sm btn-primary action-btn" style="border-radius: 6px; font-weight: 600;"><i class="bi bi-eye me-1"></i> Ver Detalhes</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
             </div>
+          </div>
         </div>
 
         <!-- Paginação -->
         {% if pedidos.paginator.num_pages > 1 %}
-        <div class="mt-4 d-flex justify-content-center">
-          <nav aria-label="Paginação de pedidos">
-            <ul class="pagination">
-              <!-- Primeira página -->
-              {% if pedidos.has_previous %}
-              <li class="page-item">
-                <a class="page-link rounded-3" href="?page=1" aria-label="Primeira">&laquo;</a>
-              </li>
-              {% else %}
-              <li class="page-item disabled">
-                <span class="page-link rounded-3">&laquo;</span>
-              </li>
-              {% endif %}
-
-              <!-- Números das páginas -->
-              {% for num in pedidos.paginator.page_range %}
-                {% if pedidos.number == num %}
-                  <li class="page-item active">
-                    <span class="page-link rounded-3 bg-primary text-white border-primary shadow-sm">{{ num }}</span>
+          <div class="mt-4 d-flex justify-content-center">
+            <nav aria-label="Paginação de pedidos">
+              <ul class="pagination">
+                <!-- Primeira página -->
+                {% if pedidos.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link rounded-3" href="?page=1" aria-label="Primeira">&laquo;</a>
                   </li>
                 {% else %}
-                  <li class="page-item">
-                    <a class="page-link rounded-3 text-primary border-0" href="?page={{ num }}">{{ num }}</a>
+                  <li class="page-item disabled">
+                    <span class="page-link rounded-3">&laquo;</span>
                   </li>
                 {% endif %}
-              {% endfor %}
 
-              <!-- Última página -->
-              {% if pedidos.has_next %}
-              <li class="page-item">
-                <a class="page-link rounded-3" href="?page={{ pedidos.paginator.num_pages }}" aria-label="Última">&raquo;</a>
-              </li>
-              {% else %}
-              <li class="page-item disabled">
-                <span class="page-link rounded-3">&raquo;</span>
-              </li>
-              {% endif %}
-            </ul>
-          </nav>
-        </div>
+                <!-- Números das páginas -->
+                {% for num in pedidos.paginator.page_range %}
+                  {% if pedidos.number == num %}
+                    <li class="page-item active">
+                      <span class="page-link rounded-3 bg-primary text-white border-primary shadow-sm">{{ num }}</span>
+                    </li>
+                  {% else %}
+                    <li class="page-item">
+                      <a class="page-link rounded-3 text-primary border-0" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+
+                <!-- Última página -->
+                {% if pedidos.has_next %}
+                  <li class="page-item">
+                    <a class="page-link rounded-3" href="?page={{ pedidos.paginator.num_pages }}" aria-label="Última">&raquo;</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <span class="page-link rounded-3">&raquo;</span>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
         {% endif %}
-    {% else %}
+      {% else %}
         <!-- Nenhum pedido -->
         <div class="card shadow-sm" style="border: none; border-radius: 12px;">
-            <div class="card-body p-5">
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox display-1 mb-4 d-block" style="color: #cbd5e1;"></i>
-                    <h4 class="fw-bold mb-2" style="color: #475569;">Nenhum pedido encontrado</h4>
-                    <p class="text-muted mb-4">Você ainda não realizou nenhuma compra em nossa loja.</p>
-                    <a href="{% url 'index' %}" class="btn btn-primary" style="border-radius: 8px; padding: 0.75rem 2rem; font-weight: 600;">
-                        <i class="bi bi-shop me-2"></i>Ir às Compras
-                    </a>
-                </div>
+          <div class="card-body p-5">
+            <div class="text-center py-5">
+              <i class="bi bi-inbox display-1 mb-4 d-block" style="color: #cbd5e1;"></i>
+              <h4 class="fw-bold mb-2" style="color: #475569;">Nenhum pedido encontrado</h4>
+              <p class="text-muted mb-4">Você ainda não realizou nenhuma compra em nossa loja.</p>
+              <a href="{% url 'index' %}" class="btn btn-primary" style="border-radius: 8px; padding: 0.75rem 2rem; font-weight: 600;"><i class="bi bi-shop me-2"></i>Ir às Compras</a>
             </div>
+          </div>
         </div>
-    {% endif %}
-</div>
+      {% endif %}
+    </div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
