@@ -1,3 +1,5 @@
+{% load format_brl %}
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -178,7 +180,7 @@
             {% endif %}
             <div class="card-body text-center">
               <h5 class="card-title fw-semibold">{{ produto.nome }}</h5>
-              <p class="card-text fw-bold text-success fs-5">R$ {{ produto.preco }}</p>
+              <p class="card-text fw-bold text-success fs-5">{{ produto.preco |brl_currency }}</p>
             </div>
           </a>
           <div class="card-footer bg-white border-0 p-3">
