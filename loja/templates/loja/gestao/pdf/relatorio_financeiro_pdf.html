@@ -1,3 +1,5 @@
+{% load format_brl %}
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -34,12 +36,12 @@
       {% for d in tabela %}
       <tr>
         <td>{{ d.data|date:"d/m/Y" }}</td>
-        <td>R$ {{ d.receita|floatformat:2 }}</td>
-        <td>R$ {{ d.custo|floatformat:2 }}</td>
-        <td>R$ {{ d.fixa|floatformat:2 }}</td>
-        <td>R$ {{ d.variavel|floatformat:2 }}</td>
+        <td>{{ d.receita|floatformat:2 |brl_currency }}</td>
+        <td>{{ d.custo|floatformat:2 |brl_currency }}</td>
+        <td>{{ d.fixa|floatformat:2 |brl_currency }}</td>
+        <td>{{ d.variavel|floatformat:2 |brl_currency }}</td>
         <td class="{% if d.lucro < 0 %}negativo{% else %}positivo{% endif %}">
-          R$ {{ d.lucro|floatformat:2 }}
+          {{ d.lucro|floatformat:2 |brl_currency }}
         </td>
       </tr>
       {% empty %}

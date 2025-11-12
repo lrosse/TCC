@@ -1,4 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
+{% load format_brl %}
 {% load static %}
 
 {% block title %}Relatório Financeiro{% endblock %}
@@ -190,10 +191,10 @@
               <td class="data-cell" style="padding: 1rem 1.25rem;">
                 <span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ d.data|date:"d/m/Y" }}</span>
               </td>
-              <td class="valor-cell valor-positivo">R$ {{ d.receita|floatformat:2 }}</td>
-              <td class="valor-cell valor-neutro">R$ {{ d.custo|floatformat:2 }}</td>
-              <td class="valor-cell valor-neutro">R$ {{ d.fixa|floatformat:2 }}</td>
-              <td class="valor-cell valor-neutro">R$ {{ d.variavel|floatformat:2 }}</td>
+              <td class="valor-cell valor-positivo">{{ d.receita|floatformat:2 |brl_currency }}</td>
+              <td class="valor-cell valor-neutro">{{ d.custo|floatformat:2 |brl_currency }}</td>
+              <td class="valor-cell valor-neutro">{{ d.fixa|floatformat:2 |brl_currency }}</td>
+              <td class="valor-cell valor-neutro">{{ d.variavel|floatformat:2 |brl_currency }}</td>
               <td class="valor-cell {% if d.lucro < 0 %}valor-negativo{% else %}valor-positivo{% endif %}">
                 <div class="d-flex align-items-center gap-2">
                   {% if d.lucro < 0 %}
@@ -201,7 +202,7 @@
                   {% else %}
                     <i class="bi bi-arrow-up-circle-fill" style="color: #059669;"></i>
                   {% endif %}
-                  <span>R$ {{ d.lucro|floatformat:2 }}</span>
+                  <span>{{ d.lucro|floatformat:2 |brl_currency}}</span>
                 </div>
               </td>
             </tr>

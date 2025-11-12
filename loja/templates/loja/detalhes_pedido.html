@@ -1,5 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
-
+{% load format_brl %}
 {% block title %}Detalhes do Pedido #{{ pedido.id }}{% endblock %}
 
 {% block content %}
@@ -158,10 +158,10 @@
                     </span>
                   </td>
                   <td style="text-align: right;">
-                    <span class="text-nowrap" style="color: #64748b;">R$ {{ item.preco_unitario }}</span>
+                    <span class="text-nowrap" style="color: #64748b;">{{ item.preco_unitario |brl_currency }}</span>
                   </td>
                   <td style="text-align: right;">
-                    <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">R$ {{ item.subtotal }}</span>
+                    <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">{{ item.subtotal |brl_currency }}</span>
                   </td>
                 </tr>
                 {% endfor %}
@@ -206,7 +206,7 @@
           <div class="info-row">
             <div class="info-label">Total do Pedido</div>
             <div class="info-value" style="font-size: 1.5rem; color: #10b981;">
-              R$ {{ pedido.total }}
+              {{ pedido.total |brl_currency }}
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
+{% load format_brl %}
 {% load static %}
 
 {% block title %}Relatório de Produtos{% endblock %}
@@ -237,12 +238,12 @@
 
               <!-- Custo -->
               <td class="custo-cell">
-                <span style="font-weight: 600; color: #64748b;">R$ {{ p.custo_info.custo|default:"0.00" }}</span>
+                <span style="font-weight: 600; color: #64748b;">{{ p.custo_info.custo|default:"0,00" |brl_currency }}</span>
               </td>
 
               <!-- Preço -->
               <td class="preco-cell">
-                <span style="font-weight: 600; color: #059669;">R$ {{ p.preco }}</span>
+                <span style="font-weight: 600; color: #059669;">{{ p.preco |brl_currency }}</span>
               </td>
 
               <!-- Quantidade -->

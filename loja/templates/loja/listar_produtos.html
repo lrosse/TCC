@@ -1,5 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
-
+{% load format_brl %}
 {% block title %}
   Lista de Produtos
 {% endblock %}
@@ -7,7 +7,7 @@
 {% block content %}
   <style>
     /* SEU CSS ORIGINAL MANTIDO */
-
+    
     .action-btn {
       text-decoration: none;
       transition: transform 0.2s ease;
@@ -15,11 +15,11 @@
     .action-btn:hover {
       transform: scale(1.2);
     }
-
+    
     thead th {
       vertical-align: middle;
     }
-
+    
     /* Estilo do botão "Selecionar todos" */
     #btn-selecionar-todos {
       border: none;
@@ -37,30 +37,30 @@
       vertical-align: middle;
       line-height: 1;
     }
-
+    
     #btn-selecionar-todos:hover {
       color: #3b82f6;
     }
-
+    
     #btn-selecionar-todos.todos-selecionados {
       color: #3b82f6;
     }
-
+    
     td.preco {
-    white-space: nowrap;              /* evita quebra de linha */
-    text-align: left;                 /* alinha o conteúdo */
-    vertical-align: middle;           /* centraliza verticalmente */
-  }
-
-  td.preco span {
-    display: inline-block;
-    white-space: nowrap;
-  }
-
+      white-space: nowrap; /* evita quebra de linha */
+      text-align: left; /* alinha o conteúdo */
+      vertical-align: middle; /* centraliza verticalmente */
+    }
+    
+    td.preco span {
+      display: inline-block;
+      white-space: nowrap;
+    }
+    
     #btn-selecionar-todos i {
       font-size: 0.875rem;
     }
-
+    
     .status {
       display: inline-block;
       padding: 4px 10px;
@@ -69,19 +69,19 @@
       border-radius: 6px;
       white-space: nowrap;
     }
-
+    
     .status.ativo {
       background-color: #dcfce7;
       color: #15803d;
       border: 1px solid #bbf7d0;
     }
-
+    
     .status.inativo {
       background-color: #fee2e2;
       color: #b91c1c;
       border: 1px solid #fecaca;
     }
-
+    
     /* Paginação moderna */
     .pagination .page-link {
       border: none;
@@ -92,19 +92,19 @@
       font-weight: 500;
       transition: all 0.2s ease;
     }
-
+    
     .pagination .page-link:hover {
       background-color: #e0ecff;
       color: #1d4ed8;
     }
-
+    
     .pagination .active .page-link {
       background-color: #2563eb !important;
       border-color: #2563eb !important;
       color: #fff !important;
       box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
     }
-
+    
     .pagination .page-item.disabled .page-link {
       background-color: #f1f5f9;
       color: #94a3b8;
@@ -115,9 +115,7 @@
     <!-- Cabeçalho -->
     <div class="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded shadow-sm flex-wrap gap-3">
       <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Lista de produtos</h2>
-      <a href="{% url 'criar_produto' %}" class="btn btn-success btn-novo-produto" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600;">
-        <i class="bi bi-plus-circle me-2"></i> Novo produto
-      </a>
+      <a href="{% url 'criar_produto' %}" class="btn btn-success btn-novo-produto" style="background: #10b981; border: none; border-radius: 8px; padding: 12px 24px; font-weight: 600;"><i class="bi bi-plus-circle me-2"></i> Novo produto</a>
     </div>
 
     <!-- Barra de busca + filtros -->
@@ -128,21 +126,13 @@
         <div class="d-flex align-items-start flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2 flex-grow-1" style="min-width: 200px;">
             <!-- Campo de busca -->
-            <input type="text" id="filtro-nome" name="nome" value="{{ nome }}" class="form-control form-control-sm flex-grow-1"
-              placeholder="Digite o nome ou ID do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
+            <input type="text" id="filtro-nome" name="nome" value="{{ nome }}" class="form-control form-control-sm flex-grow-1" placeholder="Digite o nome ou ID do produto..." style="max-width: 350px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-size: 0.8125rem;" />
 
             <!-- 🔍 Botão Buscar (reposicionado) -->
-            <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center" style="border-radius: 8px; font-weight: 600; height: 32px;">
-              <i class="bi bi-search me-1"></i> Buscar
-            </button>
+            <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center" style="border-radius: 8px; font-weight: 600; height: 32px;"><i class="bi bi-search me-1"></i> Buscar</button>
 
             <!-- Botão de filtro -->
-            <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0"
-              type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras"
-              aria-expanded="false" aria-controls="filtrosExtras"
-              style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;">
-              <i class="bi bi-sliders"></i>
-            </button>
+            <button class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosExtras" aria-expanded="false" aria-controls="filtrosExtras" style="border: 2px solid #e2e8f0; border-radius: 8px; font-weight: 500; padding: 6px 10px; height: 32px;"><i class="bi bi-sliders"></i></button>
           </div>
         </div>
 
@@ -166,9 +156,7 @@
               <input type="number" id="qtd-max" name="quantidade_max" value="{{ quantidade_max }}" class="form-control form-control-sm" placeholder="999" />
             </div>
             <div class="col-md-2 col-sm-12 d-flex align-items-end">
-              <a href="{% url 'listar_produtos' %}" class="btn btn-outline-danger btn-sm w-100">
-                <i class="bi bi-arrow-clockwise me-1"></i> Limpar
-              </a>
+              <a href="{% url 'listar_produtos' %}" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-arrow-clockwise me-1"></i> Limpar</a>
             </div>
           </div>
         </div>
@@ -178,12 +166,8 @@
       <form id="form-status" method="POST" action="{% url 'alterar_status_produtos' %}" class="d-flex gap-2 btn-acoes-wrapper mt-3">
         {% csrf_token %}
         <input type="hidden" name="acao" id="acao-status" />
-        <button type="button" class="btn btn-outline-success btn-sm" onclick="submeterAcao('ativar')">
-          <i class="bi bi-check-circle me-1"></i> Ativar selecionados
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="submeterAcao('inativar')">
-          <i class="bi bi-x-circle me-1"></i> Inativar selecionados
-        </button>
+        <button type="button" class="btn btn-outline-success btn-sm" onclick="submeterAcao('ativar')"><i class="bi bi-check-circle me-1"></i> Ativar selecionados</button>
+        <button type="button" class="btn btn-outline-danger btn-sm" onclick="submeterAcao('inativar')"><i class="bi bi-x-circle me-1"></i> Inativar selecionados</button>
       </form>
     </div>
 
@@ -211,41 +195,43 @@
             </thead>
             <tbody id="tabela-produtos">
               {% for produto in produtos %}
-              <tr style="border-bottom: 1px solid #e2e8f0;">
-                <td class="text-center">
-                  <input type="checkbox" name="produtos" value="{{ produto.id }}" form="form-status" />
-                </td>
-                <td>
-                  <div class="d-flex align-items-center gap-2">
-                    {% if produto.imagem %}
-                      <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;">
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                  <td class="text-center">
+                    <input type="checkbox" name="produtos" value="{{ produto.id }}" form="form-status" />
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      {% if produto.imagem %}
+                        <img src="{{ produto.imagem.url }}" alt="{{ produto.nome }}" class="rounded" style="width: 40px; height: 40px; object-fit: cover;" />
+                      {% else %}
+                        <div class="d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 8px; color: #64748b;">
+                          <i class="bi bi-box"></i>
+                        </div>
+                      {% endif %}
+                      <span style="font-weight: 600; color: #64748b;">#{{ produto.id }}</span>
+                    </div>
+                  </td>
+                  <td>{{ produto.nome }}</td>
+                  <td class="preco">
+                    <span>{{ produto.preco|brl_currency }}</span>
+                  </td>
+                  <td>{{ produto.descricao|truncatechars:50 }}</td>
+                  <td>{{ produto.quantidade }}</td>
+                  <td>
+                    {% if produto.ativo %}
+                      <span class="status ativo">Ativado</span>
                     {% else %}
-                      <div class="d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #e2e8f0; border-radius: 8px; color: #64748b;">
-                        <i class="bi bi-box"></i>
-                      </div>
+                      <span class="status inativo">Inativado</span>
                     {% endif %}
-                    <span style="font-weight: 600; color: #64748b;">#{{ produto.id }}</span>
-                  </div>
-                </td>
-                <td>{{ produto.nome }}</td>
-                <td class="preco"><span>R$ {{ produto.preco }}</span></td>
-                <td>{{ produto.descricao|truncatechars:50 }}</td>
-                <td>{{ produto.quantidade }}</td>
-                <td>
-                  {% if produto.ativo %}
-                    <span class="status ativo">Ativado</span>
-                  {% else %}
-                    <span class="status inativo">Inativado</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <a href="{% url 'editar_produto' produto.id %}" class="action-btn text-dark">
-                    <i class="bi bi-pencil-square"></i>
-                  </a>
-                </td>
-              </tr>
+                  </td>
+                  <td>
+                    <a href="{% url 'editar_produto' produto.id %}" class="action-btn text-dark"><i class="bi bi-pencil-square"></i></a>
+                  </td>
+                </tr>
               {% empty %}
-              <tr><td colspan="8" class="text-center py-5 text-muted">Nenhum produto encontrado.</td></tr>
+                <tr>
+                  <td colspan="8" class="text-center py-5 text-muted">Nenhum produto encontrado.</td>
+                </tr>
               {% endfor %}
             </tbody>
           </table>
@@ -255,78 +241,86 @@
 
     <!-- Paginação -->
     {% if produtos.paginator.num_pages > 1 %}
-    <div class="mt-4 d-flex justify-content-center">
-      <nav aria-label="Paginação de produtos">
-        <ul class="pagination">
-          {% if produtos.has_previous %}
-            <li class="page-item">
-              <a class="page-link rounded-3" href="?page=1&{{ filtro_params }}" aria-label="Primeira">&laquo;</a>
-            </li>
-          {% else %}
-            <li class="page-item disabled"><span class="page-link rounded-3">&laquo;</span></li>
-          {% endif %}
-
-          {% for num in produtos.paginator.page_range %}
-            {% if produtos.number == num %}
-              <li class="page-item active"><span class="page-link rounded-3 bg-primary text-white">{{ num }}</span></li>
+      <div class="mt-4 d-flex justify-content-center">
+        <nav aria-label="Paginação de produtos">
+          <ul class="pagination">
+            {% if produtos.has_previous %}
+              <li class="page-item">
+                <a class="page-link rounded-3" href="?page=1&{{ filtro_params }}" aria-label="Primeira">&laquo;</a>
+              </li>
             {% else %}
-              <li class="page-item"><a class="page-link rounded-3" href="?page={{ num }}&{{ filtro_params }}">{{ num }}</a></li>
+              <li class="page-item disabled">
+                <span class="page-link rounded-3">&laquo;</span>
+              </li>
             {% endif %}
-          {% endfor %}
 
-          {% if produtos.has_next %}
-            <li class="page-item">
-              <a class="page-link rounded-3" href="?page={{ produtos.paginator.num_pages }}&{{ filtro_params }}" aria-label="Última">&raquo;</a>
-            </li>
-          {% else %}
-            <li class="page-item disabled"><span class="page-link rounded-3">&raquo;</span></li>
-          {% endif %}
-        </ul>
-      </nav>
-    </div>
+            {% for num in produtos.paginator.page_range %}
+              {% if produtos.number == num %}
+                <li class="page-item active">
+                  <span class="page-link rounded-3 bg-primary text-white">{{ num }}</span>
+                </li>
+              {% else %}
+                <li class="page-item">
+                  <a class="page-link rounded-3" href="?page={{ num }}&{{ filtro_params }}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if produtos.has_next %}
+              <li class="page-item">
+                <a class="page-link rounded-3" href="?page={{ produtos.paginator.num_pages }}&{{ filtro_params }}" aria-label="Última">&raquo;</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link rounded-3">&raquo;</span>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
     {% endif %}
   </div>
 
   {% block extra_js %}
-  <script>
-    function submeterAcao(acao) {
-      document.getElementById('acao-status').value = acao;
-      document.getElementById('form-status').submit();
-    }
-
-    // Selecionar todos
-    let todosSelecionados = false;
-    const btn = document.getElementById("btn-selecionar-todos");
-    const icone = btn.querySelector("i");
-    const texto = btn.querySelector("span");
-
-    function atualizarEstadoBotao() {
-      const checkboxes = document.querySelectorAll("input[name='produtos']");
-      const selecionados = document.querySelectorAll("input[name='produtos']:checked").length;
-
-      if (selecionados === checkboxes.length && checkboxes.length > 0) {
-        btn.classList.add("todos-selecionados");
-        icone.className = "bi bi-check-square-fill";
-        texto.textContent = "Desmarcar todos";
-        todosSelecionados = true;
-      } else {
-        btn.classList.remove("todos-selecionados");
-        icone.className = "bi bi-check-square";
-        texto.textContent = "Selecionar todos";
-        todosSelecionados = false;
+    <script>
+      function submeterAcao(acao) {
+        document.getElementById('acao-status').value = acao
+        document.getElementById('form-status').submit()
       }
-    }
-
-    btn.addEventListener("click", function() {
-      const checkboxes = document.querySelectorAll("input[name='produtos']");
-      todosSelecionados = !todosSelecionados;
-      checkboxes.forEach(cb => cb.checked = todosSelecionados);
-      atualizarEstadoBotao();
-    });
-
-    document.querySelectorAll("input[name='produtos']").forEach(cb => {
-      cb.addEventListener("change", atualizarEstadoBotao);
-    });
-  </script>
+      
+      // Selecionar todos
+      let todosSelecionados = false
+      const btn = document.getElementById('btn-selecionar-todos')
+      const icone = btn.querySelector('i')
+      const texto = btn.querySelector('span')
+      
+      function atualizarEstadoBotao() {
+        const checkboxes = document.querySelectorAll("input[name='produtos']")
+        const selecionados = document.querySelectorAll("input[name='produtos']:checked").length
+      
+        if (selecionados === checkboxes.length && checkboxes.length > 0) {
+          btn.classList.add('todos-selecionados')
+          icone.className = 'bi bi-check-square-fill'
+          texto.textContent = 'Desmarcar todos'
+          todosSelecionados = true
+        } else {
+          btn.classList.remove('todos-selecionados')
+          icone.className = 'bi bi-check-square'
+          texto.textContent = 'Selecionar todos'
+          todosSelecionados = false
+        }
+      }
+      
+      btn.addEventListener('click', function () {
+        const checkboxes = document.querySelectorAll("input[name='produtos']")
+        todosSelecionados = !todosSelecionados
+        checkboxes.forEach((cb) => (cb.checked = todosSelecionados))
+        atualizarEstadoBotao()
+      })
+      
+      document.querySelectorAll("input[name='produtos']").forEach((cb) => {
+        cb.addEventListener('change', atualizarEstadoBotao)
+      })
+    </script>
   {% endblock %}
 {% endblock %}

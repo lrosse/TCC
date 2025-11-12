@@ -1,4 +1,5 @@
 {% extends 'loja/barra_lateral.html' %}
+{% load format_brl %}
 {% load static %}
 
 {% block title %}Relatório de Pedidos{% endblock %}
@@ -231,8 +232,8 @@
             <tr style="border-bottom: 1px solid #e2e8f0;">
               <td style="padding: 1rem 1.25rem;"><span style="font-weight: 600; color: #64748b; font-size: 0.8125rem;">#{{ p.numero_pedido }}</span></td>
               <td><span style="font-weight: 600; color: #1e293b; font-size: 0.875rem;">{{ p.cliente.username }}</span></td>
-              <td class="valor-cell"><span style="font-weight: 600; color: #059669;">R$ {{ p.total }}</span></td>
-              <td class="custo-cell"><span style="font-weight: 600; color: #64748b;">R$ {{ p.custo_total|default:"0.00" }}</span></td>
+              <td class="valor-cell"><span style="font-weight: 600; color: #059669;">{{ p.total |brl_currency}}</span></td>
+              <td class="custo-cell"><span style="font-weight: 600; color: #64748b;">{{ p.custo_total|default:"0,00" |brl_currency }}</span></td>
               <td>
                 {% if p.status == "Pendente" %}
                   <span class="badge-status pendente">Pendente</span>

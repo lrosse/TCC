@@ -1,4 +1,5 @@
 {% extends "loja/barra_lateral.html" %}
+{% load format_brl %}
 {% block title %}Gestão Financeira - Histórico de Custo{% endblock %}
 
 {% block content %}
@@ -104,20 +105,20 @@
                 <span style="font-weight: 600; color: #1e293b;">{{ h.produto.nome }}</span>
               </td>
               <td>
-                <span class="text-nowrap" style="color: #64748b;">R$ {{ h.custo_antigo|floatformat:2 }}</span>
+                <span class="text-nowrap" style="color: #64748b;">{{ h.custo_antigo|floatformat:2 |brl_currency }}</span>
               </td>
               <td>
-                <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">R$ {{ h.custo_novo|floatformat:2 }}</span>
+                <span class="text-nowrap" style="font-weight: 600; color: #1e293b;">{{ h.custo_novo|floatformat:2 |brl_currency}}</span>
               </td>
               <td>
                 {% with variacao=h.custo_novo|add:h.custo_antigo|floatformat:2|add:"-"|add:h.custo_antigo|floatformat:2 %}
                 {% if h.custo_novo > h.custo_antigo %}
                   <span class="badge" style="background-color: #fee2e2; color: #b91c1c; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-arrow-up"></i> +R$ {{ h.custo_novo|add:"-"|add:h.custo_antigo|floatformat:2 }}
+                    <i class="bi bi-arrow-up"></i> +{{ h.custo_novo|add:"-"|add:h.custo_antigo|floatformat:2 |brl_currency }}
                   </span>
                 {% elif h.custo_novo < h.custo_antigo %}
                   <span class="badge" style="background-color: #dcfce7; color: #15803d; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
-                    <i class="bi bi-arrow-down"></i> -R$ {{ h.custo_antigo|add:"-"|add:h.custo_novo|floatformat:2 }}
+                    <i class="bi bi-arrow-down"></i> -{{ h.custo_antigo|add:"-"|add:h.custo_novo|floatformat:2 |brl_currency}}
                   </span>
                 {% else %}
                   <span class="badge" style="background-color: #f1f5f9; color: #64748b; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; border-radius: 6px;">
