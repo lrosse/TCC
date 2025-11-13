@@ -114,6 +114,9 @@
     <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">
       <i class="bi bi-box2-heart me-2" style="color: #f59e0b;"></i>Relatório de Estoque
     </h2>
+    <a href="{% url 'relatorio_avancado' %}" class="btn btn-outline-secondary" style="border-radius:8px; margin-left:320px ; padding:10px 16px; font-weight:600;">
+      <i class="bi bi-arrow-left me-1"></i>Voltar
+    </a>
     <a href="{% url 'relatorio_estoque_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger" target="_blank" style="border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
       <i class="bi bi-file-earmark-pdf me-2"></i>Exportar PDF
     </a>
