@@ -153,14 +153,29 @@
           </div>
         </div>
         <div class="col-md-4">
-          <div class="card shadow-sm metric-card" style="border: none; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <div class="card-body p-3 text-center">
+        <div 
+          class="card shadow-sm metric-card" 
+          style="
+            border: none; 
+            border-radius: 12px; 
+            {% if lucro_liquido < 0 %}
+              background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); /* vermelho */
+            {% else %}
+              background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* verde */
+            {% endif %}
+          "
+        >
+          <div class="card-body p-3 text-center">
+            {% if lucro_liquido < 0 %}
+              <i class="bi bi-graph-down text-white" style="font-size: 2rem;"></i>
+            {% else %}
               <i class="bi bi-graph-up text-white" style="font-size: 2rem;"></i>
-              <h6 class="fw-semibold mt-2 mb-1 text-white" style="font-size: 0.875rem;">Lucro</h6>
-              <p class="fw-bold mb-0 text-white">R$ {{ lucro_liquido|floatformat:2 }}</p>
-            </div>
+            {% endif %}
+            <h6 class="fw-semibold mt-2 mb-1 text-white" style="font-size: 0.875rem;">Resultado liquido</h6>
+            <p class="fw-bold mb-0 text-white">R$ {{ lucro_liquido|floatformat:2 }}</p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>

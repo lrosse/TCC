@@ -36,7 +36,7 @@
 
   .metric-card:hover {
     transform: translateY(-4px);
-  }
+  } 
 
   /* Responsividade */
   @media (max-width: 768px) {
@@ -177,16 +177,29 @@
 
     <!-- Lucro Líquido -->
     <div class="col-lg col-md-6">
-      <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+      <div 
+        class="card shadow-sm border-0 text-center h-100 metric-card"
+        style="
+          border-radius: 12px;
+          {% if lucro_liquido < 0 %}
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); /* vermelho */
+          {% else %}
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* verde */
+          {% endif %}
+        "
+      >
         <div class="card-body p-4">
           <i class="bi bi-graph-up display-5 mb-2 text-white"></i>
           <h6 class="fw-semibold mb-2 text-white" style="font-size: 0.875rem;">Resultado Líquido</h6>
           <p class="fs-5 fw-bold mb-0 text-white">
-            <span class="text-nowrap">R$ {{ lucro_liquido|floatformat:2 }}</span>
+            <span class="text-nowrap">
+              R$ {{ lucro_liquido|floatformat:2 }}
+            </span>
           </p>
         </div>
       </div>
     </div>
+
   </div>
 
   <!-- Linha de gráficos -->
