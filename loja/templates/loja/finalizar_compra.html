@@ -27,24 +27,56 @@
         .btn-whatsapp:hover {
             background-color: #1ebe5d;
         }
+        .produto-img-small {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .produto-img-placeholder-small {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
     {% include "loja/_navbar.html" %}
-<div class="container my-5">
-    <div class="d-flex justify-content-center align-items-center position-relative mb-4">
-  <!-- Botão Voltar -->
-  <a href="{% url 'ver_carrinho' %}" 
-     class="btn btn-outline-secondary px-4 py-2 fw-semibold position-absolute start-0"
-     style="font-size: 1rem;">
-    <i class="bi bi-arrow-left me-2"></i>Voltar
-  </a>
 
-  <!-- Título Centralizado -->
-  <h2 class="text-primary fw-bold mb-0 d-flex align-items-center" style="font-size: 3rem;">
-    <i class="bi bi-cart4 me-2"></i>Seu Carrinho
-  </h2>
-</div>
+<div class="container py-4">
+    <!-- Cabeçalho -->
+    <div class="row align-items-center mb-4">
+        <!-- Botão Voltar (lado esquerdo) -->
+        <div class="col-auto">
+            <a href="{% url 'ver_carrinho' %}" 
+               class="btn btn-outline-secondary px-4 py-2 fw-semibold shadow-sm"
+               style="font-size: 1rem; border-radius: 8px; transition: all 0.2s ease;">
+                <i class="bi bi-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+
+        <!-- Título Centralizado -->
+        <div class="col text-center">
+            <h2 class="text-primary fw-bold mb-0 d-inline-flex align-items-center justify-content-center"
+                style="font-size: 1.9rem; letter-spacing: -0.02em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <i class="bi bi-cart-check me-2" style="font-size: 2rem;"></i>
+                Finalizar Pedido
+            </h2>
+        </div>
+
+        <!-- Espaço vazio para manter o título centralizado -->
+        <div class="col-auto" style="visibility: hidden;">
+            <button class="btn px-4 py-2">
+                <i class="bi bi-arrow-left me-2"></i>Voltar
+            </button>
+        </div>
+    </div>
 
     <!-- Resumo do Carrinho -->
     <div class="card pedido-card">
@@ -56,23 +88,39 @@
             <ul class="list-group mb-3">
                 {% for item in itens %}
                 <li class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span class="me-2">{{ item.quantidade }}x {{ item.produto.nome }}</span>
-                    <div class="d-flex">
-                    <span class="me-1">R$</span>
-                    <span>{{ item.subtotal }}</span>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Imagem do Produto -->
+                            {% if item.produto.imagem %}
+                                <img src="{{ item.produto.imagem.url }}" alt="{{ item.produto.nome }}" class="produto-img-small">
+                            {% elif item.imagem %}
+                                <img src="{{ item.imagem }}" alt="{{ item.nome }}" class="produto-img-small">
+                            {% else %}
+                                <div class="produto-img-placeholder-small">
+                                    <i class="bi bi-image text-muted" style="font-size: 1.2rem;"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Nome e Quantidade -->
+                            <span>{{ item.quantidade }}x {% if item.produto %}{{ item.produto.nome }}{% else %}{{ item.nome }}{% endif %}</span>
+                        </div>
+                        
+                        <!-- Preço -->
+                        <div class="d-flex">
+                            <span class="me-1">R$</span>
+                            <span>{{ item.subtotal }}</span>
+                        </div>
                     </div>
-                </div>
                 </li>
                 {% endfor %}
                 <li class="list-group-item">
-                <div class="d-flex justify-content-between fw-bold">
-                    <span class="me-2">Total:</span>
-                    <div class="d-flex">
-                    <span class="me-1">R$</span>
-                    <span>{{ total }}</span>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span class="me-2">Total:</span>
+                        <div class="d-flex">
+                            <span class="me-1">R$</span>
+                            <span>{{ total }}</span>
+                        </div>
                     </div>
-                </div>
                 </li>
             </ul>
             {% else %}
@@ -86,7 +134,7 @@
         <h5 class="mb-4"><i class="bi bi-truck"></i> Dados para Entrega</h5>
         <div id="alertaCampos" class="alert alert-danger d-none">Por favor, preencha todos os campos obrigatórios antes de finalizar o pedido.</div>
 
-                <form method="POST">
+        <form method="POST">
             {% csrf_token %}
 
             <div class="row g-3">
@@ -127,7 +175,6 @@
 
 <!-- JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function finalizarPedido() {
         const campos = ['nome', 'rua', 'numero', 'bairro', 'cidade'];
@@ -157,7 +204,7 @@
 
         {% autoescape off %}
         {% for item in itens %}
-        mensagem += "- {{ item.quantidade }}x {{ item.produto.nome }} – R$ {{ item.subtotal }}%0A";
+        mensagem += "- {{ item.quantidade }}x {{ item.nome }} – R$ {{ item.subtotal }}%0A";
         {% endfor %}
         {% endautoescape %}
 

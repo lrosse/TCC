@@ -61,10 +61,7 @@
         td:nth-child(4), th:nth-child(4) { width: 130px; text-align: center; }
         td:nth-child(5), th:nth-child(5) { width: 70px; text-align: center; }
         td:nth-child(1) {
-            max-width: 350px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            max-width: 450px;
         }
         tr.total-row td {
             font-weight: bold;
@@ -75,6 +72,25 @@
             background-color: #fff3cd;
             border-color: #ffeeba;
             color: #856404;
+        }
+
+        .produto-img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .produto-img-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -131,17 +147,29 @@
                         {% for item in itens %}
                         <tr>
                             <td>
-                                <div class="d-flex flex-column">
-                                    <span class="{% if item.em_falta %}text-muted text-decoration-line-through{% endif %}">
-                                        {{ item.nome }}
-                                    </span>
-
-                                    {% if item.em_falta %}
-                                    <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
-                                        <i class="bi bi-exclamation-triangle-fill"></i>
-                                        Produto indisponível — retire do carrinho!
-                                    </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <!-- Imagem do Produto -->
+                                    {% if item.imagem %}
+                                        <img src="{{ item.imagem }}" alt="{{ item.nome }}" class="produto-img">
+                                    {% else %}
+                                        <div class="produto-img-placeholder">
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
                                     {% endif %}
+
+                                    <!-- Nome e Alertas -->
+                                    <div class="d-flex flex-column">
+                                        <span class="{% if item.em_falta %}text-muted text-decoration-line-through{% endif %}">
+                                            {{ item.nome }}
+                                        </span>
+
+                                        {% if item.em_falta %}
+                                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            Produto indisponível — retire do carrinho!
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </td>
                             <td class="text-center align-middle">
