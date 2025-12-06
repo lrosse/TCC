@@ -714,8 +714,8 @@ def adicionar_ao_carrinho(request, produto_id):
 def ver_carrinho(request):
     """
     Exibe o carrinho de compras.
-    Agora ajusta automaticamente itens com estoque menor
-    e bloqueia a compra se houver produto inativo ou insuficiente.
+    Alerta sobre produtos inativos ou com estoque insuficiente,
+    sem ajustar automaticamente as quantidades.
     """
     if request.user.is_authenticated:
         # 🔒 Usuário logado → Carrinho no banco
@@ -731,6 +731,7 @@ def ver_carrinho(request):
                 continue
 
             em_falta = False
+            estoque_insuficiente = False
 
             # 🔸 Produto inativo → alerta e bloqueio
             if not produto.ativo:
@@ -739,16 +740,13 @@ def ver_carrinho(request):
                     f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
                 )
 
-            # 🔹 Quantidade acima do estoque → ajusta automaticamente
+            # 🔹 Quantidade acima do estoque → alerta SEM ajuste automático
             if produto.quantidade < item.quantidade:
-                quantidade_antiga = item.quantidade  # guarda quanto o cliente tinha
-                item.quantidade = produto.quantidade
-                item.save()
+                estoque_insuficiente = True
                 mensagens_alerta.append(
-                    f"O produto '{produto.nome}' não possui mais {quantidade_antiga} unidade(s) em estoque. "
-                    f"Sua quantidade foi ajustada para {produto.quantidade}."
+                    f"O produto '{produto.nome}' possui apenas {produto.quantidade} unidade(s) em estoque, "
+                    f"mas você tem {item.quantidade} no carrinho. Ajuste a quantidade!"
                 )
-
 
             # 🔹 Atualiza preço se houver alteração
             if produto.ativo and item.preco_unitario != produto.preco:
@@ -763,6 +761,8 @@ def ver_carrinho(request):
                 "subtotal": item.subtotal(),
                 "imagem": produto.imagem.url if produto.imagem else None,
                 "em_falta": em_falta,
+                "estoque_insuficiente": estoque_insuficiente,
+                "estoque_disponivel": produto.quantidade,
             })
 
         # 🔹 Recalcula o total
@@ -775,10 +775,7 @@ def ver_carrinho(request):
             messages.warning(request, alerta)
 
         # 🔹 Bloqueia compra se houver itens inativos ou com estoque insuficiente
-        bloqueio_compra = any(
-            (i["em_falta"] or i["quantidade"] > Produto.objects.get(nome=i["nome"]).quantidade)
-            for i in itens
-        )
+        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] for i in itens)
 
         return render(request, "loja/carrinho.html", {
             "itens": itens,
@@ -804,6 +801,7 @@ def ver_carrinho(request):
                 continue
 
             em_falta = False
+            estoque_insuficiente = False
 
             if not produto.ativo:
                 em_falta = True
@@ -811,12 +809,12 @@ def ver_carrinho(request):
                     f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
                 )
 
-            # 🔹 Ajuste automático de quantidade
+            # 🔹 Alerta de estoque SEM ajuste automático
             if produto.quantidade < dados["quantidade"]:
-                dados["quantidade"] = produto.quantidade
+                estoque_insuficiente = True
                 mensagens_alerta.append(
-                    f"O produto '{produto.nome}' não possui mais {produto.quantidade} unidade(s) em estoque. "
-                    f"Sua quantidade foi ajustada automaticamente."
+                    f"O produto '{produto.nome}' possui apenas {produto.quantidade} unidade(s) em estoque, "
+                    f"mas você tem {dados['quantidade']} no carrinho. Ajuste a quantidade!"
                 )
 
             # 🔹 Atualiza preço se houver alteração
@@ -836,6 +834,8 @@ def ver_carrinho(request):
                 "subtotal": subtotal,
                 "imagem": dados.get("imagem"),
                 "em_falta": em_falta,
+                "estoque_insuficiente": estoque_insuficiente,
+                "estoque_disponivel": produto.quantidade,
             })
 
         request.session["carrinho"] = carrinho_sessao
@@ -846,10 +846,7 @@ def ver_carrinho(request):
             messages.warning(request, alerta)
 
         # 🔹 Bloqueia compra se houver produtos inativos ou acima do estoque
-        bloqueio_compra = any(
-            (i["em_falta"] or i["quantidade"] > Produto.objects.get(nome=i["nome"]).quantidade)
-            for i in itens
-        )
+        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] for i in itens)
 
         return render(request, "loja/carrinho.html", {
             "itens": itens,
@@ -883,6 +880,11 @@ def remover_do_carrinho(request, item_id):
     return redirect('ver_carrinho')
 
 def alterar_quantidade(request, item_id):
+    """
+    Altera a quantidade de um item no carrinho.
+    NÃO faz ajuste automático - deixa o usuário escolher qualquer quantidade.
+    A validação de estoque é feita na view ver_carrinho().
+    """
     if request.user.is_authenticated:
         # 🔒 Usuário logado → altera no banco
         item = get_object_or_404(ItemCarrinho, id=item_id, carrinho__usuario=request.user)
@@ -892,16 +894,7 @@ def alterar_quantidade(request, item_id):
             except ValueError:
                 qtd = 1
 
-            estoque_disp = item.produto.quantidade  # quantidade disponível em estoque
-
-            # Se tentar passar do estoque, ajusta para o máximo
-            if qtd > estoque_disp:
-                qtd = estoque_disp
-                messages.warning(
-                    request,
-                    f"O produto '{item.produto.nome}' só possui {estoque_disp} unidade(s) em estoque. Sua quantidade foi ajustada."
-                )
-
+            # ✅ NÃO ajusta automaticamente - salva a quantidade que o usuário escolheu
             if qtd > 0:
                 item.quantidade = qtd
                 item.save()
@@ -922,17 +915,7 @@ def alterar_quantidade(request, item_id):
             except ValueError:
                 qtd = 1
 
-            produto = get_object_or_404(Produto, id=item_id)
-            estoque_disp = produto.quantidade  # quantidade disponível em estoque
-
-            # Se tentar passar do estoque, ajusta para o máximo
-            if qtd > estoque_disp:
-                qtd = estoque_disp
-                messages.warning(
-                    request,
-                    f"O produto '{produto.nome}' só possui {estoque_disp} unidade(s) em estoque. Sua quantidade foi ajustada."
-                )
-
+            # ✅ NÃO ajusta automaticamente - salva a quantidade que o usuário escolheu
             if qtd > 0:
                 carrinho_sessao[str(item_id)]["quantidade"] = qtd
             else:

@@ -74,6 +74,12 @@
             color: #856404;
         }
 
+        {% comment %} .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        } {% endcomment %}
+
         .produto-img {
             width: 60px;
             height: 60px;
@@ -91,6 +97,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .item-problema {
+            background-color: #fff3cd;
         }
     </style>
 </head>
@@ -145,7 +155,7 @@
                     </thead>
                     <tbody>
                         {% for item in itens %}
-                        <tr>
+                        <tr class="{% if item.em_falta or item.estoque_insuficiente %}item-problema{% endif %}">
                             <td>
                                 <div class="d-flex align-items-center gap-3">
                                     <!-- Imagem do Produto -->
@@ -167,6 +177,13 @@
                                         <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
                                             <i class="bi bi-exclamation-triangle-fill"></i>
                                             Produto indisponível — retire do carrinho!
+                                        </div>
+                                        {% endif %}
+
+                                        {% if item.estoque_insuficiente %}
+                                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            Apenas {{ item.estoque_disponivel }} em estoque — ajuste a quantidade!
                                         </div>
                                         {% endif %}
                                     </div>
@@ -230,15 +247,18 @@
                 <a href="{% url 'home' %}" class="btn btn-continuar btn-sm mb-2 mb-sm-0">
                     <i class="bi bi-arrow-left me-1"></i>Continuar Comprando
                 </a>
-                    {% if bloqueio_compra %}
-                    <div class="alert alert-warning mt-3 py-2 px-3 small d-inline-flex align-items-center" style="border-radius: 10px;">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                        Ajuste seu carrinho antes de finalizar a compra — há produtos indisponíveis ou com estoque insuficiente.
-                    </div>
-                    {% endif %}
+                
+                {% if bloqueio_compra %}
+                <div class="alert alert-warning mt-3 py-2 px-3 small d-inline-flex align-items-center" style="border-radius: 10px;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Ajuste seu carrinho antes de finalizar a compra — há produtos indisponíveis ou com estoque insuficiente.
+                </div>
+                {% endif %}
+                
                 <div class="text-end">
                     <a href="{% url 'finalizar_compra' %}"
-                       class="btn btn-comprar btn-sm {% if bloqueio_compra %}disabled opacity-50{% endif %}">
+                       class="btn btn-comprar btn-sm {% if bloqueio_compra %}disabled opacity-50{% endif %}"
+                       {% if bloqueio_compra %}onclick="return false;" style="pointer-events: none; cursor: not-allowed;"{% endif %}>
                        <i class="bi bi-check-circle me-1"></i>Comprar
                     </a>
                 </div>
@@ -249,24 +269,6 @@
             {% endif %}
         </div>
     </div>
-</div>
-
-<!-- Modal de Estoque -->
-<div class="modal fade" id="estoqueModal" tabindex="-1" aria-labelledby="estoqueModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header bg-warning text-dark">
-        <h5 class="modal-title fw-bold" id="estoqueModalLabel">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>Atenção
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-      </div>
-      <div class="modal-body fs-6" id="estoqueModalBody"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Ok, entendi</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Bootstrap JS -->
@@ -280,22 +282,6 @@
         input.value = next;
         form.submit();
     }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const messages = [
-          {% for message in messages %}
-            "{{ message|escapejs }}",
-          {% endfor %}
-        ];
-
-        messages.forEach(msg => {
-            if (msg.includes("estoque") || msg.includes("ajustada")) {
-                var estoqueModal = new bootstrap.Modal(document.getElementById("estoqueModal"));
-                document.getElementById("estoqueModalBody").innerText = msg;
-                estoqueModal.show();
-            }
-        });
-    });
 </script>
 </body>
 </html>
