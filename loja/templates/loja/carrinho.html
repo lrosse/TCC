@@ -74,11 +74,11 @@
             color: #856404;
         }
 
-        {% comment %} .alert-danger {
+        .alert-danger {
             background-color: #f8d7da;
             border-color: #f5c6cb;
             color: #721c24;
-        } {% endcomment %}
+        }
 
         .produto-img {
             width: 60px;
@@ -155,7 +155,7 @@
                     </thead>
                     <tbody>
                         {% for item in itens %}
-                        <tr class="{% if item.em_falta or item.estoque_insuficiente %}item-problema{% endif %}">
+                        <tr class="{% if item.em_falta or item.estoque_insuficiente or item.quantidade_zero %}item-problema{% endif %}">
                             <td>
                                 <div class="d-flex align-items-center gap-3">
                                     <!-- Imagem do Produto -->
@@ -184,6 +184,13 @@
                                         <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
                                             <i class="bi bi-exclamation-triangle-fill"></i>
                                             Apenas {{ item.estoque_disponivel }} em estoque — ajuste a quantidade!
+                                        </div>
+                                        {% endif %}
+
+                                        {% if item.quantidade_zero %}
+                                        <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-inline-flex align-items-center gap-2" role="alert" style="font-size: 0.8rem; border-radius: 8px;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            Quantidade inválida (zero) — ajuste para pelo menos 1!
                                         </div>
                                         {% endif %}
                                     </div>

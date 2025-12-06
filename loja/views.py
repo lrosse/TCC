@@ -714,7 +714,7 @@ def adicionar_ao_carrinho(request, produto_id):
 def ver_carrinho(request):
     """
     Exibe o carrinho de compras.
-    Alerta sobre produtos inativos ou com estoque insuficiente,
+    Alerta sobre produtos inativos, com estoque insuficiente ou quantidade zero,
     sem ajustar automaticamente as quantidades.
     """
     if request.user.is_authenticated:
@@ -732,12 +732,20 @@ def ver_carrinho(request):
 
             em_falta = False
             estoque_insuficiente = False
+            quantidade_zero = False
 
             # 🔸 Produto inativo → alerta e bloqueio
             if not produto.ativo:
                 em_falta = True
                 mensagens_alerta.append(
                     f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
+                )
+
+            # 🔸 Quantidade zero → alerta e bloqueio
+            if item.quantidade <= 0:
+                quantidade_zero = True
+                mensagens_alerta.append(
+                    f"O produto '{produto.nome}' está com quantidade inválida (zero). Ajuste a quantidade!"
                 )
 
             # 🔹 Quantidade acima do estoque → alerta SEM ajuste automático
@@ -762,6 +770,7 @@ def ver_carrinho(request):
                 "imagem": produto.imagem.url if produto.imagem else None,
                 "em_falta": em_falta,
                 "estoque_insuficiente": estoque_insuficiente,
+                "quantidade_zero": quantidade_zero,
                 "estoque_disponivel": produto.quantidade,
             })
 
@@ -774,8 +783,8 @@ def ver_carrinho(request):
         for alerta in mensagens_alerta:
             messages.warning(request, alerta)
 
-        # 🔹 Bloqueia compra se houver itens inativos ou com estoque insuficiente
-        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] for i in itens)
+        # 🔹 Bloqueia compra se houver itens inativos, com estoque insuficiente ou quantidade zero
+        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] or i["quantidade_zero"] for i in itens)
 
         return render(request, "loja/carrinho.html", {
             "itens": itens,
@@ -802,11 +811,19 @@ def ver_carrinho(request):
 
             em_falta = False
             estoque_insuficiente = False
+            quantidade_zero = False
 
             if not produto.ativo:
                 em_falta = True
                 mensagens_alerta.append(
                     f"O produto '{produto.nome}' está indisponível. Retire-o do carrinho!"
+                )
+
+            # 🔸 Quantidade zero → alerta e bloqueio
+            if dados["quantidade"] <= 0:
+                quantidade_zero = True
+                mensagens_alerta.append(
+                    f"O produto '{produto.nome}' está com quantidade inválida (zero). Ajuste a quantidade!"
                 )
 
             # 🔹 Alerta de estoque SEM ajuste automático
@@ -835,6 +852,7 @@ def ver_carrinho(request):
                 "imagem": dados.get("imagem"),
                 "em_falta": em_falta,
                 "estoque_insuficiente": estoque_insuficiente,
+                "quantidade_zero": quantidade_zero,
                 "estoque_disponivel": produto.quantidade,
             })
 
@@ -845,8 +863,8 @@ def ver_carrinho(request):
         for alerta in mensagens_alerta:
             messages.warning(request, alerta)
 
-        # 🔹 Bloqueia compra se houver produtos inativos ou acima do estoque
-        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] for i in itens)
+        # 🔹 Bloqueia compra se houver produtos inativos, acima do estoque ou quantidade zero
+        bloqueio_compra = any(i["em_falta"] or i["estoque_insuficiente"] or i["quantidade_zero"] for i in itens)
 
         return render(request, "loja/carrinho.html", {
             "itens": itens,
