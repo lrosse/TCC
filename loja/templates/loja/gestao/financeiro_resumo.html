@@ -1,16 +1,7 @@
 {% extends 'loja/barra_lateral.html' %}
-{% load format_brl %}
-{% block title %}
-  Gestão Financeira - Resumo
-{% endblock %}
+{% block title %}Gestão Financeira - Resumo{% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
-  <style>
-    /* Abas personalizadas */
-    .nav-tabs {
-      border-bottom: 2px solid #e2e8f0;
-=======
 <style>
   /* Abas personalizadas */
   .nav-tabs {
@@ -52,24 +43,46 @@
     .container-fluid {
       padding-left: 1rem !important;
       padding-right: 1rem !important;
->>>>>>> main
     }
-    
+
+    h2 {
+      font-size: 1.25rem !important;
+    }
+
     .nav-tabs .nav-link {
-      border: none;
-      color: #64748b;
-      font-weight: 500;
-      padding: 0.75rem 1.5rem;
-      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
     }
+
+    .metric-card .display-5 {
+      font-size: 2rem !important;
+    }
+
+    .metric-card .fs-5 {
+      font-size: 1rem !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .row.g-4 {
+      gap: 0.75rem !important;
+    }
+  }
+</style>
+
+<div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
+      <!-- Cabeçalho -->
+    <div class="mb-4 p-4 bg-white rounded shadow-sm">
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão Financeira</h2>
+        <a href="{% url 'gestao_index' %}" class="btn btn-outline-secondary" style="border-radius:8px; padding:10px 16px; font-weight:600;"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
+      </div>
+    </div>
+
+  <!-- Filtro de datas -->
+  <div class="mb-3 p-3 bg-white rounded shadow-sm">
+    <label class="form-label fw-semibold mb-3" style="color: #475569; font-size: 0.875rem;">Filtrar por período</label>
     
-<<<<<<< HEAD
-    .nav-tabs .nav-link:hover {
-      color: #3b82f6;
-      border-bottom: 2px solid #3b82f6;
-      margin-bottom: -2px;
-    }
-=======
     <form method="get" class="row g-3 align-items-end">
       <div class="col-md-3 col-sm-6">
         <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data início</label>
@@ -203,224 +216,31 @@
         </div>
       </div>
     </div>
->>>>>>> main
     
-    .nav-tabs .nav-link.active {
-      color: #3b82f6;
-      background: transparent;
-      border-bottom: 2px solid #3b82f6;
-      margin-bottom: -2px;
-    }
-    
-    /* Cards de métricas */
-    .metric-card {
-      transition: transform 0.2s ease;
-    }
-    
-    .metric-card:hover {
-      transform: translateY(-4px);
-    }
-    
-    /* Responsividade */
-    @media (max-width: 768px) {
-      .container-fluid {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-      }
-    
-      h2 {
-        font-size: 1.25rem !important;
-      }
-    
-      .nav-tabs .nav-link {
-        font-size: 0.875rem;
-        padding: 0.5rem 1rem;
-      }
-    
-      .metric-card .display-5 {
-        font-size: 2rem !important;
-      }
-    
-      .metric-card .fs-5 {
-        font-size: 1rem !important;
-      }
-    }
-    
-    @media (max-width: 576px) {
-      .row.g-4 {
-        gap: 0.75rem !important;
-      }
-    }
-  </style>
-
-  <div class="container-fluid px-4" style="background-color: #f8fafc; min-height: 100vh; padding-top: 2rem;">
-    <!-- Cabeçalho -->
-    <div class="mb-4 p-4 bg-white rounded shadow-sm">
-      <div class="d-flex justify-content-between align-items-center">
-        <h2 class="fw-bold mb-0" style="color: #1e293b; letter-spacing: -0.025em;">Gestão Financeira</h2>
-        <a href="{% url 'gestao_index' %}" class="btn btn-outline-secondary" style="border-radius:8px; padding:10px 16px; font-weight:600;"><i class="bi bi-arrow-left me-1"></i>Voltar</a>
-      </div>
-    </div>
-
-    <!-- Filtro de datas -->
-    <div class="mb-3 p-3 bg-white rounded shadow-sm">
-      <label class="form-label fw-semibold mb-3" style="color: #475569; font-size: 0.875rem;">Filtrar por período</label>
-
-      <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-3 col-sm-6">
-          <label for="data_inicio" class="form-label" style="font-size: 0.75rem; color: #475569;">Data início</label>
-          <input type="date" id="data_inicio" name="data_inicio" class="form-control form-control-sm" value="{{ data_inicio }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;" />
-        </div>
-        <div class="col-md-3 col-sm-6">
-          <label for="data_fim" class="form-label" style="font-size: 0.75rem; color: #475569;">Data fim</label>
-          <input type="date" id="data_fim" name="data_fim" class="form-control form-control-sm" value="{{ data_fim }}" style="border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc;" />
-        </div>
-        <div class="col-md-3 col-sm-12">
-          <button type="submit" class="btn btn-primary w-100" style="border-radius: 8px; padding: 8px 20px; font-weight: 600;"><i class="bi bi-funnel me-2"></i> Filtrar</button>
-        </div>
-      </form>
-    </div>
-
-    <!-- Abas -->
-    <div class="mb-4 p-3 bg-white rounded shadow-sm">
-      <ul class="nav nav-tabs">
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_resumo' %}active{% endif %}"
-            href="{% url 'financeiro_resumo' %}{% if request.GET.urlencode %}
-              
-              
-              ?{{ request.GET.urlencode }}
-            {% endif %}">
-            <i class="bi bi-graph-up me-2"></i>Resumo Geral
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_produtos' %}active{% endif %}"
-            href="{% url 'financeiro_produtos' %}{% if request.GET.urlencode %}
-              
-              
-              ?{{ request.GET.urlencode }}
-            {% endif %}">
-            <i class="bi bi-box-seam me-2"></i>Produtos
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link {% if request.resolver_match.url_name == 'financeiro_pedidos' %}active{% endif %}"
-            href="{% url 'financeiro_pedidos' %}{% if request.GET.urlencode %}
-              
-              
-              ?{{ request.GET.urlencode }}
-            {% endif %}">
-            <i class="bi bi-receipt me-2"></i>Pedidos
-          </a>
-        </li>
-      </ul>
-    </div>
-
-    <!-- Cards Resumo -->
-    <div class="row g-3 mb-4">
-      <!-- Receita -->
-      <div class="col-lg col-md-6">
-        <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <i class="bi bi-cash-coin display-5 mb-2" style="color: #10b981;"></i>
-            <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Receita Total</h6>
-            <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
-              <span class="text-nowrap">{{ receita_total|floatformat:2|brl_currency }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Custos -->
-      <div class="col-lg col-md-6">
-        <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <i class="bi bi-box-seam display-5 mb-2" style="color: #3b82f6;"></i>
-            <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Custos Totais</h6>
-            <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
-              <span class="text-nowrap">{{ custo_total|floatformat:2|brl_currency }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Despesas Fixas -->
-      <div class="col-lg col-md-6">
-        <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <i class="bi bi-house-check display-5 mb-2" style="color: #f59e0b;"></i>
-            <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Despesas Fixas</h6>
-            <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
-              <span class="text-nowrap">{{ despesas_fixas|floatformat:2|brl_currency }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Despesas Variáveis -->
-      <div class="col-lg col-md-6">
-        <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <i class="bi bi-receipt display-5 mb-2" style="color: #ef4444;"></i>
-            <h6 class="fw-semibold mb-2" style="color: #64748b; font-size: 0.875rem;">Despesas Variáveis</h6>
-            <p class="fs-5 fw-bold mb-0" style="color: #1e293b;">
-              <span class="text-nowrap">{{ despesas_variaveis|floatformat:2|brl_currency }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lucro Líquido -->
-      <div class="col-lg col-md-6">
-        <div class="card shadow-sm border-0 text-center h-100 metric-card" style="border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          <div class="card-body p-4">
-            <i class="bi bi-graph-up display-5 mb-2 text-white"></i>
-            <h6 class="fw-semibold mb-2 text-white" style="font-size: 0.875rem;">Resultado Líquido</h6>
-            <p class="fs-5 fw-bold mb-0 text-white">
-              <span class="text-nowrap">{{ lucro_liquido|floatformat:2|brl_currency }}</span>
-            </p>
-          </div>
+    <!-- Gráfico Lucro Líquido -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #475569;">Resultado Líquido</h6>
+          <canvas id="grafico2"></canvas>
         </div>
       </div>
     </div>
-
-    <!-- Linha de gráficos -->
-    <div class="row g-3 mb-4">
-      <!-- Gráfico Receita vs Despesas -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm border-0" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <h6 class="fw-semibold mb-3" style="color: #475569;">Receita vs Gasto Mensal</h6>
-            <canvas id="graficoFinanceiro"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráfico Lucro Líquido -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm border-0" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <h6 class="fw-semibold mb-3" style="color: #475569;">Resultado Líquido</h6>
-            <canvas id="grafico2"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráfico Pizza Despesas -->
-      <div class="col-lg-4">
-        <div class="card shadow-sm border-0" style="border-radius: 12px;">
-          <div class="card-body p-4">
-            <h6 class="fw-semibold mb-3" style="color: #475569;">Despesas Fixas vs Variáveis</h6>
-            <canvas id="grafico3"></canvas>
-          </div>
+    
+    <!-- Gráfico Pizza Despesas -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0" style="border-radius: 12px;">
+        <div class="card-body p-4">
+          <h6 class="fw-semibold mb-3" style="color: #475569;">Despesas Fixas vs Variáveis</h6>
+          <canvas id="grafico3"></canvas>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
   // Gráfico Receita vs Despesas
   const meses = {{ meses_grafico|safe }};
   const receitas = {{ receitas_grafico|safe }};
