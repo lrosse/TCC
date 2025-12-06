@@ -2,40 +2,62 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import Feedback, Despesa
 
+from django import forms
+from django.contrib.auth.models import User
+
 class RegistroForm(forms.ModelForm):
-    password = forms.CharField(widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Confirme a senha", widget=forms.PasswordInput)
-    is_superuser = forms.BooleanField(required=False, label="Tornar Superusuário")
+    password = forms.CharField(
+        label="Senha",
+        widget=forms.PasswordInput,
+        help_text="Digite uma senha segura."
+    )
+    password2 = forms.CharField(
+        label="Confirme a senha",
+        widget=forms.PasswordInput,
+        help_text="Repita a senha digitada acima."
+    )
+    is_superuser = forms.BooleanField(
+        required=False,
+        label="Tornar superusuário"
+    )
 
     class Meta:
         model = User
         fields = ['username', 'email']
+        labels = {
+            'username': 'Nome de usuário',
+            'email': 'E-mail',
+        }
+        help_texts = {
+            'username': 'Obrigatório. 150 caracteres ou menos. Use letras, números e @/./+/-/_ apenas.',
+            'email': 'Informe um endereço de e-mail válido.',
+        }
 
     def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)  # Pega o usuário da view
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Se o usuário não for admin, remove o campo is_superuser
+        # 🔒 Se o usuário não for admin, remove o campo is_superuser
         if not (user and user.is_staff):
             del self.fields['is_superuser']
 
     def clean_password2(self):
         if self.cleaned_data['password'] != self.cleaned_data['password2']:
-            raise forms.ValidationError("As senhas não coincidem!")
+            raise forms.ValidationError("As senhas não coincidem.")
         return self.cleaned_data['password2']
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
         
-        # Verifica se o admin marcou o campo para tornar superusuário
+        # 🔹 Se o admin marcou "Tornar superusuário"
         if 'is_superuser' in self.cleaned_data and self.cleaned_data['is_superuser']:
             user.is_superuser = True
-            user.is_staff = True  # O superusuário também deve ser staff
+            user.is_staff = True  # Superusuário também é staff
         if commit:
             user.save()
         return user
-    
+
 class FeedbackForm(forms.ModelForm):
     class Meta:
         model = Feedback

@@ -12,6 +12,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
 
     <style>
+<<<<<<< HEAD
       .pedido-card {
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -35,6 +36,75 @@
     {% include 'loja/_navbar.html' %}
     <div class="container my-5">
       <h2 class="text-center mb-5 text-primary">Finalizar Pedido</h2>
+=======
+        .pedido-card {
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
+        }
+        .form-section {
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+        }
+        .btn-whatsapp {
+            background-color: #25D366;
+            border: none;
+        }
+        .btn-whatsapp:hover {
+            background-color: #1ebe5d;
+        }
+        .produto-img-small {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .produto-img-placeholder-small {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    {% include "loja/_navbar.html" %}
+
+<div class="container py-4">
+    <!-- Cabeçalho -->
+    <div class="row align-items-center mb-4">
+        <!-- Botão Voltar (lado esquerdo) -->
+        <div class="col-auto">
+            <a href="{% url 'ver_carrinho' %}" 
+               class="btn btn-outline-secondary px-4 py-2 fw-semibold shadow-sm"
+               style="font-size: 1rem; border-radius: 8px; transition: all 0.2s ease;">
+                <i class="bi bi-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+
+        <!-- Título Centralizado -->
+        <div class="col text-center">
+            <h2 class="text-primary fw-bold mb-0 d-inline-flex align-items-center justify-content-center"
+                style="font-size: 1.9rem; letter-spacing: -0.02em; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <i class="bi bi-cart-check me-2" style="font-size: 2rem;"></i>
+                Finalizar Pedido
+            </h2>
+        </div>
+
+        <!-- Espaço vazio para manter o título centralizado -->
+        <div class="col-auto" style="visibility: hidden;">
+            <button class="btn px-4 py-2">
+                <i class="bi bi-arrow-left me-2"></i>Voltar
+            </button>
+        </div>
+    </div>
+>>>>>>> main
 
       <!-- Resumo do Carrinho -->
       <div class="card pedido-card">
@@ -46,6 +116,7 @@
             <ul class="list-group mb-3">
               {% for item in itens %}
                 <li class="list-group-item">
+<<<<<<< HEAD
                   <div class="d-flex justify-content-between align-items-center">
                     <span class="me-2">{{ item.quantidade }}x {{ item.produto.nome }}</span>
                     <div class="d-flex">
@@ -62,6 +133,42 @@
                   </div>
                 </div>
               </li>
+=======
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Imagem do Produto -->
+                            {% if item.produto.imagem %}
+                                <img src="{{ item.produto.imagem.url }}" alt="{{ item.produto.nome }}" class="produto-img-small">
+                            {% elif item.imagem %}
+                                <img src="{{ item.imagem }}" alt="{{ item.nome }}" class="produto-img-small">
+                            {% else %}
+                                <div class="produto-img-placeholder-small">
+                                    <i class="bi bi-image text-muted" style="font-size: 1.2rem;"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Nome e Quantidade -->
+                            <span>{{ item.quantidade }}x {% if item.produto %}{{ item.produto.nome }}{% else %}{{ item.nome }}{% endif %}</span>
+                        </div>
+                        
+                        <!-- Preço -->
+                        <div class="d-flex">
+                            <span class="me-1">R$</span>
+                            <span>{{ item.subtotal }}</span>
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span class="me-2">Total:</span>
+                        <div class="d-flex">
+                            <span class="me-1">R$</span>
+                            <span>{{ total }}</span>
+                        </div>
+                    </div>
+                </li>
+>>>>>>> main
             </ul>
           {% else %}
             <p class="text-muted">Seu carrinho está vazio.</p>
@@ -75,7 +182,11 @@
         <div id="alertaCampos" class="alert alert-danger d-none">Por favor, preencha todos os campos obrigatórios antes de finalizar o pedido.</div>
 
         <form method="POST">
+<<<<<<< HEAD
           {% csrf_token %}
+=======
+            {% csrf_token %}
+>>>>>>> main
 
           <div class="row g-3">
             <div class="col-md-6">
@@ -111,10 +222,16 @@
       </div>
     </div>
 
+<<<<<<< HEAD
     <!-- JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+=======
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+>>>>>>> main
     function finalizarPedido() {
         const campos = ['nome', 'rua', 'numero', 'bairro', 'cidade'];
         let vazio = false;
@@ -143,7 +260,7 @@
 
         {% autoescape off %}
         {% for item in itens %}
-        mensagem += "- {{ item.quantidade }}x {{ item.produto.nome }} – R$ {{ item.subtotal }}%0A";
+        mensagem += "- {{ item.quantidade }}x {{ item.nome }} – R$ {{ item.subtotal }}%0A";
         {% endfor %}
         {% endautoescape %}
 
@@ -161,5 +278,10 @@
         window.open(url, '_blank');
     }
 </script>
+<<<<<<< HEAD
   </body>
 </html>
+=======
+</body>
+</html>
+>>>>>>> main
